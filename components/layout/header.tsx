@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Ticket, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { LanguageToggle } from "@/components/i18n/language-toggle"
-import { UserNav } from "@/components/auth/user-nav"
-import { useAuth } from "@/components/auth/auth-provider"
-import { ModeToggle } from "@/components/theme/mode-toggle"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Ticket, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LanguageToggle } from "@/components/i18n/language-toggle";
+import { UserNav } from "@/components/auth/user-nav";
+import { useAuth } from "@/components/auth/auth-provider";
+import { ModeToggle } from "@/components/theme/mode-toggle";
 
 export default function Header() {
-  const pathname = usePathname()
-  const { user } = useAuth()
+  const pathname = usePathname();
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -19,10 +19,12 @@ export default function Header() {
         <div className="flex items-center gap-6 md:gap-10">
           <Link href="/" className="flex items-center space-x-2">
             <Ticket className="h-6 w-6" />
-            <span className="hidden font-bold sm:inline-block">EventTix</span>
+            <span className="hidden font-bold sm:inline-block">
+              Bona Banana
+            </span>
           </Link>
           <nav className="hidden gap-6 md:flex">
-            <Link
+            {/* <Link
               href="/"
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 pathname === "/" ? "text-foreground" : "text-muted-foreground"
@@ -37,12 +39,14 @@ export default function Header() {
               }`}
             >
               Events
-            </Link>
+            </Link> */}
             {user && (
               <Link
                 href="/profile"
                 className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === "/profile" ? "text-foreground" : "text-muted-foreground"
+                  pathname === "/profile"
+                    ? "text-foreground"
+                    : "text-muted-foreground"
                 }`}
               >
                 My Tickets
@@ -52,7 +56,9 @@ export default function Header() {
               <Link
                 href="/admin"
                 className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname.startsWith("/admin") ? "text-foreground" : "text-muted-foreground"
+                  pathname.startsWith("/admin")
+                    ? "text-foreground"
+                    : "text-muted-foreground"
                 }`}
               >
                 Admin
@@ -61,21 +67,17 @@ export default function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <ModeToggle />
+          {/* <ModeToggle /> */}
           <LanguageToggle />
           {user ? (
             <UserNav user={user} />
           ) : (
             <Button asChild variant="outline" size="sm">
-              <Link href="/auth/login">
-                <User className="mr-2 h-4 w-4" />
-                Login
-              </Link>
+              <Link href="/auth/login">Login</Link>
             </Button>
           )}
         </div>
       </div>
     </header>
-  )
+  );
 }
-

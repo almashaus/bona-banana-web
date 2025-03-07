@@ -1,12 +1,17 @@
-"use client"
+"use client";
 
-import { Check, Globe } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useLanguage } from "./language-provider"
+import { Check, Globe, Flag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useLanguage } from "./language-provider";
 
 export function LanguageToggle() {
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage } = useLanguage();
 
   return (
     <DropdownMenu>
@@ -18,23 +23,14 @@ export function LanguageToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setLanguage("en")}>
-          <span>English</span>
+          <Flag /> <span>English</span>
           {language === "en" && <Check className="ml-2 h-4 w-4" />}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLanguage("es")}>
-          <span>Español</span>
-          {language === "es" && <Check className="ml-2 h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLanguage("fr")}>
-          <span>Français</span>
-          {language === "fr" && <Check className="ml-2 h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLanguage("de")}>
-          <span>Deutsch</span>
-          {language === "de" && <Check className="ml-2 h-4 w-4" />}
+        <DropdownMenuItem onClick={() => setLanguage("ar")}>
+          <Flag /> <span>عربي</span>
+          {language === "ar" && <Check className="ml-2 h-4 w-4" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
-
