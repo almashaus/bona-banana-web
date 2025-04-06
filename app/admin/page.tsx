@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarDays, MapPin, Plus, Ticket, Users } from "lucide-react";
@@ -15,12 +15,43 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/components/auth/auth-provider";
-import { events } from "@/data/events";
+import { Event } from "@/data/models";
 import { formatCurrency } from "@/lib/utils";
+import { collection, getDocs, Timestamp } from "@firebase/firestore";
+import { db } from "@/firebaseConfig";
+
+async function getEvents() {
+  const querySnapshot = await getDocs(collection(db, "events"));
+  const events = querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    const timestamp: Timestamp = data.dates[0].start_datetime;
+
+    const date: Date = timestamp.toDate();
+    data.dates[0].start_datetime = date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    return data as Event;
+  });
+  return events;
+}
 
 export default function AdminPage() {
   const { user } = useAuth();
   const router = useRouter();
+
+  const [events, setEvents] = useState<Event[]>([]);
+
+  useEffect(() => {
+    getEvents().then((events) => {
+      setEvents(events);
+    });
+  }, []);
 
   // useEffect(() => {
   //   if (!user?.isAdmin) {
@@ -110,22 +141,22 @@ export default function AdminPage() {
             <CardContent className="space-y-4">
               {events.map((event) => (
                 <div
-                  key={event.id}
+                  key={event.event_id}
                   className="flex items-center justify-between border-b pb-4"
                 >
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 overflow-hidden rounded-md">
                       <img
-                        src={event.image || "/placeholder.svg"}
-                        alt={event.name}
+                        src={event.event_image || "/placeholder.svg"}
+                        alt={event.title}
                         className="h-full w-full object-cover"
                       />
                     </div>
                     <div>
-                      <h3 className="font-medium">{event.name}</h3>
+                      <h3 className="font-medium">{event.title}</h3>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <CalendarDays className="mr-1 h-4 w-4" />
-                        {new Date(event.dates[0]).toLocaleDateString()}
+                        {`${event.dates?.[0].start_datetime}`}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <MapPin className="mr-1 h-4 w-4" />
@@ -135,7 +166,7 @@ export default function AdminPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/admin/events/${event.id}`}>Edit</Link>
+                      <Link href={`/admin/events/${event.event_id}`}>Edit</Link>
                     </Button>
                     <Button variant="destructive" size="sm">
                       Delete

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, MapPin, Ticket, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,56 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { events } from "@/data/events";
+import { formatCurrency } from "@/lib/utils";
+import { Event } from "@/data/models";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useToast } from "@/components/ui/use-toast";
+import { collection, getDocs, Timestamp } from "@firebase/firestore";
+import { db } from "@/firebaseConfig";
+
+function formatDate(date: Date): string {
+  const formattedDate = date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return formattedDate;
+}
+
+async function getEvents() {
+  const querySnapshot = await getDocs(collection(db, "events"));
+  const events = querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    const timestamp_start: Timestamp = data.dates[0].start_datetime;
+    const timestamp_end: Timestamp = data.dates[0].end_datetime;
+
+    const start_date: Date = timestamp_start.toDate();
+    data.dates[0].start_datetime = start_date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const end_date: Date = timestamp_end.toDate();
+    data.dates[0].end_datetime = end_date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return data as Event;
+  });
+  return events;
+}
 
 export default function EventPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
@@ -31,8 +77,16 @@ export default function EventPage({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
+  const [events, setEvents] = useState<Event[]>([]);
 
-  const event = events.find((e) => e.id === params.id);
+  useEffect(() => {
+    getEvents().then((events) => {
+      setEvents(events);
+    });
+  }, []);
+  // Find the event by ID
+  const eventId = params.id;
+  const event = events.find((e) => e.event_id === params.id);
 
   if (!event) {
     return (
@@ -57,7 +111,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
       });
 
       const redirectUrl = `/checkout?eventId=${encodeURIComponent(
-        event.id
+        event.event_id
       )}&date=${encodeURIComponent(selectedDate)}&quantity=${encodeURIComponent(
         quantity
       )}`;
@@ -76,32 +130,68 @@ export default function EventPage({ params }: { params: { id: string } }) {
 
     // Navigate to checkout with event details
     router.push(
-      `/checkout?eventId=${event.id}&date=${selectedDate}&quantity=${quantity}`
+      `/checkout?eventId=${event.event_id}&date=${selectedDate}&quantity=${quantity}`
     );
   };
 
   return (
     <div className="container py-10">
       <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
-        {/* Event Image */}
-        <div className="overflow-hidden rounded-lg">
-          <img
-            src={event.image || "/placeholder.svg"}
-            alt={event.name}
-            className="aspect-video w-full object-cover"
-          />
-        </div>
-
         {/* Event Details */}
-        <div className="flex flex-col space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">{event.name}</h1>
-            <div className="mt-2 flex items-center text-muted-foreground">
-              <MapPin className="mr-1 h-5 w-5" />
-              {event.venue}, {event.location}
+        <div>
+          <h1 className="text-3xl font-bold">{event.title}</h1>
+          <img
+            src={event.event_image || "/placeholder.svg"}
+            alt={event.title}
+            className="aspect-video w-full object-cover rounded-xl my-4"
+          />
+
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Event Details</h2>
+            <p className="text-muted-foreground">{event.description}</p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Date</p>
+                  <p className="text-sm text-muted-foreground">
+                    {event.dates && event.dates.length > 0
+                      ? event.dates.length > 1
+                        ? `${formatDate(
+                            event.dates[0].start_datetime
+                          )} - ${formatDate(
+                            event.dates[event.dates.length - 1].end_datetime
+                          )}`
+                        : formatDate(event.dates[0].start_datetime)
+                      : "No dates available"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Capacity</p>
+                  <p className="text-sm text-muted-foreground">
+                    {event.dates?.[0].capacity} attendees
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <MapPin className=" h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Location</p>
+                  <p className="text-sm text-muted-foreground">
+                    {event.location}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
+        {/* Ticket Info */}
+        <div className="flex flex-col space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Ticket Information</CardTitle>
@@ -119,9 +209,13 @@ export default function EventPage({ params }: { params: { id: string } }) {
                     <SelectValue placeholder="Select date" />
                   </SelectTrigger>
                   <SelectContent>
-                    {event.dates.map((date) => (
-                      <SelectItem key={date} value={date}>
-                        {formatDate(date)}
+                    {event.dates?.map((date) => (
+                      <SelectItem
+                        key={date.event_date_id}
+                        value={date.event_date_id}
+                      >
+                        {formatDate(date.start_datetime)} -{" "}
+                        {formatDate(date.end_datetime)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -168,36 +262,6 @@ export default function EventPage({ params }: { params: { id: string } }) {
               </Button>
             </CardFooter>
           </Card>
-
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">About This Event</h2>
-            <p className="text-muted-foreground">{event.description}</p>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Date</p>
-                  <p className="text-sm text-muted-foreground">
-                    {event.dates.length > 1
-                      ? `${formatDate(event.dates[0])} - ${formatDate(
-                          event.dates[event.dates.length - 1]
-                        )}`
-                      : formatDate(event.dates[0])}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Capacity</p>
-                  <p className="text-sm text-muted-foreground">
-                    {event.capacity} attendees
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
