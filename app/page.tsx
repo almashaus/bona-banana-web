@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Event } from "@/data/models";
 import Loading from "../components/ui/loading";
 import EventsList from "./events-list";
+import { formatEventsDates } from "@/lib/utils";
 
 export default function Home() {
   const [allEvents, setallEvents] = useState<Event[]>([]);
@@ -19,18 +20,8 @@ export default function Home() {
       try {
         const querySnapshot = await getDocs(collection(db, "events"));
         const events = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          const timestamp: Timestamp = data.dates[0].start_datetime;
+          const data = formatEventsDates(doc.data(), false);
 
-          const date: Date = timestamp.toDate();
-          data.dates[0].start_datetime = date.toLocaleString("en-US", {
-            year: "numeric",
-            month: "numeric",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          });
           return data as Event;
         });
         setallEvents(events);

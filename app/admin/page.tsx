@@ -9,32 +9,21 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Event } from "@/data/models";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatEventsDates } from "@/lib/utils";
 import { collection, getDocs, Timestamp } from "@firebase/firestore";
 import { db } from "@/firebaseConfig";
+import Loading from "@/components/ui/loading";
 
 async function getEvents() {
   const querySnapshot = await getDocs(collection(db, "events"));
   const events = querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    const timestamp: Timestamp = data.dates[0].start_datetime;
-
-    const date: Date = timestamp.toDate();
-    data.dates[0].start_datetime = date.toLocaleString("en-US", {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const data = formatEventsDates(doc.data(), false);
 
     return data as Event;
   });
@@ -44,13 +33,22 @@ async function getEvents() {
 export default function AdminPage() {
   const { user } = useAuth();
   const router = useRouter();
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
 
   useEffect(() => {
-    getEvents().then((events) => {
-      setEvents(events);
-    });
+    getEvents()
+      .then((events) => {
+        setEvents(events);
+      })
+      .catch((error) => {
+        console.error("Error fetching events:", error);
+        setError("Failed to fetch data. Please try again later.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   // useEffect(() => {
@@ -138,6 +136,11 @@ export default function AdminPage() {
                 Manage your events, edit details, or remove events.
               </CardDescription>
             </CardHeader>
+            {loading && (
+              <div className="flex justify-center items-center py-12">
+                <Loading />
+              </div>
+            )}
             <CardContent className="space-y-4">
               {events.map((event) => (
                 <div
@@ -156,7 +159,7 @@ export default function AdminPage() {
                       <h3 className="font-medium">{event.title}</h3>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <CalendarDays className="mr-1 h-4 w-4" />
-                        {`${event.dates?.[0].start_datetime}`}
+                        {`${event.dates?.[0].date} | ${event.dates?.[0].start_time} - ${event.dates?.[0].end_time}`}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <MapPin className="mr-1 h-4 w-4" />
@@ -175,11 +178,6 @@ export default function AdminPage() {
                 </div>
               ))}
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full">
-                View All Events
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
 

@@ -1,24 +1,69 @@
+import { DocumentData, Timestamp } from "@firebase/firestore";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Event } from "@/data/models";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-UK", {
     style: "currency",
     currency: "USD",
   }).format(amount);
 }
 
-export function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString("en-US", {
-    weekday: "long",
+export function formatDate(date: Date): string {
+  return date.toLocaleString("en-UK", {
     year: "numeric",
-    month: "long",
+    month: "numeric",
     day: "numeric",
+    hour12: true,
   });
+}
+
+export function formatTime(date: Date): string {
+  return date.toLocaleString("en-UK", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+export function formatEventsDates(data: DocumentData, isLoop: Boolean): Event {
+  for (let i = 0; i < (isLoop ? data.dates.length : 1); i++) {
+    const theDate = data.dates[i];
+
+    if (theDate && theDate.date) {
+      const timestamp: Timestamp = theDate.date;
+      const date: Date = timestamp.toDate();
+
+      theDate.date = date.toLocaleString("en-UK", {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour12: true,
+      });
+
+      const timestamp_start: Timestamp = theDate.start_time;
+      const start_time: Date = timestamp_start.toDate();
+      theDate.start_time = start_time.toLocaleString("en-UK", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      const timestamp_end: Timestamp = theDate.end_time;
+      const end_time: Date = timestamp_end.toDate();
+      theDate.end_time = end_time.toLocaleString("en-UK", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+  }
+  return data as Event;
 }
 
 export function generateOrderNumber(): string {

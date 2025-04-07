@@ -40,18 +40,7 @@ export default function Header() {
             >
               Events
             </Link> */}
-            {user && (
-              <Link
-                href="/profile"
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === "/profile"
-                    ? "text-foreground"
-                    : "text-muted-foreground"
-                }`}
-              >
-                My Tickets
-              </Link>
-            )}
+
             {user?.isAdmin && (
               <Link
                 href="/admin"
@@ -72,7 +61,7 @@ export default function Header() {
           {user ? (
             <UserNav user={user} />
           ) : (
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="default">
               <Link href="/auth/login">Login</Link>
             </Button>
           )}

@@ -28,7 +28,7 @@ export default function EventsList({ allEvents }: { allEvents: Event[] }) {
               <h3 className="line-clamp-1 text-lg font-bold">{event.title}</h3>
               <div className="mt-2 flex items-center text-sm text-muted-foreground">
                 <CalendarDays className="mr-1 h-4 w-4" />
-                {`${event.dates?.[0].start_datetime}`}
+                {`${event.dates?.[0].date}, ${event.dates?.[0].start_time} - ${event.dates?.[0].end_time}`}
               </div>
               <div className="mt-1 flex items-center text-sm text-muted-foreground">
                 <MapPin className="mr-1 h-4 w-4" />

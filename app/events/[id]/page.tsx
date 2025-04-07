@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, MapPin, Ticket, Users } from "lucide-react";
+import { CalendarDays, ClockIcon, MapPin, Ticket, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,56 +20,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatDate,
+  formatEventsDates,
+  formatTime,
+} from "@/lib/utils";
 import { Event } from "@/data/models";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useToast } from "@/components/ui/use-toast";
 import { collection, getDocs, Timestamp } from "@firebase/firestore";
 import { db } from "@/firebaseConfig";
-
-function formatDate(date: Date): string {
-  const formattedDate = date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  return formattedDate;
-}
-
-async function getEvents() {
-  const querySnapshot = await getDocs(collection(db, "events"));
-  const events = querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    const timestamp_start: Timestamp = data.dates[0].start_datetime;
-    const timestamp_end: Timestamp = data.dates[0].end_datetime;
-
-    const start_date: Date = timestamp_start.toDate();
-    data.dates[0].start_datetime = start_date.toLocaleString("en-US", {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    const end_date: Date = timestamp_end.toDate();
-    data.dates[0].end_datetime = end_date.toLocaleString("en-US", {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-    return data as Event;
-  });
-  return events;
-}
+import { getDocumentById } from "@/utils/firestore";
+import Loading from "@/components/ui/loading";
 
 export default function EventPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
@@ -77,30 +40,23 @@ export default function EventPage({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const id = params.id as string;
 
   useEffect(() => {
-    getEvents().then((events) => {
-      setEvents(events);
-    });
-  }, []);
-  // Find the event by ID
-  const eventId = params.id;
-  const event = events.find((e) => e.event_id === params.id);
-
-  if (!event) {
-    return (
-      <div className="container py-10 text-center">
-        <h1 className="text-2xl font-bold mb-4">Event not found</h1>
-        <p className="mb-6">
-          The event you're looking for doesn't exist or has been removed.
-        </p>
-        <Button asChild>
-          <a href="/events">Browse Events</a>
-        </Button>
-      </div>
-    );
-  }
+    if (id) {
+      getDocumentById("events", id)
+        .then((data) => {
+          const eventsData = formatEventsDates(data, true);
+          setEvent(eventsData as Event);
+        })
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
+    }
+  }, [id]);
 
   const handleBuyTicket = () => {
     if (!user) {
@@ -111,7 +67,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
       });
 
       const redirectUrl = `/checkout?eventId=${encodeURIComponent(
-        event.event_id
+        event?.event_id ?? ""
       )}&date=${encodeURIComponent(selectedDate)}&quantity=${encodeURIComponent(
         quantity
       )}`;
@@ -130,140 +86,183 @@ export default function EventPage({ params }: { params: { id: string } }) {
 
     // Navigate to checkout with event details
     router.push(
-      `/checkout?eventId=${event.event_id}&date=${selectedDate}&quantity=${quantity}`
+      `/checkout?eventId=${event?.event_id}&date=${selectedDate}&quantity=${quantity}`
     );
   };
 
-  return (
-    <div className="container py-10">
-      <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
-        {/* Event Details */}
-        <div>
-          <h1 className="text-3xl font-bold">{event.title}</h1>
-          <img
-            src={event.event_image || "/placeholder.svg"}
-            alt={event.title}
-            className="aspect-video w-full object-cover rounded-xl my-4"
-          />
+  if (error) {
+    return (
+      <div className="container py-10 text-center">
+        <h1 className="text-2xl font-bold mb-4">Event not found</h1>
+        <p className="mb-6">
+          The event you're looking for doesn't exist or has been removed.
+        </p>
+        <Button asChild>
+          <a href="/events">Browse Events</a>
+        </Button>
+      </div>
+    );
+  }
 
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Event Details</h2>
-            <p className="text-muted-foreground">{event.description}</p>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-56">
+        <Loading />
+      </div>
+    );
+  } else if (event) {
+    return (
+      <div className="container py-10">
+        <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
+          {/* Event Details */}
+          <div>
+            <h1 className="text-3xl font-bold">{event.title}</h1>
+            <img
+              src={event.event_image || "/placeholder.svg"}
+              alt={event.title}
+              className="aspect-video w-full object-cover rounded-xl my-4"
+            />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Date</p>
-                  <p className="text-sm text-muted-foreground">
-                    {event.dates && event.dates.length > 0
-                      ? event.dates.length > 1
-                        ? `${formatDate(
-                            event.dates[0].start_datetime
-                          )} - ${formatDate(
-                            event.dates[event.dates.length - 1].end_datetime
-                          )}`
-                        : formatDate(event.dates[0].start_datetime)
-                      : "No dates available"}
-                  </p>
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold">Event Details</h2>
+              <p className="text-muted-foreground">{event.description}</p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Date</p>
+                    <p className="text-sm text-muted-foreground">
+                      {event.dates && event.dates.length > 0
+                        ? event.dates.length > 1 &&
+                          event.dates[0].start_time &&
+                          event.dates[0].end_time
+                          ? `${event.dates[0].date} - ${
+                              event.dates[event.dates.length - 1].date
+                            }`
+                          : `${event.dates[0].date} | ${event.dates[0].start_time} - ${event.dates[0].end_time}`
+                        : "No dates available"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Capacity</p>
-                  <p className="text-sm text-muted-foreground">
-                    {event.dates?.[0].capacity} attendees
-                  </p>
+                <div className="flex items-center gap-2">
+                  <ClockIcon className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Time</p>
+                    <p className="text-sm text-muted-foreground">
+                      {event.dates && event.dates.length > 0
+                        ? event.dates.length > 1 &&
+                          event.dates[0].start_time &&
+                          event.dates[0].end_time
+                          ? `
+                           ${event.dates[0].start_time} - ${event.dates[0].end_time}`
+                          : `${event.dates[0].date} | ${event.dates[0].start_time} - ${event.dates[0].end_time}`
+                        : "No dates available"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <MapPin className=" h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Location</p>
-                  <p className="text-sm text-muted-foreground">
-                    {event.location}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Capacity</p>
+                    <p className="text-sm text-muted-foreground">
+                      {event.dates?.[0].capacity} attendees
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <MapPin className=" h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Location</p>
+                    <p className="text-sm text-muted-foreground">
+                      {event.location}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Ticket Info */}
-        <div className="flex flex-col space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ticket Information</CardTitle>
-              <CardDescription>
-                Select your preferred date and quantity
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Date
-                </label>
-                <Select onValueChange={setSelectedDate}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select date" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {event.dates?.map((date) => (
-                      <SelectItem
-                        key={date.event_date_id}
-                        value={date.event_date_id}
-                      >
-                        {formatDate(date.start_datetime)} -{" "}
-                        {formatDate(date.end_datetime)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Quantity
-                </label>
-                <Select
-                  defaultValue="1"
-                  onValueChange={(value) => setQuantity(Number.parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select quantity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num} {num === 1 ? "ticket" : "tickets"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between pt-4">
-                <div className="flex items-center gap-2">
-                  <Ticket className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    Price per ticket:
+          {/* Ticket Info */}
+          <div className="flex flex-col space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ticket Information</CardTitle>
+                <CardDescription>
+                  Select your preferred date and quantity
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Date
+                  </label>
+                  <Select onValueChange={setSelectedDate}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {event.dates?.map((date) => (
+                        <SelectItem
+                          key={date.event_date_id}
+                          value={date.event_date_id}
+                        >
+                          {formatDate(date.date)} |{" "}
+                          {formatTime(date.start_time)} -{" "}
+                          {formatTime(date.end_time)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Quantity
+                  </label>
+                  <Select
+                    defaultValue="1"
+                    onValueChange={(value) =>
+                      setQuantity(Number.parseInt(value))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select quantity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num} {num === 1 ? "ticket" : "tickets"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between pt-4">
+                  <div className="flex items-center gap-2">
+                    <Ticket className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Price per ticket:
+                    </span>
+                  </div>
+                  <span className="font-bold">
+                    {formatCurrency(event.price)}
                   </span>
                 </div>
-                <span className="font-bold">{formatCurrency(event.price)}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between font-bold">
-                <span>Total:</span>
-                <span>{formatCurrency(event.price * quantity)}</span>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full" size="lg" onClick={handleBuyTicket}>
-                Buy Ticket
-              </Button>
-            </CardFooter>
-          </Card>
+                <Separator />
+                <div className="flex items-center justify-between font-bold">
+                  <span>Total:</span>
+                  <span>{formatCurrency(event.price * quantity)}</span>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" size="lg" onClick={handleBuyTicket}>
+                  Buy Ticket
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 }

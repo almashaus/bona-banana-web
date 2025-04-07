@@ -12,6 +12,8 @@ import {
   XIcon,
   CheckIcon,
   UploadIcon,
+  Clock4Icon,
+  EyeIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,9 +67,10 @@ export default function CreateEventPage() {
   const [eventDates, setEventDates] = useState<EventDate[]>([
     {
       event_date_id: `date-${Date.now()}`,
-      start_datetime: new Date(),
-      end_datetime: new Date(new Date().setHours(new Date().getHours() + 3)),
-      capacity: 100,
+      date: new Date(),
+      start_time: new Date(),
+      end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
+      capacity: 50,
       event_id: "",
     },
   ]);
@@ -99,9 +102,10 @@ export default function CreateEventPage() {
       event_date_id: `date-${Date.now()}-${Math.random()
         .toString(36)
         .substring(2, 9)}`,
-      start_datetime: new Date(),
-      end_datetime: new Date(new Date().setHours(new Date().getHours() + 3)),
-      capacity: 100,
+      date: new Date(),
+      start_time: new Date(),
+      end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
+      capacity: 50,
       event_id: "",
     };
     setEventDates([...eventDates, newDate]);
@@ -147,7 +151,8 @@ export default function CreateEventPage() {
         title: title,
         slug: slug,
         description: description,
-        event_image: eventImage,
+        event_image:
+          "https://static.vecteezy.com/system/resources/thumbnails/041/388/388/small/ai-generated-concert-crowd-enjoying-live-music-event-photo.jpg", // TODO:  eventImage,
         ad_image: adImage,
         price: price,
         status: status,
@@ -161,16 +166,16 @@ export default function CreateEventPage() {
       // await new Promise((resolve) => setTimeout(resolve, 1500));
 
       toast({
-        title: "Event created",
-        description: "Your event has been created successfully.",
+        title: "✅ Event created",
+        description: "Your event has been created successfully 🎉",
       });
 
       // Redirect to admin events page
       router.push("/admin");
     } catch (error) {
       toast({
-        title: "Error",
-        description: "There was an error creating the event.",
+        title: "⚠️ Error",
+        description: "There was an error creating the event ❗️",
         variant: "destructive",
       });
     } finally {
@@ -261,15 +266,29 @@ export default function CreateEventPage() {
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={EventStatus.DRAFT}>Draft</SelectItem>
+                      <SelectItem value={EventStatus.DRAFT}>
+                        <div className="flex items-center">
+                          Draft
+                          <Clock4Icon className=" w-4 h-4 text-gray-400 mx-1 " />
+                        </div>
+                      </SelectItem>
                       <SelectItem value={EventStatus.PUBLISHED}>
-                        Published
+                        <div className="flex items-center">
+                          Published
+                          <EyeIcon className=" w-4 h-4 text-blue-400 mx-1 " />
+                        </div>
                       </SelectItem>
                       <SelectItem value={EventStatus.CANCELLED}>
-                        Cancelled
+                        <div className="flex items-center">
+                          Cancelled
+                          <XIcon className=" w-4 h-4 text-red-400 mx-1 " />
+                        </div>
                       </SelectItem>
                       <SelectItem value={EventStatus.COMPLETED}>
-                        Completed
+                        <div className="flex items-center">
+                          Completed
+                          <CheckIcon className=" w-4 h-4 text-green-400 mx-1 " />
+                        </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -396,9 +415,9 @@ export default function CreateEventPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {eventDates.map((date, index) => (
+              {eventDates.map((eventDate, index) => (
                 <div
-                  key={date.event_date_id}
+                  key={eventDate.event_date_id}
                   className="space-y-4 pb-4 border-b last:border-0"
                 >
                   <div className="flex items-center justify-between">
@@ -408,7 +427,7 @@ export default function CreateEventPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeEventDate(date.event_date_id)}
+                        onClick={() => removeEventDate(eventDate.event_date_id)}
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
                         Remove
@@ -416,9 +435,9 @@ export default function CreateEventPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Start Date & Time</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mx-5">
+                    <div className="">
+                      <Label>Date</Label>
                       <div className="flex flex-col space-y-2">
                         <Popover>
                           <PopoverTrigger asChild>
@@ -426,12 +445,12 @@ export default function CreateEventPage() {
                               variant="outline"
                               className={cn(
                                 "justify-start text-left font-normal",
-                                !date.start_datetime && "text-muted-foreground"
+                                !eventDate.date && "text-muted-foreground"
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {date.start_datetime ? (
-                                format(date.start_datetime, "PPP")
+                              {eventDate.date ? (
+                                format(eventDate.date, "PPP")
                               ) : (
                                 <span>Pick a date</span>
                               )}
@@ -440,19 +459,17 @@ export default function CreateEventPage() {
                           <PopoverContent className="w-auto p-0">
                             <Calendar
                               mode="single"
-                              selected={date.start_datetime}
+                              selected={eventDate.date}
                               onSelect={(day) => {
                                 if (day) {
                                   const newDate = new Date(day);
-                                  newDate.setHours(
-                                    date.start_datetime.getHours()
-                                  );
+                                  newDate.setHours(eventDate.date.getHours());
                                   newDate.setMinutes(
-                                    date.start_datetime.getMinutes()
+                                    eventDate.date.getMinutes()
                                   );
                                   updateEventDate(
-                                    date.event_date_id,
-                                    "start_datetime",
+                                    eventDate.event_date_id,
+                                    "date",
                                     newDate
                                   );
                                 }
@@ -460,83 +477,43 @@ export default function CreateEventPage() {
                             />
                           </PopoverContent>
                         </Popover>
-                        <div className="flex space-x-2">
-                          <Input
-                            type="time"
-                            value={format(date.start_datetime, "HH:mm")}
-                            onChange={(e) => {
-                              const [hours, minutes] =
-                                e.target.value.split(":");
-                              const newDate = new Date(date.start_datetime);
-                              newDate.setHours(Number.parseInt(hours));
-                              newDate.setMinutes(Number.parseInt(minutes));
-                              updateEventDate(
-                                date.event_date_id,
-                                "start_datetime",
-                                newDate
-                              );
-                            }}
-                          />
-                        </div>
                       </div>
                     </div>
 
                     <div className="grid gap-2">
-                      <Label>End Date & Time</Label>
+                      <Label>Start Time</Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          type="time"
+                          value={format(eventDate.start_time, "HH:mm")}
+                          onChange={(e) => {
+                            const [hours, minutes] = e.target.value.split(":");
+                            const newDate = new Date(eventDate.date);
+                            newDate.setHours(Number.parseInt(hours));
+                            newDate.setMinutes(Number.parseInt(minutes));
+                            updateEventDate(
+                              eventDate.event_date_id,
+                              "start_time",
+                              newDate
+                            );
+                          }}
+                        />
+                      </div>
+                      <Label>End Time</Label>
                       <div className="flex flex-col space-y-2">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "justify-start text-left font-normal",
-                                !date.end_datetime && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {date.end_datetime ? (
-                                format(date.end_datetime, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={date.end_datetime}
-                              onSelect={(day) => {
-                                if (day) {
-                                  const newDate = new Date(day);
-                                  newDate.setHours(
-                                    date.end_datetime.getHours()
-                                  );
-                                  newDate.setMinutes(
-                                    date.end_datetime.getMinutes()
-                                  );
-                                  updateEventDate(
-                                    date.event_date_id,
-                                    "end_datetime",
-                                    newDate
-                                  );
-                                }
-                              }}
-                            />
-                          </PopoverContent>
-                        </Popover>
                         <div className="flex space-x-2">
                           <Input
                             type="time"
-                            value={format(date.end_datetime, "HH:mm")}
+                            value={format(eventDate.end_time, "HH:mm")}
                             onChange={(e) => {
                               const [hours, minutes] =
                                 e.target.value.split(":");
-                              const newDate = new Date(date.end_datetime);
+                              const newDate = new Date(eventDate.date);
                               newDate.setHours(Number.parseInt(hours));
                               newDate.setMinutes(Number.parseInt(minutes));
                               updateEventDate(
-                                date.event_date_id,
-                                "end_datetime",
+                                eventDate.event_date_id,
+                                "end_time",
                                 newDate
                               );
                             }}
@@ -547,22 +524,23 @@ export default function CreateEventPage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor={`capacity-${date.event_date_id}`}>
+                    <Label htmlFor={`capacity-${eventDate.event_date_id}`}>
                       Capacity
                     </Label>
                     <Input
-                      id={`capacity-${date.event_date_id}`}
+                      id={`capacity-${eventDate.event_date_id}`}
                       type="number"
                       min="1"
-                      value={date.capacity}
+                      value={eventDate.capacity}
                       onChange={(e) =>
                         updateEventDate(
-                          date.event_date_id,
+                          eventDate.event_date_id,
                           "capacity",
                           Number.parseInt(e.target.value)
                         )
                       }
-                      placeholder="100"
+                      placeholder="50"
+                      className="w-24"
                       required
                     />
                   </div>

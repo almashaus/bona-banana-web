@@ -62,8 +62,9 @@ interface Event {
 interface EventDate {
   event_date_id: string; //
   event_id: string; // , foreign key to Event
-  start_datetime: Date;
-  end_datetime: Date;
+  date: Date;
+  start_time: Date;
+  end_time: Date;
   capacity: number;
 
   // Relations

@@ -54,8 +54,9 @@ const event1: Event = {
 const eventDate1: EventDate = {
   event_date_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   event_id: event1.event_id,
-  start_datetime: new Date("2025-05-15T09:00:00Z"),
-  end_datetime: new Date("2025-05-15T18:00:00Z"),
+  date: new Date("2025-05-15T09:00:00Z"),
+  start_time: new Date("2025-05-15T09:00:00Z"),
+  end_time: new Date("2025-05-15T18:00:00Z"),
   capacity: 500,
   event: event1,
 };
@@ -63,8 +64,9 @@ const eventDate1: EventDate = {
 const eventDate2: EventDate = {
   event_date_id: "6c9e6679-7425-40de-944b-e07fc1f90ae8",
   event_id: event1.event_id,
-  start_datetime: new Date("2025-05-16T09:00:00Z"),
-  end_datetime: new Date("2025-05-16T18:00:00Z"),
+  date: new Date("2025-05-16T09:00:00Z"),
+  start_time: new Date("2025-05-16T09:00:00Z"),
+  end_time: new Date("2025-05-16T18:00:00Z"),
   capacity: 500,
   event: event1,
 };

@@ -30,7 +30,10 @@ export function UserNav({ user }: UserNavProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="relative h-10 w-10 rounded-full">
+        <Button
+          variant="outline"
+          className="relative h-10 w-10 rounded-lg bg-muted"
+        >
           <Avatar className="h-10 w-10">
             <AvatarFallback>
               <User className="h-[1.2rem] w-[1.2rem]" />
