@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, MapPin, Plus, Ticket, Users } from "lucide-react";
+import {
+  CalendarDays,
+  ClockIcon,
+  MapPin,
+  Plus,
+  Ticket,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,9 +23,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Event } from "@/data/models";
 import { formatCurrency, formatEventsDates } from "@/lib/utils";
-import { collection, getDocs, Timestamp } from "@firebase/firestore";
+import { collection, getDocs } from "@firebase/firestore";
 import { db } from "@/firebaseConfig";
 import Loading from "@/components/ui/loading";
+import { deleteDocById } from "@/utils/firestore";
+import LoadingDots from "@/components/ui/loading-dots";
+import { useToast } from "@/components/ui/use-toast";
 
 async function getEvents() {
   const querySnapshot = await getDocs(collection(db, "events"));
@@ -33,9 +43,11 @@ async function getEvents() {
 export default function AdminPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     getEvents()
@@ -60,6 +72,36 @@ export default function AdminPage() {
   // if (!user?.isAdmin) {
   //   return null
   // }
+
+  const deleteEvent = async (eventId: string) => {
+    try {
+      setIsDeleting(true);
+      const result = await deleteDocById("events", eventId);
+      if (result) {
+        setEvents((prevEvents) =>
+          prevEvents.filter((event) => event.event_id !== eventId)
+        );
+
+        toast({
+          title: "✅ Event deleted",
+          description: "Your event has been deleted successfully",
+        });
+      } else {
+        throw new Error("Failed to delete event");
+      }
+    } catch (error) {
+      setError(`${error}`);
+
+      toast({
+        title: "⚠️ Error deleting event",
+        description: "Failed to delete event. Please try again later.",
+        variant: "destructive",
+      });
+      setError(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="container py-10">
@@ -136,11 +178,21 @@ export default function AdminPage() {
                 Manage your events, edit details, or remove events.
               </CardDescription>
             </CardHeader>
+
             {loading && (
               <div className="flex justify-center items-center py-12">
                 <Loading />
               </div>
             )}
+
+            {events.length === 0 && !loading && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  No events available. Create your first event.
+                </p>
+              </div>
+            )}
+
             <CardContent className="space-y-4">
               {events.map((event) => (
                 <div
@@ -148,7 +200,7 @@ export default function AdminPage() {
                   className="flex items-center justify-between border-b pb-4"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 overflow-hidden rounded-md">
+                    <div className="h-16 w-16 overflow-hidden rounded-md">
                       <img
                         src={event.event_image || "/placeholder.svg"}
                         alt={event.title}
@@ -156,23 +208,32 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <h3 className="font-medium">{event.title}</h3>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <CalendarDays className="mr-1 h-4 w-4" />
-                        {`${event.dates?.[0].date} | ${event.dates?.[0].start_time} - ${event.dates?.[0].end_time}`}
+                      <h3 className="font-semibold text-lg">{event.title}</h3>
+                      <div className="flex items-center text-xs md:text-sm text-muted-foreground">
+                        <CalendarDays className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                        {`${event.dates?.[0].date}`}
                       </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <MapPin className="mr-1 h-4 w-4" />
+                      <div className="flex items-center text-xs md:text-sm text-muted-foreground">
+                        <ClockIcon className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                        {`${event.dates?.[0].start_time} - ${event.dates?.[0].end_time}`}
+                      </div>
+                      <div className="flex items-center text-xs md:text-sm text-muted-foreground">
+                        <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4" />
                         {event.location}
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col md:flex-row gap-2">
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/admin/events/${event.event_id}`}>Edit</Link>
                     </Button>
-                    <Button variant="destructive" size="sm">
-                      Delete
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={isDeleting}
+                      onClick={() => deleteEvent(event.event_id)}
+                    >
+                      {isDeleting ? <LoadingDots /> : "Delete"}
                     </Button>
                   </div>
                 </div>
