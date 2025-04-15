@@ -21,7 +21,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <head>
+        <link rel="stylesheet" href="/css/riyal.css" />
+      </head>
+      <body
+        className={inter.className + " bg-gradient-to-b from-muted/50 to-muted"}
+      >
         <AuthProvider>
           <LanguageProvider>
             <div className="flex min-h-screen min-w-full flex-col">

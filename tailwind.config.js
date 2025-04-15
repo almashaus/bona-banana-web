@@ -21,8 +21,14 @@ module.exports = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
+        background: "#fffcf5",
         foreground: "hsl(var(--foreground))",
+        redColor: "#e64936",
+        orangeColor: "#f49b32",
+        yellowColor: "#f0bf3f",
+        greenColor: "#213421",
+        lightColor: "#f3e8cc",
+        darkColor: "#191919",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -36,8 +42,8 @@ module.exports = {
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#f5f5f5",
+          foreground: "#737373",
         },
         accent: {
           DEFAULT: "hsl(var(--accent))",
@@ -74,5 +80,4 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
-
+};

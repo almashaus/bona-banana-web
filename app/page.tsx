@@ -11,7 +11,7 @@ import EventsList from "./events-list";
 import { formatEventsDates } from "@/lib/utils";
 
 export default function Home() {
-  const [allEvents, setallEvents] = useState<Event[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +24,7 @@ export default function Home() {
 
           return data as Event;
         });
-        setallEvents(events);
+        setAllEvents(events);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -36,18 +36,8 @@ export default function Home() {
     getEvents();
   }, []);
 
-  if (error) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen ">
       {/* Hero Section */}
       {/* <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-muted/50 to-muted">
         <div className="container px-4 md:px-6">

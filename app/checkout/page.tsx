@@ -1,63 +1,69 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { CalendarDays, CreditCard, MapPin, Ticket } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
-import { formatCurrency, formatDate, generateOrderNumber } from "@/lib/utils"
-import { events } from "@/data/events"
-import { useAuth } from "@/components/auth/auth-provider"
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { CalendarDays, CreditCard, MapPin, Ticket } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
+import { formatDate, generateOrderNumber } from "@/lib/utils";
+import { events } from "@/data/events";
+import { useAuth } from "@/components/auth/auth-provider";
 
 export default function CheckoutPage() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const { toast } = useToast()
-  const { user } = useAuth()
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const eventId = searchParams.get("eventId")
-  const date = searchParams.get("date")
-  const quantity = Number.parseInt(searchParams.get("quantity") || "1")
+  const eventId = searchParams.get("eventId");
+  const date = searchParams.get("date");
+  const quantity = Number.parseInt(searchParams.get("quantity") || "1");
 
-  const event = events.find((e) => e.id === eventId)
+  const event = events.find((e) => e.id === eventId);
 
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState("card")
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("card");
 
   if (!event || !date) {
     return (
       <div className="container py-10 text-center">
-        <h1 className="text-2xl font-bold mb-4">Invalid checkout information</h1>
-        <p className="mb-6">Please select an event and date before proceeding to checkout.</p>
+        <h1 className="text-2xl font-bold mb-4">
+          Invalid checkout information
+        </h1>
+        <p className="mb-6">
+          Please select an event and date before proceeding to checkout.
+        </p>
         <Button asChild>
           <a href="/events">Browse Events</a>
         </Button>
       </div>
-    )
+    );
   }
 
-  const subtotal = event.price * quantity
-  const fees = subtotal * 0.05 // 5% service fee
-  const total = subtotal + fees
+  const subtotal = event.price * quantity;
+  const fees = subtotal * 0.05; // 5% service fee
+  const total = subtotal + fees;
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsProcessing(true)
+    e.preventDefault();
+    setIsProcessing(true);
 
     // Simulate payment processing
     setTimeout(() => {
-      const orderNumber = generateOrderNumber()
+      const orderNumber = generateOrderNumber();
 
       // Navigate to confirmation page
-      router.push(`/confirmation?orderNumber=${orderNumber}&eventId=${eventId}&date=${date}&quantity=${quantity}`)
-    }, 2000)
-  }
+      router.push(
+        `/confirmation?orderNumber=${orderNumber}&eventId=${eventId}&date=${date}&quantity=${quantity}`
+      );
+    }, 2000);
+  };
 
   return (
     <div className="container py-10">
@@ -71,7 +77,11 @@ export default function CheckoutPage() {
 
             <div className="flex items-start gap-4 mb-6">
               <div className="h-20 w-20 overflow-hidden rounded-md">
-                <img src={event.image || "/placeholder.svg"} alt={event.name} className="h-full w-full object-cover" />
+                <img
+                  src={event.image || "/placeholder.svg"}
+                  alt={event.name}
+                  className="h-full w-full object-cover"
+                />
               </div>
               <div>
                 <h3 className="font-medium">{event.name}</h3>
@@ -95,16 +105,25 @@ export default function CheckoutPage() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
+                <span>
+                  <span className="icon-saudi_riyal" />
+                  {subtotal}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Service Fee</span>
-                <span>{formatCurrency(fees)}</span>
+                <span>
+                  <span className="icon-saudi_riyal" />
+                  {fees}
+                </span>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between font-bold">
                 <span>Total</span>
-                <span>{formatCurrency(total)}</span>
+                <span>
+                  <span className="icon-saudi_riyal" />
+                  {total}
+                </span>
               </div>
             </div>
           </div>
@@ -112,7 +131,10 @@ export default function CheckoutPage() {
 
         {/* Payment Form */}
         <div className="lg:col-span-1">
-          <form onSubmit={handleSubmit} className="rounded-lg border p-6 shadow-sm">
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-lg border p-6 shadow-sm"
+          >
             <h2 className="text-xl font-semibold mb-4">Payment Details</h2>
 
             <Tabs defaultValue="card" onValueChange={setPaymentMethod}>
@@ -127,7 +149,11 @@ export default function CheckoutPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="card-number">Card Number</Label>
-                  <Input id="card-number" placeholder="1234 5678 9012 3456" required />
+                  <Input
+                    id="card-number"
+                    placeholder="1234 5678 9012 3456"
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
@@ -140,7 +166,10 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </TabsContent>
-              <TabsContent value="paypal" className="flex justify-center items-center h-40">
+              <TabsContent
+                value="paypal"
+                className="flex justify-center items-center h-40"
+              >
                 <p className="text-center text-muted-foreground">
                   You will be redirected to PayPal to complete your payment.
                 </p>
@@ -148,14 +177,22 @@ export default function CheckoutPage() {
             </Tabs>
 
             <div className="mt-6">
-              <Button type="submit" className="w-full" size="lg" disabled={isProcessing}>
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={isProcessing}
+              >
                 {isProcessing ? (
                   <span className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 animate-pulse" />
                     Processing...
                   </span>
                 ) : (
-                  <span>Pay {formatCurrency(total)}</span>
+                  <span>
+                    Pay <span className="icon-saudi_riyal" />
+                    {total}
+                  </span>
                 )}
               </Button>
             </div>
@@ -163,6 +200,5 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

@@ -14,11 +14,11 @@ export default function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
           <Link href="/" className="flex items-center space-x-2">
-            <Ticket className="h-6 w-6" />
+            <img src="/logo.svg" alt="Bona Banana Logo" className="h-10" />
             <span className="hidden font-bold sm:inline-block">
               Bona Banana
             </span>
@@ -44,7 +44,7 @@ export default function Header() {
             {user?.isAdmin && (
               <Link
                 href="/admin"
-                className={`text-sm font-medium transition-colors hover:text-primary ${
+                className={`text-sm font-medium transition-colors hover:text-redColor ${
                   pathname.startsWith("/admin")
                     ? "text-foreground"
                     : "text-muted-foreground"

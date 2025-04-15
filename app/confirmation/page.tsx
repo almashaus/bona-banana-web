@@ -1,51 +1,53 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
-import { CalendarDays, Download, MapPin, Ticket } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { formatCurrency, formatDate, generateQRCode } from "@/lib/utils"
-import { events } from "@/data/events"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { CalendarDays, Download, MapPin, Ticket } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { formatDate, generateQRCode } from "@/lib/utils";
+import { events } from "@/data/events";
 
 export default function ConfirmationPage() {
-  const searchParams = useSearchParams()
-  const [isLoading, setIsLoading] = useState(true)
+  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const orderNumber = searchParams.get("orderNumber")
-  const eventId = searchParams.get("eventId")
-  const date = searchParams.get("date")
-  const quantity = Number.parseInt(searchParams.get("quantity") || "1")
+  const orderNumber = searchParams.get("orderNumber");
+  const eventId = searchParams.get("eventId");
+  const date = searchParams.get("date");
+  const quantity = Number.parseInt(searchParams.get("quantity") || "1");
 
-  const event = events.find((e) => e.id === eventId)
+  const event = events.find((e) => e.id === eventId);
 
   useEffect(() => {
     // Simulate loading
     const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
+      setIsLoading(false);
+    }, 1000);
 
-    return () => clearTimeout(timer)
-  }, [])
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!event || !date || !orderNumber) {
     return (
       <div className="container py-10 text-center">
-        <h1 className="text-2xl font-bold mb-4">Invalid confirmation information</h1>
+        <h1 className="text-2xl font-bold mb-4">
+          Invalid confirmation information
+        </h1>
         <p className="mb-6">We couldn't find the details for your order.</p>
         <Button asChild>
           <Link href="/events">Browse Events</Link>
         </Button>
       </div>
-    )
+    );
   }
 
-  const subtotal = event.price * quantity
-  const fees = subtotal * 0.05 // 5% service fee
-  const total = subtotal + fees
-  const qrCodeUrl = generateQRCode(orderNumber)
+  const subtotal = event.price * quantity;
+  const fees = subtotal * 0.05; // 5% service fee
+  const total = subtotal + fees;
+  const qrCodeUrl = generateQRCode(orderNumber);
 
   return (
     <div className="container py-10">
@@ -55,7 +57,9 @@ export default function ConfirmationPage() {
             <Ticket className="h-6 w-6" />
           </div>
           <h1 className="text-3xl font-bold">Order Confirmed!</h1>
-          <p className="text-muted-foreground mt-2">Your tickets have been successfully purchased.</p>
+          <p className="text-muted-foreground mt-2">
+            Your tickets have been successfully purchased.
+          </p>
         </div>
 
         <Card className="mb-6">
@@ -83,9 +87,15 @@ export default function ConfirmationPage() {
             <div className="flex justify-center mb-4">
               <div className="text-center">
                 <div className="bg-white p-2 rounded-lg inline-block mb-2">
-                  <img src={qrCodeUrl || "/placeholder.svg"} alt="QR Code" className="w-40 h-40" />
+                  <img
+                    src={qrCodeUrl || "/placeholder.svg"}
+                    alt="QR Code"
+                    className="w-40 h-40"
+                  />
                 </div>
-                <p className="text-sm text-muted-foreground">Present this QR code at the venue</p>
+                <p className="text-sm text-muted-foreground">
+                  Present this QR code at the venue
+                </p>
               </div>
             </div>
 
@@ -95,21 +105,31 @@ export default function ConfirmationPage() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tickets</span>
                 <span>
-                  {quantity} × {formatCurrency(event.price)}
+                  {quantity} × <span className="icon-saudi_riyal" />
+                  {event.price}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
+                <span>
+                  <span className="icon-saudi_riyal" />
+                  {subtotal}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Service Fee</span>
-                <span>{formatCurrency(fees)}</span>
+                <span>
+                  <span className="icon-saudi_riyal" />
+                  {fees}
+                </span>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between font-bold">
                 <span>Total</span>
-                <span>{formatCurrency(total)}</span>
+                <span>
+                  <span className="icon-saudi_riyal" />
+                  {total}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -126,6 +146,5 @@ export default function ConfirmationPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

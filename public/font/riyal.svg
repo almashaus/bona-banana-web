@@ -1,0 +1,12 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg">
+<metadata>Copyright (C) 2025 by original authors @ fontello.com</metadata>
+<defs>
+<font id="riyal" horiz-adv-x="1000" >
+<font-face font-family="riyal" font-weight="400" font-stretch="normal" units-per-em="1000" ascent="850" descent="-150" />
+<missing-glyph horiz-adv-x="1000" />
+<glyph glyph-name="saudi_riyal" unicode="&#xe800;" d="M557-36h0c-16-35-27-74-31-114l338 72c16 35 27 74 31 114l-338-72z m307 173c16 35 27 74 31 114l-263-56v108l232 49c16 36 27 74 31 114l-263-56v387c-41-22-77-52-106-88v-321l-105-22v484c-40-23-76-53-105-88v-419l-236-50c-16-35-26-74-30-114l266 57v-136l-285-60c-16-36-27-74-31-115l299 64c24 5 45 19 58 39l55 81v0c6 9 9 19 9 30v119l105 22v-215l338 72z" horiz-adv-x="895" />
+</font>
+</defs>
+</svg>

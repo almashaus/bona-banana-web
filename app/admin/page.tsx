@@ -22,7 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Event } from "@/data/models";
-import { formatCurrency, formatEventsDates } from "@/lib/utils";
+import { formatEventsDates } from "@/lib/utils";
 import { collection, getDocs } from "@firebase/firestore";
 import { db } from "@/firebaseConfig";
 import Loading from "@/components/ui/loading";
@@ -155,7 +155,10 @@ export default function AdminPage() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(45231.89)}</div>
+            <div className="text-2xl font-bold">
+              <span className="icon-saudi_riyal" />
+              {45231.89}
+            </div>
             <p className="text-xs text-muted-foreground">
               +20.1% from last month
             </p>

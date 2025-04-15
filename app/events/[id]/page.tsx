@@ -20,17 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  formatCurrency,
-  formatDate,
-  formatEventsDates,
-  formatTime,
-} from "@/lib/utils";
+import { formatDate, formatEventsDates, formatTime } from "@/lib/utils";
 import { Event } from "@/data/models";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useToast } from "@/components/ui/use-toast";
-import { collection, getDocs, Timestamp } from "@firebase/firestore";
-import { db } from "@/firebaseConfig";
 import { getDocumentById } from "@/utils/firestore";
 import Loading from "@/components/ui/loading";
 
@@ -127,9 +120,9 @@ export default function EventPage({ params }: { params: { id: string } }) {
               <h2 className="text-xl font-bold">Event Details</h2>
               <p className="text-muted-foreground">{event.description}</p>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border border-neutral-200 bg-card text-card-foreground shadow-sm">
                 <div className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                  <CalendarDays className="h-5 w-5 text-redColor" />
                   <div>
                     <p className="text-sm font-medium">Date</p>
                     <p className="text-sm text-muted-foreground">
@@ -146,7 +139,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ClockIcon className="h-5 w-5 text-muted-foreground" />
+                  <ClockIcon className="h-5 w-5 text-redColor" />
                   <div>
                     <p className="text-sm font-medium">Time</p>
                     <p className="text-sm text-muted-foreground">
@@ -162,7 +155,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-muted-foreground" />
+                  <Users className="h-5 w-5 text-redColor" />
                   <div>
                     <p className="text-sm font-medium">Capacity</p>
                     <p className="text-sm text-muted-foreground">
@@ -171,7 +164,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
                   </div>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <MapPin className=" h-5 w-5 text-muted-foreground" />
+                  <MapPin className="h-5 w-5 text-redColor" />
                   <div>
                     <p className="text-sm font-medium">Location</p>
                     <p className="text-sm text-muted-foreground">
@@ -239,19 +232,23 @@ export default function EventPage({ params }: { params: { id: string } }) {
                 </div>
                 <div className="flex items-center justify-between pt-4">
                   <div className="flex items-center gap-2">
-                    <Ticket className="h-5 w-5 text-muted-foreground" />
+                    <Ticket className="h-5 w-5 text-redColor" />
                     <span className="text-muted-foreground">
                       Price per ticket:
                     </span>
                   </div>
                   <span className="font-bold">
-                    {formatCurrency(event.price)}
+                    <span className="icon-saudi_riyal" />
+                    {event.price}
                   </span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between font-bold">
                   <span>Total:</span>
-                  <span>{formatCurrency(event.price * quantity)}</span>
+                  <span>
+                    <span className="icon-saudi_riyal" />
+                    {event.price * quantity}
+                  </span>
                 </div>
               </CardContent>
               <CardFooter>

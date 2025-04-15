@@ -151,8 +151,7 @@ export default function CreateEventPage() {
         title: title,
         slug: slug,
         description: description,
-        event_image:
-          "https://static.vecteezy.com/system/resources/thumbnails/041/388/388/small/ai-generated-concert-crowd-enjoying-live-music-event-photo.jpg", // TODO:  eventImage,
+        event_image: "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage,
         ad_image: adImage,
         price: price,
         status: status,
@@ -427,9 +426,10 @@ export default function CreateEventPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
+                        className="text-red-500 hover:text-red-500"
                         onClick={() => removeEventDate(eventDate.event_date_id)}
                       >
-                        <Trash2 className="h-4 w-4 mr-1" />
+                        <Trash2 className="h-4 w-4 mr-1 text-red-500" />
                         Remove
                       </Button>
                     )}
@@ -444,7 +444,7 @@ export default function CreateEventPage() {
                             <Button
                               variant="outline"
                               className={cn(
-                                "justify-start text-left font-normal",
+                                "justify-start text-left font-normal bg-white",
                                 !eventDate.date && "text-muted-foreground"
                               )}
                             >
@@ -549,8 +549,8 @@ export default function CreateEventPage() {
 
               <Button
                 type="button"
-                variant="outline"
-                className="w-full"
+                // variant="outline"
+                className="w-full text-black/80 bg-muted-foreground/30 hover:bg-muted-foreground/20"
                 onClick={addEventDate}
               >
                 <Plus className="h-4 w-4 mr-2" />
