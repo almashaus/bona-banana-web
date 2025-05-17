@@ -82,3 +82,21 @@ export function generateEventId(length = 10) {
 
   return result;
 }
+
+export function dateTimeStringToDate(dateStr: string, timeStr: string): Date {
+  // Parse date: "14/05/2025"
+  const [day, month, year] = dateStr.split("/").map(Number);
+
+  // Parse time: "12:00 am"
+  let [time, period] = timeStr.trim().split(" ");
+  let [hours, minutes] = time.split(":").map(Number);
+
+  if (period.toLowerCase() === "pm" && hours !== 12) {
+    hours += 12;
+  }
+  if (period.toLowerCase() === "am" && hours === 12) {
+    hours = 0;
+  }
+
+  return new Date(year, month - 1, day, hours, minutes);
+}

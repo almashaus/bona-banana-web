@@ -213,22 +213,24 @@ export default function AdminPage() {
                     <div>
                       <h3 className="font-semibold text-lg">{event.title}</h3>
                       <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                        <CalendarDays className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                        <CalendarDays className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
                         {`${event.dates?.[0].date}`}
                       </div>
                       <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                        <ClockIcon className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                        <ClockIcon className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
                         {`${event.dates?.[0].start_time} - ${event.dates?.[0].end_time}`}
                       </div>
                       <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                        <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4" />
+                        <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
                         {event.location}
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-col md:flex-row gap-2">
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/admin/events/${event.event_id}`}>Edit</Link>
+                      <Link href={`/admin/events/edit/${event.event_id}`}>
+                        Edit
+                      </Link>
                     </Button>
                     <Button
                       variant="destructive"
