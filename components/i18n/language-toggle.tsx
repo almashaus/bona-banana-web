@@ -23,11 +23,11 @@ export function LanguageToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setLanguage("en")}>
-          <Flag /> <span>English</span>
+          <span>🇬🇧 English</span>
           {language === "en" && <Check className="ml-2 h-4 w-4" />}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setLanguage("ar")}>
-          <Flag /> <span>عربي</span>
+          <span>🇸🇦 عربي</span>
           {language === "ar" && <Check className="ml-2 h-4 w-4" />}
         </DropdownMenuItem>
       </DropdownMenuContent>

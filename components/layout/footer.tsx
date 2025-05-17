@@ -7,8 +7,6 @@ export default function Footer() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
           <img src="/logo.svg" alt="Bona Banana Logo" className="h-20" />
-
-          <h3 className="text-lg font-bold">Bona Banana</h3>
         </div>
 
         {/* Social Media */}

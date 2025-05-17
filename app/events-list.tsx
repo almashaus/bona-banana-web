@@ -23,19 +23,19 @@ export default function EventsList({ allEvents }: { allEvents: Event[] }) {
             <CardContent className="p-4 bg-lightColor mx-3 rounded-md">
               <h3 className="line-clamp-1 text-lg font-bold">{event.title}</h3>
               <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                <CalendarDays className="mr-1 h-4 w-4" />
+                <CalendarDays className="mr-1 h-4 w-4 text-redColor" />
                 {`${event.dates?.[0].date}`}
               </div>
               <div className="mt-1 flex items-center text-sm text-muted-foreground">
-                <ClockIcon className="mr-1 h-4 w-4" />
+                <ClockIcon className="mr-1 h-4 w-4 text-redColor" />
                 {`${event.dates?.[0].start_time} - ${event.dates?.[0].end_time}`}
               </div>
             </CardContent>
-            <CardFooter className="p-3 flex justify-between items-center bg-dark-color ">
-              <div className=" bg-redColor px-8 py-3 rounded-md text-white">
+            <CardFooter className="p-3 grid grid-cols-2 gap-3 justify-between items-center bg-dark-color ">
+              <div className=" bg-redColor py-3 rounded-md text-white text-center">
                 <span className="">{event.location}</span>
               </div>
-              <div className="bg-yellowColor px-8 py-3 rounded-md text-white">
+              <div className="bg-yellowColor py-3 rounded-md text-white  text-center">
                 <span className="icon-saudi_riyal" />
                 {event.price}
               </div>

@@ -44,11 +44,7 @@ export default function Header() {
             {user?.isAdmin && (
               <Link
                 href="/admin"
-                className={`text-sm font-medium transition-colors hover:text-redColor ${
-                  pathname.startsWith("/admin")
-                    ? "text-foreground"
-                    : "text-muted-foreground"
-                }`}
+                className="text-sm font-medium transition-colors text-redColor hover:text-foreground"
               >
                 Admin
               </Link>

@@ -106,14 +106,15 @@ export default function EventPage({ params }: { params: { id: string } }) {
   } else if (event) {
     return (
       <div className="container py-10">
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
+        <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
           {/* Event Details */}
-          <div>
+          <div className="lg:col-span-2">
             <h1 className="text-3xl font-bold">{event.title}</h1>
+
             <img
               src={event.event_image || "/placeholder.svg"}
               alt={event.title}
-              className="aspect-video w-full object-cover rounded-xl my-4"
+              className="aspect-video w-full lg:w-3/4 object-cover rounded-xl my-4"
             />
 
             <div className="space-y-4">
