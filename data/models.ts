@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 // Enum types
 enum UserRole {
   USER = "user",
@@ -51,12 +53,11 @@ interface Event {
   status: EventStatus;
   location: string;
   is_dnd: boolean;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Timestamp;
+  updated_at: Timestamp;
 
   // Relations
-  creator?: User;
-  dates?: EventDate[];
+  dates: EventDate[];
 }
 
 interface EventDate {
@@ -67,8 +68,6 @@ interface EventDate {
   end_time: Date;
   capacity: number;
 
-  // Relations
-  event?: Event;
   tickets?: Ticket[];
 }
 

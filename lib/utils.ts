@@ -12,15 +12,22 @@ export function formatDate(date: Date): string {
     year: "numeric",
     month: "numeric",
     day: "numeric",
-    hour12: true,
   });
 }
 
 export function formatTime(date: Date): string {
   return date.toLocaleString("en-UK", {
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
     hour12: true,
+  });
+}
+
+export function formatTime24H(date: Date): string {
+  return date.toLocaleString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   });
 }
 
@@ -30,30 +37,13 @@ export function formatEventsDates(data: DocumentData, isLoop: Boolean): Event {
 
     if (theDate && theDate.date) {
       const timestamp: Timestamp = theDate.date;
-      const date: Date = timestamp.toDate();
-
-      theDate.date = date.toLocaleString("en-UK", {
-        year: "numeric",
-        month: "numeric",
-        day: "numeric",
-        hour12: true,
-      });
+      theDate.date = timestamp.toDate();
 
       const timestamp_start: Timestamp = theDate.start_time;
-      const start_time: Date = timestamp_start.toDate();
-      theDate.start_time = start_time.toLocaleString("en-UK", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      theDate.start_time = timestamp_start.toDate();
 
       const timestamp_end: Timestamp = theDate.end_time;
-      const end_time: Date = timestamp_end.toDate();
-      theDate.end_time = end_time.toLocaleString("en-UK", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      theDate.end_time = timestamp_end.toDate();
     }
   }
   return data as Event;
@@ -81,22 +71,4 @@ export function generateEventId(length = 10) {
   }
 
   return result;
-}
-
-export function dateTimeStringToDate(dateStr: string, timeStr: string): Date {
-  // Parse date: "14/05/2025"
-  const [day, month, year] = dateStr.split("/").map(Number);
-
-  // Parse time: "12:00 am"
-  let [time, period] = timeStr.trim().split(" ");
-  let [hours, minutes] = time.split(":").map(Number);
-
-  if (period.toLowerCase() === "pm" && hours !== 12) {
-    hours += 12;
-  }
-  if (period.toLowerCase() === "am" && hours === 12) {
-    hours = 0;
-  }
-
-  return new Date(year, month - 1, day, hours, minutes);
 }

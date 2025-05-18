@@ -59,7 +59,10 @@ export function UserNav({ user }: UserNavProps) {
             My Tickets
           </DropdownMenuItem>
           {user.isAdmin && (
-            <DropdownMenuItem onClick={() => router.push("/admin")}>
+            <DropdownMenuItem
+              className="text-redColor"
+              onClick={() => router.push("/admin")}
+            >
               Admin Dashboard
             </DropdownMenuItem>
           )}

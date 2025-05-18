@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CalendarDays, ClockIcon, MapPin, Search } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Event } from "@/data/models";
+import { formatDate, formatTime } from "@/lib/utils";
 
 export default function EventsList({ allEvents }: { allEvents: Event[] }) {
   return (
@@ -24,11 +25,13 @@ export default function EventsList({ allEvents }: { allEvents: Event[] }) {
               <h3 className="line-clamp-1 text-lg font-bold">{event.title}</h3>
               <div className="mt-2 flex items-center text-sm text-muted-foreground">
                 <CalendarDays className="mr-1 h-4 w-4 text-redColor" />
-                {`${event.dates?.[0].date}`}
+                {`${formatDate(event.dates[0].date)}`}
               </div>
               <div className="mt-1 flex items-center text-sm text-muted-foreground">
                 <ClockIcon className="mr-1 h-4 w-4 text-redColor" />
-                {`${event.dates?.[0].start_time} - ${event.dates?.[0].end_time}`}
+                {`${formatTime(event.dates[0].start_time)} - ${formatTime(
+                  event.dates[0].end_time
+                )}`}
               </div>
             </CardContent>
             <CardFooter className="p-3 grid grid-cols-2 gap-3 justify-between items-center bg-dark-color ">

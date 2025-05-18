@@ -40,20 +40,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  cn,
-  dateTimeStringToDate,
-  formatDate,
-  formatEventsDates,
-  formatTime,
-} from "@/lib/utils";
+import { cn, formatDate, formatEventsDates, formatTime24H } from "@/lib/utils";
 import { Event, EventDate, EventStatus } from "@/data/models";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { getDocumentById } from "@/utils/firestore";
 import Loading from "@/components/ui/loading";
 
 export default function EditEventPage({ params }: { params: { id: string } }) {
+  const id = params.id as string;
+
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -80,11 +76,9 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
       start_time: new Date(),
       end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
-      event_id: "",
+      event_id: id,
     },
   ]);
-
-  const id = params.id as string;
 
   useEffect(() => {
     if (id) {
@@ -141,7 +135,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
       start_time: new Date(),
       end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
-      event_id: "",
+      event_id: event?.event_id || "",
     };
     setEventDates([...eventDates, newDate]);
   };
@@ -203,19 +197,6 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
         }
       }
 
-      const formattedEventDates = eventDates.map((eventDate) => ({
-        ...eventDate,
-        date: new Date(eventDate.date),
-        start_time: dateTimeStringToDate(
-          eventDate.date.toString(),
-          eventDate.start_time.toString()
-        ),
-        end_time: dateTimeStringToDate(
-          eventDate.date.toString(),
-          eventDate.end_time.toString()
-        ),
-      }));
-
       await editEvent({
         creator_id: user?.id || "1",
         title: title,
@@ -227,12 +208,11 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
         status: status,
         location: location,
         is_dnd: isDnd,
-        created_at: new Date(),
-        updated_at: new Date(),
-        dates: formattedEventDates,
+        created_at: event!.created_at,
+        updated_at: Timestamp.fromDate(new Date()),
+        dates: eventDates,
         event_id: event!.event_id,
       });
-      // await new Promise((resolve) => setTimeout(resolve, 1500));
 
       toast({
         title: "✅ Event updated",
@@ -561,7 +541,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
                         <div className="flex space-x-2">
                           <Input
                             type="time"
-                            value={formatTime(eventDate.start_time)}
+                            value={formatTime24H(eventDate.start_time)}
                             onChange={(e) => {
                               const [hours, minutes] =
                                 e.target.value.split(":");
@@ -581,7 +561,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
                           <div className="flex space-x-2">
                             <Input
                               type="time"
-                              value={formatTime(eventDate.end_time)}
+                              value={formatTime24H(eventDate.end_time)}
                               onChange={(e) => {
                                 const [hours, minutes] =
                                   e.target.value.split(":");

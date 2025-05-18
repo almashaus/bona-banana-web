@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/popover";
 import { cn, generateEventId } from "@/lib/utils";
 import { Event, EventDate, EventStatus } from "@/data/models";
-import { collection, addDoc, setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 
 export default function CreateEventPage() {
@@ -131,8 +131,14 @@ export default function CreateEventPage() {
   // Add new event to Firestore
   const addNewEvent = async (event: Event) => {
     try {
+      // Generate event ID and set event dates
       const eventId = generateEventId();
       event.event_id = eventId;
+      event.dates = eventDates.map((date) => ({
+        ...date,
+        event_id: eventId,
+      }));
+
       await setDoc(doc(db, "events", event.event_id), event);
       console.log("Document written with ID: ", event.event_id);
     } catch (e) {
@@ -157,13 +163,13 @@ export default function CreateEventPage() {
         status: status,
         location: location,
         is_dnd: isDnd,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: Timestamp.fromDate(new Date()),
+        updated_at: Timestamp.fromDate(new Date()),
         dates: eventDates,
         event_id: "",
       });
-      // await new Promise((resolve) => setTimeout(resolve, 1500));
 
+      // Show success toast
       toast({
         title: "✅ Event created",
         description: "Your event has been created successfully 🎉",
@@ -450,7 +456,7 @@ export default function CreateEventPage() {
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {eventDate.date ? (
-                                format(eventDate.date, "PPP")
+                                format(eventDate.date, "PP")
                               ) : (
                                 <span>Pick a date</span>
                               )}
@@ -523,7 +529,7 @@ export default function CreateEventPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid gap-2 mx-5">
                     <Label htmlFor={`capacity-${eventDate.event_date_id}`}>
                       Capacity
                     </Label>

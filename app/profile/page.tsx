@@ -1,47 +1,47 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from "@/components/auth/auth-provider"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/components/auth/auth-provider";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth()
-  const router = useRouter()
-  const { toast } = useToast()
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const [name, setName] = useState(user?.name || "")
-  const [email, setEmail] = useState(user?.email || "")
-  const [isUpdating, setIsUpdating] = useState(false)
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   if (!user) {
-    router.push("/auth/login?redirect=/profile")
-    return null
+    router.push("/auth/login?redirect=/profile");
+    return null;
   }
 
   const handleUpdateProfile = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsUpdating(true)
+    e.preventDefault();
+    setIsUpdating(true);
 
     // Simulate API call
     setTimeout(() => {
-      setIsUpdating(false)
+      setIsUpdating(false);
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
-      })
-    }, 1000)
-  }
+      });
+    }, 1000);
+  };
 
   return (
     <div className="container py-10">
@@ -66,15 +66,22 @@ export default function ProfilePage() {
           </TabsList>
 
           <TabsContent value="profile">
-            <div className="rounded-lg border p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+            <div className="rounded-lg border p-6 shadow-sm bg-white">
+              <h2 className="text-xl font-semibold mb-4">
+                Personal Information
+              </h2>
               <form onSubmit={handleUpdateProfile}>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">
                       Name
                     </Label>
-                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="col-span-3"
+                    />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="email" className="text-right">
@@ -102,7 +109,9 @@ export default function ProfilePage() {
             <div className="rounded-lg border p-6 shadow-sm">
               <h2 className="text-xl font-semibold mb-4">My Tickets</h2>
               <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">You don't have any tickets yet.</p>
+                <p className="text-muted-foreground mb-4">
+                  You don't have any tickets yet.
+                </p>
                 <Button asChild>
                   <Link href="/events">Browse Events</Link>
                 </Button>
@@ -122,19 +131,31 @@ export default function ProfilePage() {
                       <Label htmlFor="current-password" className="text-right">
                         Current Password
                       </Label>
-                      <Input id="current-password" type="password" className="col-span-3" />
+                      <Input
+                        id="current-password"
+                        type="password"
+                        className="col-span-3"
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="new-password" className="text-right">
                         New Password
                       </Label>
-                      <Input id="new-password" type="password" className="col-span-3" />
+                      <Input
+                        id="new-password"
+                        type="password"
+                        className="col-span-3"
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="confirm-password" className="text-right">
                         Confirm Password
                       </Label>
-                      <Input id="confirm-password" type="password" className="col-span-3" />
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        className="col-span-3"
+                      />
                     </div>
                   </div>
                   <div className="flex justify-end">
@@ -147,7 +168,8 @@ export default function ProfilePage() {
                 <div>
                   <h3 className="text-lg font-medium mb-2">Danger Zone</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Once you delete your account, there is no going back. Please be certain.
+                    Once you delete your account, there is no going back. Please
+                    be certain.
                   </p>
                   <Button variant="destructive" onClick={() => logout()}>
                     Log Out
@@ -159,6 +181,5 @@ export default function ProfilePage() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }
-

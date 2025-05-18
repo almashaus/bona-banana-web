@@ -127,14 +127,16 @@ export default function EventPage({ params }: { params: { id: string } }) {
                   <div>
                     <p className="text-sm font-medium">Date</p>
                     <p className="text-sm text-muted-foreground">
-                      {event.dates && event.dates.length > 0
+                      {selectedDate
+                        ? `${selectedDate.split("-")[0]}`
+                        : event.dates && event.dates.length > 0
                         ? event.dates.length > 1 &&
                           event.dates[0].start_time &&
                           event.dates[0].end_time
-                          ? `${event.dates[0].date} - ${
+                          ? `${formatDate(event.dates[0].date)} - ${formatDate(
                               event.dates[event.dates.length - 1].date
-                            }`
-                          : `${event.dates[0].date} | ${event.dates[0].start_time} - ${event.dates[0].end_time}`
+                            )}`
+                          : `${formatDate(event.dates[0].date)}`
                         : "No dates available"}
                     </p>
                   </div>
@@ -144,14 +146,15 @@ export default function EventPage({ params }: { params: { id: string } }) {
                   <div>
                     <p className="text-sm font-medium">Time</p>
                     <p className="text-sm text-muted-foreground">
-                      {event.dates && event.dates.length > 0
-                        ? event.dates.length > 1 &&
-                          event.dates[0].start_time &&
-                          event.dates[0].end_time
-                          ? `
-                           ${event.dates[0].start_time} - ${event.dates[0].end_time}`
-                          : `${event.dates[0].date} | ${event.dates[0].start_time} - ${event.dates[0].end_time}`
-                        : "No dates available"}
+                      {selectedDate
+                        ? `${selectedDate.split("-")[1]} - ${
+                            selectedDate.split("-")[2]
+                          }`
+                        : event.dates && event.dates.length > 0
+                        ? `${formatTime(
+                            event.dates[0].start_time
+                          )} - ${formatTime(event.dates[0].end_time)}`
+                        : "No times available"}
                     </p>
                   </div>
                 </div>
@@ -191,7 +194,13 @@ export default function EventPage({ params }: { params: { id: string } }) {
                   <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Date
                   </label>
-                  <Select onValueChange={setSelectedDate}>
+                  <Select
+                    onValueChange={(value) => {
+                      // value is like "date-1747506317478-7l6xwzl"
+                      // const valueList = value.split("-");
+                      setSelectedDate(value);
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select date" />
                     </SelectTrigger>
@@ -199,7 +208,9 @@ export default function EventPage({ params }: { params: { id: string } }) {
                       {event.dates?.map((date) => (
                         <SelectItem
                           key={date.event_date_id}
-                          value={date.event_date_id}
+                          value={`${formatDate(date.date)}-${formatTime(
+                            date.start_time
+                          )}-${formatTime(date.end_time)}`}
                         >
                           {formatDate(date.date)} |{" "}
                           {formatTime(date.start_time)} -{" "}

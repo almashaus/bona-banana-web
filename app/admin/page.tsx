@@ -22,8 +22,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Event } from "@/data/models";
-import { formatEventsDates } from "@/lib/utils";
-import { collection, getDocs } from "@firebase/firestore";
+import { formatDate, formatEventsDates, formatTime } from "@/lib/utils";
+import { collection, getDocs, orderBy, query } from "@firebase/firestore";
 import { db } from "@/firebaseConfig";
 import Loading from "@/components/ui/loading";
 import { deleteDocById } from "@/utils/firestore";
@@ -31,7 +31,11 @@ import LoadingDots from "@/components/ui/loading-dots";
 import { useToast } from "@/components/ui/use-toast";
 
 async function getEvents() {
-  const querySnapshot = await getDocs(collection(db, "events"));
+  const eventsQuery = query(
+    collection(db, "events"),
+    orderBy("updated_at", "desc")
+  );
+  const querySnapshot = await getDocs(eventsQuery);
   const events = querySnapshot.docs.map((doc) => {
     const data = formatEventsDates(doc.data(), false);
 
@@ -197,7 +201,7 @@ export default function AdminPage() {
             )}
 
             <CardContent className="space-y-4">
-              {events.map((event) => (
+              {events.map((event: Event) => (
                 <div
                   key={event.event_id}
                   className="flex items-center justify-between border-b pb-4"
@@ -214,11 +218,13 @@ export default function AdminPage() {
                       <h3 className="font-semibold text-lg">{event.title}</h3>
                       <div className="flex items-center text-xs md:text-sm text-muted-foreground">
                         <CalendarDays className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                        {`${event.dates?.[0].date}`}
+                        {`${formatDate(event.dates[0].date)}`}
                       </div>
                       <div className="flex items-center text-xs md:text-sm text-muted-foreground">
                         <ClockIcon className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                        {`${event.dates?.[0].start_time} - ${event.dates?.[0].end_time}`}
+                        {`${formatTime(
+                          event.dates[0].start_time
+                        )} - ${formatTime(event.dates[0].end_time)}`}
                       </div>
                       <div className="flex items-center text-xs md:text-sm text-muted-foreground">
                         <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />

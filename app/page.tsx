@@ -9,6 +9,7 @@ import { Event } from "@/data/models";
 import Loading from "../components/ui/loading";
 import EventsList from "./events-list";
 import { formatEventsDates } from "@/lib/utils";
+import { query, orderBy } from "firebase/firestore";
 
 export default function Home() {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
@@ -18,10 +19,13 @@ export default function Home() {
   useEffect(() => {
     async function getEvents() {
       try {
-        const querySnapshot = await getDocs(collection(db, "events"));
+        const eventsQuery = query(
+          collection(db, "events"),
+          orderBy("updated_at", "desc")
+        );
+        const querySnapshot = await getDocs(eventsQuery);
         const events = querySnapshot.docs.map((doc) => {
           const data = formatEventsDates(doc.data(), false);
-
           return data as Event;
         });
         setAllEvents(events);
