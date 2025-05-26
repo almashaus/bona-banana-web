@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,14 +29,36 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast({
-        title: "Login successful",
+        title: "✅ Login successful",
         description: "You have been logged in successfully",
+        variant: "success",
       });
       router.push(redirectUrl);
     } catch (error) {
       toast({
         title: "Login failed",
         description: "Please check your credentials and try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGoogle();
+      toast({
+        title: "✅ Login successful",
+        description: "You have been logged in with Google",
+        variant: "success",
+      });
+      router.push(redirectUrl);
+    } catch (error) {
+      toast({
+        title: "Google sign-in failed",
+        description: "Please try again",
         variant: "destructive",
       });
     } finally {
@@ -86,7 +108,7 @@ export default function LoginPage() {
                 <div className="text-right">
                   <Link
                     href="/auth/reset-password"
-                    className="text-xs font-medium text-redColor underline-offset-4 hover:underline"
+                    className="text-xs font-light text-redColor underline-offset-4 hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -108,7 +130,13 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="grid gap-2">
-            <Button variant="outline" type="button">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              <img src="/icons/google.svg" alt="Google Logo" className="h-5" />
               Google
             </Button>
           </div>

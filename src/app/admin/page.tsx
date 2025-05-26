@@ -38,6 +38,7 @@ import Loading from "@/src/components/ui/loading";
 import { deleteDocById } from "@/src/lib/firebase/firestore";
 import LoadingDots from "@/src/components/ui/loading-dots";
 import { useToast } from "@/src/components/ui/use-toast";
+import { admin } from "@/src/lib/firebase/firebaseAdmin";
 
 async function getEvents() {
   const eventsQuery = query(
@@ -76,15 +77,15 @@ export default function AdminPage() {
       });
   }, []);
 
-  // useEffect(() => {
-  //   if (!user?.isAdmin) {
-  //     router.push("/")
-  //   }
-  // }, [user, router])
+  useEffect(() => {
+    if (!user?.isAdmin) {
+      router.push("/");
+    }
+  }, [user, router]);
 
-  // if (!user?.isAdmin) {
-  //   return null
-  // }
+  if (!user?.isAdmin) {
+    return null;
+  }
 
   const deleteEvent = async (eventId: string) => {
     try {

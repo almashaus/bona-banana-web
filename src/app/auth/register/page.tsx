@@ -18,7 +18,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -39,14 +39,36 @@ export default function RegisterPage() {
     try {
       await register(name, email, password);
       toast({
-        title: "Registration successful",
+        title: "✅ Registration successful",
         description: "Your account has been created successfully",
+        variant: "success",
       });
       router.push("/");
     } catch (error) {
       toast({
         title: "Registration failed",
         description: "There was an error creating your account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGoogle();
+      toast({
+        title: "✅ Login successful",
+        description: "You have been logged in with Google",
+        variant: "success",
+      });
+      router.push("/");
+    } catch (error) {
+      toast({
+        title: "Google sign-in failed",
+        description: "Please try again",
         variant: "destructive",
       });
     } finally {
@@ -131,7 +153,13 @@ export default function RegisterPage() {
             </div>
           </div>
           <div className="grid gap-2">
-            <Button variant="outline" type="button">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              <img src="/icons/google.svg" alt="Google Logo" className="h-5" />
               Google
             </Button>
           </div>
