@@ -35,24 +35,11 @@ import {
 import { collection, getDocs, orderBy, query } from "@firebase/firestore";
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import Loading from "@/src/components/ui/loading";
-import { deleteDocById } from "@/src/lib/firebase/firestore";
+import { deleteDocById, getEvents } from "@/src/lib/firebase/firestore";
 import LoadingDots from "@/src/components/ui/loading-dots";
 import { useToast } from "@/src/components/ui/use-toast";
 import UsersList from "@/src/app/admin/users/page";
-
-async function getEvents() {
-  const eventsQuery = query(
-    collection(db, "events"),
-    orderBy("updated_at", "desc")
-  );
-  const querySnapshot = await getDocs(eventsQuery);
-  const events = querySnapshot.docs.map((doc) => {
-    const data = formatEventsDates(doc.data(), false);
-
-    return data as Event;
-  });
-  return events;
-}
+import Events from "./events/page";
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -86,36 +73,6 @@ export default function AdminPage() {
   if (!user?.isAdmin) {
     return null;
   }
-
-  const deleteEvent = async (eventId: string) => {
-    try {
-      setIsDeleting(true);
-      const result = await deleteDocById("events", eventId);
-      if (result) {
-        setEvents((prevEvents) =>
-          prevEvents.filter((event) => event.event_id !== eventId)
-        );
-
-        toast({
-          title: "✅ Event deleted",
-          description: "Your event has been deleted successfully",
-        });
-      } else {
-        throw new Error("Failed to delete event");
-      }
-    } catch (error) {
-      setError(`${error}`);
-
-      toast({
-        title: "⚠️ Error deleting event",
-        description: "Failed to delete event. Please try again later.",
-        variant: "destructive",
-      });
-      setError(null);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
   return (
     <div className="container py-10">
@@ -196,69 +153,13 @@ export default function AdminPage() {
               </CardDescription>
             </CardHeader>
 
-            {loading && (
-              <div className="flex justify-center items-center py-12">
-                <Loading />
+            <CardContent>
+              <Events />
+              <div className="flex justify-center ">
+                <Button asChild>
+                  <Link href="/admin/events">View All Events</Link>
+                </Button>
               </div>
-            )}
-
-            {events.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  No events available. Create your first event.
-                </p>
-              </div>
-            )}
-
-            <CardContent className="space-y-4">
-              {events.map((event: Event) => (
-                <div
-                  key={event.event_id}
-                  className="flex items-center justify-between border-b pb-4"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 overflow-hidden rounded-md">
-                      <img
-                        src={event.event_image || "/placeholder.svg"}
-                        alt={event.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{event.title}</h3>
-                      <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                        <CalendarDays className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                        {`${formatDate(event.dates[0].date)}`}
-                      </div>
-                      <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                        <ClockIcon className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                        {`${formatTime(
-                          event.dates[0].start_time
-                        )} - ${formatTime(event.dates[0].end_time)}`}
-                      </div>
-                      <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                        <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                        {event.location}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col md:flex-row gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/admin/events/edit/${event.event_id}`}>
-                        Edit
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={isDeleting}
-                      onClick={() => deleteEvent(event.event_id)}
-                    >
-                      {isDeleting ? <LoadingDots /> : "Delete"}
-                    </Button>
-                  </div>
-                </div>
-              ))}
             </CardContent>
           </Card>
         </TabsContent>
@@ -289,6 +190,9 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <UsersList />
+              <Button asChild>
+                <Link href="/">View All Events</Link>
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

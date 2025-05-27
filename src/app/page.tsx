@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
-import { db } from "@/src/lib/firebase/firebaseConfig";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
-import { Event } from "@/src/models/event";
+import { Event, EventStatus } from "@/src/models/event";
 import Loading from "@/src/components/ui/loading";
-import { formatEventsDates } from "@/src/lib/utils/formatDate";
-import { query, orderBy } from "firebase/firestore";
-import { CalendarDays, ClockIcon, MapPin, Search } from "lucide-react";
+import { CalendarDays, ClockIcon } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/src/components/ui/card";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
+import { getEventsByStatus } from "../lib/firebase/firestore";
 
 export default function Home() {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
@@ -19,17 +16,15 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function getEvents() {
+    async function events() {
       try {
-        const eventsQuery = query(
-          collection(db, "events"),
-          orderBy("updated_at", "desc")
-        );
-        const querySnapshot = await getDocs(eventsQuery);
-        const events = querySnapshot.docs.map((doc) => {
-          const data = formatEventsDates(doc.data(), false);
-          return data as Event;
-        });
+        const events = await getEventsByStatus(EventStatus.PUBLISHED);
+
+        if (!events || events.length === 0) {
+          setError("No events found");
+          setLoading(false);
+          return;
+        }
         setAllEvents(events);
         setLoading(false);
       } catch (error) {
@@ -39,7 +34,7 @@ export default function Home() {
       }
     }
 
-    getEvents();
+    events();
   }, []);
 
   return (
@@ -76,15 +71,22 @@ export default function Home() {
             <div className="flex justify-center items-center py-12">
               <Loading />
             </div>
+          ) : allEvents.length > 0 ? (
+            <div>
+              <EventsList allEvents={allEvents} />
+              <div className="flex justify-center ">
+                <Button asChild>
+                  <Link href="/">View All Events</Link>
+                </Button>
+              </div>
+            </div>
           ) : (
-            <EventsList allEvents={allEvents} />
+            <div className="flex justify-center items-center py-12">
+              <p className="text-muted-foreground">
+                There is no event currently, Come back later
+              </p>
+            </div>
           )}
-
-          <div className="flex justify-center">
-            <Button asChild>
-              <Link href="/">View All Events</Link>
-            </Button>
-          </div>
         </div>
       </section>
     </div>

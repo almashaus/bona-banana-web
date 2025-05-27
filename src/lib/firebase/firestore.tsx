@@ -7,14 +7,30 @@ import {
   DocumentData,
   query,
   orderBy,
+  where,
 } from "firebase/firestore";
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import { formatEventsDates } from "@/src/lib/utils/formatDate";
-import { Event } from "@/src/models/event";
+import { Event, EventStatus } from "@/src/models/event";
 
 export async function getEvents() {
   const eventsQuery = query(
     collection(db, "events"),
+    orderBy("updated_at", "desc")
+  );
+  const querySnapshot = await getDocs(eventsQuery);
+  const events = querySnapshot.docs.map((doc) => {
+    const data = formatEventsDates(doc.data(), false);
+
+    return data as Event;
+  });
+  return events;
+}
+
+export async function getEventsByStatus(status: string) {
+  const eventsQuery = query(
+    collection(db, "events"),
+    where("status", "==", status as EventStatus),
     orderBy("updated_at", "desc")
   );
   const querySnapshot = await getDocs(eventsQuery);
