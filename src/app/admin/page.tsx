@@ -38,7 +38,7 @@ import Loading from "@/src/components/ui/loading";
 import { deleteDocById } from "@/src/lib/firebase/firestore";
 import LoadingDots from "@/src/components/ui/loading-dots";
 import { useToast } from "@/src/components/ui/use-toast";
-import { admin } from "@/src/lib/firebase/firebaseAdmin";
+import UsersList from "@/src/app/admin/users/page";
 
 async function getEvents() {
   const eventsQuery = query(
@@ -288,9 +288,7 @@ export default function AdminPage() {
               <CardDescription>View and manage user accounts.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No users to display.</p>
-              </div>
+              <UsersList />
             </CardContent>
           </Card>
         </TabsContent>
