@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import {
   CalendarIcon,
   ImageIcon,
@@ -52,8 +52,8 @@ import { db } from "@/src/lib/firebase/firebaseConfig";
 import { getDocumentById } from "@/src/lib/firebase/firestore";
 import Loading from "@/src/components/ui/loading";
 
-export default function EditEventPage({ params }: { params: { id: string } }) {
-  const id = params.id as string;
+export default function EditEventPage() {
+  const { id } = useParams();
 
   const router = useRouter();
   const { toast } = useToast();
@@ -76,18 +76,18 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventDates, setEventDates] = useState<EventDate[]>([
     {
-      event_date_id: `date-${Date.now()}`,
+      event_date_id: `date${Date.now()}`,
       date: new Date(),
       start_time: new Date(),
       end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
-      event_id: id,
+      event_id: id as string,
     },
   ]);
 
   useEffect(() => {
     if (id) {
-      getDocumentById("events", id)
+      getDocumentById("events", id as string)
         .then((data) => {
           const eventData = formatEventsDates(data, true);
           setEvent(eventData as Event);
@@ -133,9 +133,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   // Add new event date
   const addEventDate = () => {
     const newDate: EventDate = {
-      event_date_id: `date-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2, 9)}`,
+      event_date_id: `date${Date.now()}`,
       date: new Date(),
       start_time: new Date(),
       end_time: new Date(new Date().setHours(new Date().getHours() + 3)),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { CalendarDays, ClockIcon, MapPin, Ticket, Users } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -21,6 +21,7 @@ import {
 } from "@/src/components/ui/select";
 import { Separator } from "@/src/components/ui/separator";
 import {
+  eventDateTimeString,
   formatDate,
   formatEventsDates,
   formatTime,
@@ -30,8 +31,9 @@ import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import { getDocumentById } from "@/src/lib/firebase/firestore";
 import Loading from "@/src/components/ui/loading";
+import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
 
-export default function EventPage({ params }: { params: { id: string } }) {
+export default function EventPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -41,14 +43,16 @@ export default function EventPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const id = params.id as string;
+  // get event ID from params
+  const { id } = useParams();
 
   useEffect(() => {
     if (id) {
-      getDocumentById("events", id)
+      getDocumentById("events", id as string)
         .then((data) => {
-          const eventsData = formatEventsDates(data, true);
-          setEvent(eventsData as Event);
+          const eventData = formatEventsDates(data, true);
+          setEvent(eventData as Event);
+          setSelectedDate(eventDateTimeString(eventData.dates[0]));
         })
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
@@ -56,19 +60,15 @@ export default function EventPage({ params }: { params: { id: string } }) {
   }, [id]);
 
   const handleBuyTicket = () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to purchase tickets",
-        variant: "destructive",
-      });
+    // Set event details in the checkout store
+    useCheckoutStore.setState((state) => ({
+      eventId: event?.event_id,
+      eventDateId: selectedDate.split("-")[0],
+      quantity: quantity,
+    }));
 
-      const redirectUrl = `/checkout?eventId=${encodeURIComponent(
-        event?.event_id ?? ""
-      )}&date=${encodeURIComponent(selectedDate)}&quantity=${encodeURIComponent(
-        quantity
-      )}`;
-      router.push(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`);
+    if (!user) {
+      router.push(`/auth/login?redirect=${encodeURIComponent("/checkout")}`);
       return;
     }
 
@@ -82,9 +82,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
     }
 
     // Navigate to checkout with event details
-    router.push(
-      `/checkout?eventId=${event?.event_id}&date=${selectedDate}&quantity=${quantity}`
-    );
+    router.push("/checkout");
   };
 
   if (error) {
@@ -132,11 +130,9 @@ export default function EventPage({ params }: { params: { id: string } }) {
                     <p className="text-sm font-medium">Date</p>
                     <p className="text-sm text-muted-foreground">
                       {selectedDate
-                        ? `${selectedDate.split("-")[0]}`
+                        ? `${selectedDate.split("-")[1]}`
                         : event.dates && event.dates.length > 0
-                        ? event.dates.length > 1 &&
-                          event.dates[0].start_time &&
-                          event.dates[0].end_time
+                        ? event.dates.length > 1
                           ? `${formatDate(event.dates[0].date)} - ${formatDate(
                               event.dates[event.dates.length - 1].date
                             )}`
@@ -151,8 +147,8 @@ export default function EventPage({ params }: { params: { id: string } }) {
                     <p className="text-sm font-medium">Time</p>
                     <p className="text-sm text-muted-foreground">
                       {selectedDate
-                        ? `${selectedDate.split("-")[1]} - ${
-                            selectedDate.split("-")[2]
+                        ? `${selectedDate.split("-")[2]} - ${
+                            selectedDate.split("-")[3]
                           }`
                         : event.dates && event.dates.length > 0
                         ? `${formatTime(
@@ -167,7 +163,10 @@ export default function EventPage({ params }: { params: { id: string } }) {
                   <div>
                     <p className="text-sm font-medium">Capacity</p>
                     <p className="text-sm text-muted-foreground">
-                      {event.dates?.[0].capacity} attendees
+                      {selectedDate
+                        ? selectedDate.split("-")[4]
+                        : event.dates[0].capacity}{" "}
+                      attendees
                     </p>
                   </div>
                 </div>
@@ -199,9 +198,8 @@ export default function EventPage({ params }: { params: { id: string } }) {
                     Date
                   </label>
                   <Select
+                    value={selectedDate}
                     onValueChange={(value) => {
-                      // value is like "date-1747506317478-7l6xwzl"
-                      // const valueList = value.split("-");
                       setSelectedDate(value);
                     }}
                   >
@@ -212,9 +210,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
                       {event.dates?.map((date) => (
                         <SelectItem
                           key={date.event_date_id}
-                          value={`${formatDate(date.date)}-${formatTime(
-                            date.start_time
-                          )}-${formatTime(date.end_time)}`}
+                          value={eventDateTimeString(date)}
                         >
                           {formatDate(date.date)} |{" "}
                           {formatTime(date.start_time)} -{" "}

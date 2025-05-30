@@ -14,6 +14,7 @@ import {
   GoogleAuthProvider,
   sendPasswordResetEmail,
 } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 type User = {
   id: string;
@@ -50,6 +51,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   // Helper to convert FirebaseUser to our User type
   const mapFirebaseUser = (fbUser: FirebaseUser, token?: string): User => ({
@@ -128,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(() => {
         setUser(null);
         removeUserFromStorage();
+        router.push("/auth/login");
       })
       .catch((error) => {
         console.error("Logout failed:", error);

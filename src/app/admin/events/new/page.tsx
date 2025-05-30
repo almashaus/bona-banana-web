@@ -67,7 +67,7 @@ export default function CreateEventPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventDates, setEventDates] = useState<EventDate[]>([
     {
-      event_date_id: `date-${Date.now()}`,
+      event_date_id: `date${Date.now()}`,
       date: new Date(),
       start_time: new Date(),
       end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
@@ -100,9 +100,7 @@ export default function CreateEventPage() {
   // Add new event date
   const addEventDate = () => {
     const newDate: EventDate = {
-      event_date_id: `date-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2, 9)}`,
+      event_date_id: `date${Date.now()}`,
       date: new Date(),
       start_time: new Date(),
       end_time: new Date(new Date().setHours(new Date().getHours() + 3)),

@@ -1,5 +1,5 @@
 import { DocumentData, Timestamp } from "firebase/firestore";
-import { Event } from "@/src/models/event";
+import { Event, EventDate } from "@/src/models/event";
 
 export function formatDate(date: Date): string {
   return date.toLocaleString("en-UK", {
@@ -42,3 +42,15 @@ export function formatEventsDates(data: DocumentData, isLoop: Boolean): Event {
   }
   return data as Event;
 }
+
+export const eventDateTimeString = (date: EventDate): string => {
+  return `${date.event_date_id}-${formatDate(date.date)}-${formatTime(
+    date.start_time
+  )}-${formatTime(date.end_time)}-${date.capacity}`;
+};
+
+export const eventDateTimeShortString = (date: EventDate): string => {
+  return `${formatDate(date.date)} | ${formatTime(
+    date.start_time
+  )} - ${formatTime(date.end_time)}`;
+};
