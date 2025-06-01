@@ -109,7 +109,7 @@ export default function Events() {
             <div className="flex items-center gap-2 md:gap-4">
               <div className="h-16 w-16 overflow-hidden rounded-md">
                 <img
-                  src={event.event_image || "/placeholder.svg"}
+                  src={event.event_image || "/no-image.svg"}
                   alt={event.title}
                   className="h-full w-full object-cover"
                 />

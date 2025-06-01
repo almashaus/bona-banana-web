@@ -12,9 +12,7 @@ export function generateOrderNumber(): string {
 export function generateQRCode(text: string): string {
   // In a real app, this would generate a QR code
   // For now, we'll just return a placeholder
-  return `/placeholder.svg?height=200&width=200&text=${encodeURIComponent(
-    text
-  )}`;
+  return `/no-image.svg?height=200&width=200&text=${encodeURIComponent(text)}`;
 }
 
 export function generateEventId(length = 10) {

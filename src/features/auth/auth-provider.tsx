@@ -15,6 +15,8 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/src/lib/stores/useAuthStore";
+import { syncUserWithFirestore } from "@/src/lib/firebase/firestore";
 
 type User = {
   id: string;
@@ -52,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const setAuthUser = useAuthStore((state) => state.setUser);
 
   // Helper to convert FirebaseUser to our User type
   const mapFirebaseUser = (fbUser: FirebaseUser, token?: string): User => ({
@@ -66,6 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for Firebase Auth state changes
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       if (fbUser) {
+        setAuthUser(fbUser);
+        syncUserWithFirestore(fbUser);
+
         const mappedUser = mapFirebaseUser(fbUser);
         setUser(mappedUser);
         setUserToStorage(mappedUser);
@@ -130,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(() => {
         setUser(null);
         removeUserFromStorage();
-        router.push("/auth/login");
+        router.push("/login");
       })
       .catch((error) => {
         console.error("Logout failed:", error);

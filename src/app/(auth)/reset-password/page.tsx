@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -67,7 +66,7 @@ export default function ResetPasswordPage() {
             </p>
 
             <Button asChild>
-              <Link href="/auth/login">Back to login</Link>
+              <Link href="/login">Back to login</Link>
             </Button>
           </div>
         </div>
@@ -112,7 +111,7 @@ export default function ResetPasswordPage() {
         </div>
         <p className="px-8 text-center text-sm text-muted-foreground">
           <Link
-            href="/auth/login"
+            href="/login"
             className="underline underline-offset-4 hover:text-greenColor"
           >
             ← Back to login

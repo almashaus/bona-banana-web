@@ -46,7 +46,7 @@ export default function Header() {
                 href="/admin"
                 className="text-sm font-medium transition-colors text-redColor hover:text-foreground"
               >
-                Admin
+                Dashboard
               </Link>
             )}
           </nav>
@@ -58,7 +58,7 @@ export default function Header() {
             <UserNav user={user} />
           ) : (
             <Button asChild variant="outline" size="default">
-              <Link href="/auth/login">Login</Link>
+              <Link href="/login">Login</Link>
             </Button>
           )}
         </div>

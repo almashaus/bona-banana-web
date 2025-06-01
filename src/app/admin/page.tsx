@@ -3,14 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  CalendarDays,
-  ClockIcon,
-  MapPin,
-  Plus,
-  Ticket,
-  Users,
-} from "lucide-react";
+import { Plus, Ticket, Users } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Card,
@@ -27,18 +20,9 @@ import {
 } from "@/src/components/ui/tabs";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { Event } from "@/src/models/event";
-import {
-  formatDate,
-  formatEventsDates,
-  formatTime,
-} from "@/src/lib/utils/formatDate";
-import { collection, getDocs, orderBy, query } from "@firebase/firestore";
-import { db } from "@/src/lib/firebase/firebaseConfig";
-import Loading from "@/src/components/ui/loading";
-import { deleteDocById, getEvents } from "@/src/lib/firebase/firestore";
-import LoadingDots from "@/src/components/ui/loading-dots";
+import { getEvents } from "@/src/lib/firebase/firestore";
 import { useToast } from "@/src/components/ui/use-toast";
-import UsersList from "@/src/app/admin/users/page";
+import UsersPage from "./users/page";
 import Events from "./events/page";
 
 export default function AdminPage() {
@@ -48,7 +32,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     getEvents()
@@ -77,7 +60,7 @@ export default function AdminPage() {
   return (
     <div className="container py-10">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
         <Button asChild>
           <Link href="/admin/events/new">
             <Plus className="mr-2 h-4 w-4" />
@@ -184,15 +167,13 @@ export default function AdminPage() {
 
         <TabsContent value="users">
           <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>View and manage user accounts.</CardDescription>
-            </CardHeader>
             <CardContent>
-              <UsersList />
-              <Button asChild>
-                <Link href="/">View All Events</Link>
-              </Button>
+              <UsersPage />
+              <div className="flex justify-center ">
+                <Button asChild>
+                  <Link href="/admin/users">View All Users</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,11 +1,9 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Ticket } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -107,7 +105,7 @@ export default function LoginPage() {
                 />
                 <div className="text-right">
                   <Link
-                    href="/auth/reset-password"
+                    href="/reset-password"
                     className="text-xs font-light text-redColor underline-offset-4 hover:underline"
                   >
                     Forgot password?
@@ -144,7 +142,7 @@ export default function LoginPage() {
         <p className="px-8 text-center text-sm text-muted-foreground">
           <span>Don&apos;t have an account? </span>
           <Link
-            href="/auth/register"
+            href="/signup"
             className="underline underline-offset-4 text-orangeColor hover:text-black"
           >
             Sign up

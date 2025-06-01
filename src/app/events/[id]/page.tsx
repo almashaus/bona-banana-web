@@ -68,7 +68,7 @@ export default function EventPage() {
     }));
 
     if (!user) {
-      router.push(`/auth/login?redirect=${encodeURIComponent("/checkout")}`);
+      router.push(`/login?redirect=${encodeURIComponent("/checkout")}`);
       return;
     }
 
@@ -114,7 +114,7 @@ export default function EventPage() {
             <h1 className="text-3xl font-bold">{event.title}</h1>
 
             <img
-              src={event.event_image || "/placeholder.svg"}
+              src={event.event_image || "/no-image.svg"}
               alt={event.title}
               className="aspect-video w-full lg:w-3/4 object-cover rounded-xl my-4"
             />

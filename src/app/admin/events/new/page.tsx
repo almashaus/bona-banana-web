@@ -312,7 +312,7 @@ export default function CreateEventPage() {
                   <div className="border rounded-md p-1 w-48 h-40 flex flex-col items-center justify-center bg-muted relative">
                     {eventImage ? (
                       <img
-                        src={eventImage || "/placeholder.svg"}
+                        src={eventImage || "/no-image.svg"}
                         alt="Event"
                         className="w-full h-full object-cover rounded-md"
                         onError={(e) => {
@@ -363,7 +363,7 @@ export default function CreateEventPage() {
                   <div className="border rounded-md p-1 w-48 h-40 flex flex-col items-center justify-center bg-muted relative">
                     {adImage ? (
                       <img
-                        src={adImage || "/placeholder.svg"}
+                        src={adImage || "/no-image.svg"}
                         alt="Ad"
                         className="max-w-full max-h-full object-contain rounded-md"
                         onError={(e) => {

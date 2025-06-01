@@ -1,11 +1,9 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Ticket } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -167,7 +165,7 @@ export default function RegisterPage() {
         <p className="px-8 text-center text-sm text-muted-foreground">
           <span>Already have an account? </span>
           <Link
-            href="/auth/login"
+            href="/login"
             className="underline underline-offset-4 text-orangeColor hover:text-black"
           >
             Sign in

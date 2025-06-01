@@ -17,6 +17,17 @@ export function formatTime(date: Date): string {
   });
 }
 
+export function formatDateTime(date: Date): string {
+  return date.toLocaleString("en-UK", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export function formatTime24H(date: Date): string {
   return date.toLocaleString("en-GB", {
     hour: "2-digit",

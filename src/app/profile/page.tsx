@@ -30,7 +30,7 @@ export default function ProfilePage() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   if (!user) {
-    router.push("/auth/login?redirect=/profile");
+    router.push(`/login?redirect=${encodeURIComponent("/profile")}`);
     return null;
   }
 

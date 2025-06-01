@@ -88,7 +88,7 @@ export default function ConfirmationPage() {
               <div className="text-center">
                 <div className="bg-white p-2 rounded-lg inline-block mb-2">
                   <img
-                    src={qrCodeUrl || "/placeholder.svg"}
+                    src={qrCodeUrl || "/no-image.svg"}
                     alt="QR Code"
                     className="w-40 h-40"
                   />

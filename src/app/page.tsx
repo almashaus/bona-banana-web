@@ -101,7 +101,7 @@ function EventsList({ allEvents }: { allEvents: Event[] }) {
           <Card className="overflow-hidden transition-all shadow-none hover:scale-105  bg-darkColor border-0">
             <div className="flex justify-center items-center m-3">
               <img
-                src={event.event_image || "/placeholder.svg"}
+                src={event.event_image || "/no-image.svg"}
                 alt={event.title}
                 className="h-full w-full object-cover rounded-md"
                 onError={(e) => {

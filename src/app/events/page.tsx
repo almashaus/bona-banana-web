@@ -49,7 +49,7 @@
 //             <Card className="overflow-hidden h-full transition-all hover:shadow-lg">
 //               <div className="aspect-video w-full overflow-hidden">
 //                 <img
-//                   src={event.image || "/placeholder.svg"}
+//                   src={event.image || "/no-image.svg"}
 //                   alt={event.name}
 //                   className="h-full w-full object-cover transition-transform hover:scale-105"
 //                 />

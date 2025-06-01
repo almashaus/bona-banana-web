@@ -8,7 +8,10 @@ import {
   query,
   orderBy,
   where,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
+import { User } from "firebase/auth";
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import { formatEventsDates } from "@/src/lib/utils/formatDate";
 import { Event, EventStatus } from "@/src/models/event";
@@ -100,3 +103,10 @@ export async function deleteDocById(collectionName: string, docId: string) {
     throw new Error("Failed to delete event. Please try again later.");
   }
 }
+
+export const syncUserWithFirestore = async (user: User) => {
+  if (!user) return;
+
+  const userRef = doc(db, "users", user.uid);
+  await updateDoc(userRef, { last_login: serverTimestamp() });
+};

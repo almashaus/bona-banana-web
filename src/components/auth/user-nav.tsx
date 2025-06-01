@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { useAuth } from "../../features/auth/auth-provider";
+import { useAuth } from "@/src/features/auth/auth-provider";
 
 type UserNavProps = {
   user: {
@@ -63,7 +63,7 @@ export function UserNav({ user }: UserNavProps) {
               className="text-redColor"
               onClick={() => router.push("/admin")}
             >
-              Admin Dashboard
+              Dashboard
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
