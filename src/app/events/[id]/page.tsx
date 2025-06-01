@@ -62,7 +62,7 @@ export default function EventPage() {
   const handleBuyTicket = () => {
     // Set event details in the checkout store
     useCheckoutStore.setState((state) => ({
-      eventId: event?.event_id,
+      eventId: event?.id,
       eventDateId: selectedDate.split("-")[0],
       quantity: quantity,
     }));
@@ -114,7 +114,7 @@ export default function EventPage() {
             <h1 className="text-3xl font-bold">{event.title}</h1>
 
             <img
-              src={event.event_image || "/no-image.svg"}
+              src={event.eventImage || "/no-image.svg"}
               alt={event.title}
               className="aspect-video w-full lg:w-3/4 object-cover rounded-xl my-4"
             />
@@ -152,8 +152,8 @@ export default function EventPage() {
                           }`
                         : event.dates && event.dates.length > 0
                         ? `${formatTime(
-                            event.dates[0].start_time
-                          )} - ${formatTime(event.dates[0].end_time)}`
+                            event.dates[0].startTime
+                          )} - ${formatTime(event.dates[0].endTime)}`
                         : "No times available"}
                     </p>
                   </div>
@@ -209,12 +209,11 @@ export default function EventPage() {
                     <SelectContent>
                       {event.dates?.map((date) => (
                         <SelectItem
-                          key={date.event_date_id}
+                          key={date.id}
                           value={eventDateTimeString(date)}
                         >
-                          {formatDate(date.date)} |{" "}
-                          {formatTime(date.start_time)} -{" "}
-                          {formatTime(date.end_time)}
+                          {formatDate(date.date)} | {formatTime(date.startTime)}{" "}
+                          - {formatTime(date.endTime)}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -28,7 +28,6 @@ export default function Home() {
         setAllEvents(events);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching events:", error);
         setError("Failed to fetch data. Please try again later.");
         setLoading(false);
       }
@@ -81,9 +80,14 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="flex justify-center items-center py-12">
-              <p className="text-muted-foreground">
-                There is no event currently, Come back later
+            <div className="flex flex-col justify-center items-center py-12">
+              <img
+                src="/no-data.png"
+                alt="no data"
+                className="h-1/2 w-1/2 lg:h-1/4 lg:w-1/4"
+              />
+              <p className="text-muted-foreground text-center">
+                There is no event currently, Come back later!
               </p>
             </div>
           )}
@@ -97,11 +101,11 @@ function EventsList({ allEvents }: { allEvents: Event[] }) {
   return (
     <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
       {allEvents.map((event) => (
-        <Link href={`/events/${event.event_id}`} key={event.event_id}>
+        <Link href={`/events/${event.id}`} key={event.id}>
           <Card className="overflow-hidden transition-all shadow-none hover:scale-105  bg-darkColor border-0">
             <div className="flex justify-center items-center m-3">
               <img
-                src={event.event_image || "/no-image.svg"}
+                src={event.eventImage || "/no-image.svg"}
                 alt={event.title}
                 className="h-full w-full object-cover rounded-md"
                 onError={(e) => {
@@ -117,8 +121,8 @@ function EventsList({ allEvents }: { allEvents: Event[] }) {
               </div>
               <div className="mt-1 flex items-center text-sm text-muted-foreground">
                 <ClockIcon className="mr-1 h-4 w-4 text-redColor" />
-                {`${formatTime(event.dates[0].start_time)} - ${formatTime(
-                  event.dates[0].end_time
+                {`${formatTime(event.dates[0].startTime)} - ${formatTime(
+                  event.dates[0].endTime
                 )}`}
               </div>
             </CardContent>

@@ -4,8 +4,6 @@ export const getRoleColor = (role: UserRole): string => {
   switch (role) {
     case UserRole.ADMIN:
       return "text-red-500";
-    case UserRole.SUPER_ADMIN:
-      return "text-rose-500";
     case UserRole.EDITOR:
       return "text-green-500";
     case UserRole.VIEWER:

@@ -44,24 +44,24 @@ export function formatEventsDates(data: DocumentData, isLoop: Boolean): Event {
       const timestamp: Timestamp = theDate.date;
       theDate.date = timestamp.toDate();
 
-      const timestamp_start: Timestamp = theDate.start_time;
-      theDate.start_time = timestamp_start.toDate();
+      const timestampStart: Timestamp = theDate.startTime;
+      theDate.startTime = timestampStart.toDate();
 
-      const timestamp_end: Timestamp = theDate.end_time;
-      theDate.end_time = timestamp_end.toDate();
+      const timestampEnd: Timestamp = theDate.endTime;
+      theDate.endTime = timestampEnd.toDate();
     }
   }
   return data as Event;
 }
 
 export const eventDateTimeString = (date: EventDate): string => {
-  return `${date.event_date_id}-${formatDate(date.date)}-${formatTime(
-    date.start_time
-  )}-${formatTime(date.end_time)}-${date.capacity}`;
+  return `${date.id}-${formatDate(date.date)}-${formatTime(
+    date.startTime
+  )}-${formatTime(date.endTime)}-${date.capacity}`;
 };
 
 export const eventDateTimeShortString = (date: EventDate): string => {
   return `${formatDate(date.date)} | ${formatTime(
-    date.start_time
-  )} - ${formatTime(date.end_time)}`;
+    date.startTime
+  )} - ${formatTime(date.endTime)}`;
 };

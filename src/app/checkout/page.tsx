@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   ClockIcon,
@@ -58,9 +58,7 @@ export default function CheckoutPage() {
           setEvent(eventData);
 
           // get Date detials
-          const sdate = eventData.dates.find(
-            (item) => item.event_date_id === dateId
-          );
+          const sdate = eventData.dates.find((item) => item.id === dateId);
           setSelectedDate(eventDateTimeString(sdate ?? eventData.dates[0]));
         })
         .catch(() => {
@@ -132,7 +130,7 @@ export default function CheckoutPage() {
               <div className="flex items-start gap-4 mb-6">
                 <div className="h-20 w-20 overflow-hidden rounded-md">
                   <img
-                    src={event.event_image || "/no-image.svg"}
+                    src={event.eventImage || "/no-image.svg"}
                     alt={event.title}
                     className="h-full w-full object-cover"
                   />
@@ -177,7 +175,12 @@ export default function CheckoutPage() {
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between font-bold">
-                  <span>Total</span>
+                  <span>
+                    Total{" "}
+                    <span className="text-xs font-light text-muted-foreground">
+                      *Including VAT
+                    </span>
+                  </span>
                   <span>
                     <span className="icon-saudi_riyal" />
                     {total}

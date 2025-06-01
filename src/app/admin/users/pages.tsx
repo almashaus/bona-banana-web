@@ -18,13 +18,13 @@ import {
 } from "@/src/components/ui/table";
 
 import { getAllDocuments } from "@/src/lib/firebase/firestore";
-import { User, UserRole } from "@/src/models/user";
+import { AppUser, UserRole } from "@/src/models/user";
 import Loading from "@/src/components/ui/loading";
 import { get } from "http";
 import { getRoleColor } from "@/src/lib/utils/styles";
 
 export default function UsersList() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export default function UsersList() {
       try {
         const usersData = await getAllDocuments("users");
 
-        setUsers(usersData as User[]);
+        setUsers(usersData as AppUser[]);
         setIsLoading(false);
       } catch (error) {
         setError("Failed to load users. Please try again later.");
@@ -65,12 +65,10 @@ export default function UsersList() {
             </TableHeader>
             <TableBody>
               {users.map((user) => (
-                <TableRow key={user.user_id}>
+                <TableRow key={user.id}>
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell className={getRoleColor(user.role)}>
-                    {user.role}
-                  </TableCell>
+                  <TableCell>{user.name}</TableCell>
                   <TableCell className="text-center">0</TableCell>
                 </TableRow>
               ))}

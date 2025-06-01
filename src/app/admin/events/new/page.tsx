@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -26,7 +25,6 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Switch } from "@/src/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -36,7 +34,7 @@ import {
 } from "@/src/components/ui/select";
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
-import { add, format } from "date-fns";
+import { format } from "date-fns";
 import { Calendar } from "@/src/components/ui/calendar";
 import {
   Popover,
@@ -48,6 +46,7 @@ import { Event, EventDate, EventStatus } from "@/src/models/event";
 import { setDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import { formatDate } from "@/src/lib/utils/formatDate";
+import { addDocToCollection } from "@/src/lib/firebase/firestore";
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -63,16 +62,16 @@ export default function CreateEventPage() {
   const [adImage, setAdImage] = useState("");
   const [price, setPrice] = useState<number>(0);
   const [status, setStatus] = useState<EventStatus>(EventStatus.DRAFT);
-  const [isDnd, setIsDnd] = useState(false);
+  const [isDnd, setisDnd] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventDates, setEventDates] = useState<EventDate[]>([
     {
-      event_date_id: `date${Date.now()}`,
+      id: `date${Date.now()}`,
       date: new Date(),
-      start_time: new Date(),
-      end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
+      startTime: new Date(),
+      endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
-      event_id: "",
+      eventId: "",
     },
   ]);
 
@@ -100,26 +99,26 @@ export default function CreateEventPage() {
   // Add new event date
   const addEventDate = () => {
     const newDate: EventDate = {
-      event_date_id: `date${Date.now()}`,
+      id: `date${Date.now()}`,
       date: new Date(),
-      start_time: new Date(),
-      end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
+      startTime: new Date(),
+      endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
-      event_id: "",
+      eventId: "",
     };
     setEventDates([...eventDates, newDate]);
   };
 
   // Remove event date
   const removeEventDate = (id: string) => {
-    setEventDates(eventDates.filter((date) => date.event_date_id !== id));
+    setEventDates(eventDates.filter((date) => date.id !== id));
   };
 
   // Update event date
   const updateEventDate = (id: string, field: keyof EventDate, value: any) => {
     setEventDates(
       eventDates.map((date) => {
-        if (date.event_date_id === id) {
+        if (date.id === id) {
           return { ...date, [field]: value };
         }
         return date;
@@ -130,18 +129,12 @@ export default function CreateEventPage() {
   // Add new event to Firestore
   const addNewEvent = async (event: Event) => {
     try {
-      // Generate event ID and set event dates
-      const eventId = generateEventId();
-      event.event_id = eventId;
-      event.dates = eventDates.map((date) => ({
-        ...date,
-        event_id: eventId,
-      }));
-
-      await setDoc(doc(db, "events", event.event_id), event);
-      console.log("Document written with ID: ", event.event_id);
+      const response = await addDocToCollection("events", event);
+      if (!response) {
+        throw new Error("Couldn't add a new event");
+      }
     } catch (e) {
-      console.error("Error adding document: ", e);
+      console.error("Error adding event: ", e);
     }
   };
 
@@ -152,20 +145,20 @@ export default function CreateEventPage() {
 
     try {
       await addNewEvent({
-        creator_id: user?.id || "1",
+        creatorId: user?.id || "1",
         title: title,
         slug: slug,
         description: description,
-        event_image: "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage,
-        ad_image: adImage,
+        eventImage: "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage,
+        adImage: adImage,
         price: price,
         status: status,
         location: location,
-        is_dnd: isDnd,
-        created_at: Timestamp.fromDate(new Date()),
-        updated_at: Timestamp.fromDate(new Date()),
+        isDnd: isDnd,
+        createdAt: Timestamp.fromDate(new Date()),
+        updatedAt: Timestamp.fromDate(new Date()),
         dates: eventDates,
-        event_id: "",
+        id: "",
       });
 
       // Show success toast
@@ -421,7 +414,7 @@ export default function CreateEventPage() {
             <CardContent className="space-y-6">
               {eventDates.map((eventDate, index) => (
                 <div
-                  key={eventDate.event_date_id}
+                  key={eventDate.id}
                   className="space-y-4 pb-4 border-b last:border-0"
                 >
                   <div className="flex items-center justify-between">
@@ -432,7 +425,7 @@ export default function CreateEventPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-500"
-                        onClick={() => removeEventDate(eventDate.event_date_id)}
+                        onClick={() => removeEventDate(eventDate.id)}
                       >
                         <Trash2 className="h-4 w-4 mr-1 text-red-500" />
                         Remove
@@ -473,7 +466,7 @@ export default function CreateEventPage() {
                                     eventDate.date.getMinutes()
                                   );
                                   updateEventDate(
-                                    eventDate.event_date_id,
+                                    eventDate.id,
                                     "date",
                                     newDate
                                   );
@@ -490,17 +483,13 @@ export default function CreateEventPage() {
                       <div className="flex space-x-2">
                         <Input
                           type="time"
-                          value={format(eventDate.start_time, "HH:mm")}
+                          value={format(eventDate.startTime, "HH:mm")}
                           onChange={(e) => {
                             const [hours, minutes] = e.target.value.split(":");
                             const newDate = new Date(eventDate.date);
                             newDate.setHours(Number.parseInt(hours));
                             newDate.setMinutes(Number.parseInt(minutes));
-                            updateEventDate(
-                              eventDate.event_date_id,
-                              "start_time",
-                              newDate
-                            );
+                            updateEventDate(eventDate.id, "startTime", newDate);
                           }}
                         />
                       </div>
@@ -509,18 +498,14 @@ export default function CreateEventPage() {
                         <div className="flex space-x-2">
                           <Input
                             type="time"
-                            value={format(eventDate.end_time, "HH:mm")}
+                            value={format(eventDate.endTime, "HH:mm")}
                             onChange={(e) => {
                               const [hours, minutes] =
                                 e.target.value.split(":");
                               const newDate = new Date(eventDate.date);
                               newDate.setHours(Number.parseInt(hours));
                               newDate.setMinutes(Number.parseInt(minutes));
-                              updateEventDate(
-                                eventDate.event_date_id,
-                                "end_time",
-                                newDate
-                              );
+                              updateEventDate(eventDate.id, "endTime", newDate);
                             }}
                           />
                         </div>
@@ -529,17 +514,15 @@ export default function CreateEventPage() {
                   </div>
 
                   <div className="grid gap-2 mx-5">
-                    <Label htmlFor={`capacity-${eventDate.event_date_id}`}>
-                      Capacity
-                    </Label>
+                    <Label htmlFor={`capacity-${eventDate.id}`}>Capacity</Label>
                     <Input
-                      id={`capacity-${eventDate.event_date_id}`}
+                      id={`capacity-${eventDate.id}`}
                       type="number"
                       min="1"
                       value={eventDate.capacity}
                       onChange={(e) =>
                         updateEventDate(
-                          eventDate.event_date_id,
+                          eventDate.id,
                           "capacity",
                           Number.parseInt(e.target.value)
                         )

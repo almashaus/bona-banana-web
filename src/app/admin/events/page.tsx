@@ -43,7 +43,7 @@ export default function Events() {
 
       if (result) {
         setEvents((prevEvents) =>
-          prevEvents.filter((event) => event.event_id !== eventId)
+          prevEvents.filter((event) => event.id !== eventId)
         );
 
         toast({
@@ -103,13 +103,13 @@ export default function Events() {
 
         {events.map((event: Event) => (
           <div
-            key={event.event_id}
+            key={event.id}
             className="flex items-center justify-between border-b mb-4 pb-4"
           >
             <div className="flex items-center gap-2 md:gap-4">
               <div className="h-16 w-16 overflow-hidden rounded-md">
                 <img
-                  src={event.event_image || "/no-image.svg"}
+                  src={event.eventImage || "/no-image.svg"}
                   alt={event.title}
                   className="h-full w-full object-cover"
                 />
@@ -125,8 +125,8 @@ export default function Events() {
                 </div>
                 <div className="flex items-center text-xs md:text-sm text-muted-foreground">
                   <ClockIcon className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                  {`${formatTime(event.dates[0].start_time)} - ${formatTime(
-                    event.dates[0].end_time
+                  {`${formatTime(event.dates[0].startTime)} - ${formatTime(
+                    event.dates[0].endTime
                   )}`}
                 </div>
                 <div className="flex items-center text-xs md:text-sm text-muted-foreground">
@@ -137,13 +137,13 @@ export default function Events() {
             </div>
             <div className="flex flex-col md:flex-row gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/admin/events/edit/${event.event_id}`}>Edit</Link>
+                <Link href={`/admin/events/edit/${event.id}`}>Edit</Link>
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
                 disabled={isDeleting}
-                onClick={() => deleteEvent(event.event_id)}
+                onClick={() => deleteEvent(event.id)}
               >
                 {isDeleting ? <LoadingDots /> : "Delete"}
               </Button>

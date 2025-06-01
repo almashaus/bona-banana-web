@@ -67,21 +67,21 @@ export default function EditEventPage() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [location, setLocaton] = useState("Riyadh");
+  const [location, setLocation] = useState("Riyadh");
   const [eventImage, setEventImage] = useState("");
   const [adImage, setAdImage] = useState("");
   const [price, setPrice] = useState<number>(0);
   const [status, setStatus] = useState<EventStatus>(EventStatus.DRAFT);
-  const [isDnd, setIsDnd] = useState(false);
+  const [isDnd, setisDnd] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventDates, setEventDates] = useState<EventDate[]>([
     {
-      event_date_id: `date${Date.now()}`,
+      id: `date${Date.now()}`,
       date: new Date(),
-      start_time: new Date(),
-      end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
+      startTime: new Date(),
+      endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
-      event_id: id as string,
+      eventId: id as string,
     },
   ]);
 
@@ -96,12 +96,12 @@ export default function EditEventPage() {
           setTitle(eventData.title || "");
           setSlug(eventData.slug || "");
           setDescription(eventData.description || "");
-          setLocaton(eventData.location || "Riyadh");
-          setEventImage(eventData.event_image || "");
-          setAdImage(eventData.ad_image || "");
+          setLocation(eventData.location || "Riyadh");
+          setEventImage(eventData.eventImage || "");
+          setAdImage(eventData.adImage || "");
           setPrice(eventData.price || 0);
           setStatus(eventData.status || EventStatus.DRAFT);
-          setIsDnd(eventData.is_dnd || false);
+          setisDnd(eventData.isDnd || false);
           setEventDates(eventData.dates || []);
         })
         .catch((err) => setError(err.message))
@@ -133,26 +133,26 @@ export default function EditEventPage() {
   // Add new event date
   const addEventDate = () => {
     const newDate: EventDate = {
-      event_date_id: `date${Date.now()}`,
+      id: `date${Date.now()}`,
       date: new Date(),
-      start_time: new Date(),
-      end_time: new Date(new Date().setHours(new Date().getHours() + 3)),
+      startTime: new Date(),
+      endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
-      event_id: event?.event_id || "",
+      eventId: event?.id || "",
     };
     setEventDates([...eventDates, newDate]);
   };
 
   // Remove event date
   const removeEventDate = (id: string) => {
-    setEventDates(eventDates.filter((date) => date.event_date_id !== id));
+    setEventDates(eventDates.filter((date) => date.id !== id));
   };
 
   // Update event date
   const updateEventDate = (id: string, field: keyof EventDate, value: any) => {
     setEventDates(
       eventDates.map((date) => {
-        if (date.event_date_id === id) {
+        if (date.id === id) {
           return { ...date, [field]: value };
         }
         return date;
@@ -162,11 +162,12 @@ export default function EditEventPage() {
 
   // Add new event to Firestore
   const editEvent = async (event: Event) => {
+    console.log(event.id);
     try {
-      await setDoc(doc(db, "events", event.event_id), event);
-      console.log("Document written with ID: ", event.event_id);
+      await setDoc(doc(db, "events", event.id), event);
+      console.log("Document written with ID: ", event.id);
     } catch (e) {
-      console.error("Error adding document: ", e);
+      console.error("Error edit event: ", e);
     }
   };
 
@@ -179,7 +180,7 @@ export default function EditEventPage() {
       // Validate event dates
       for (const eventDate of eventDates) {
         if (event?.status === EventStatus.PUBLISHED) {
-          if (!eventDate.date || !eventDate.start_time || !eventDate.end_time) {
+          if (!eventDate.date || !eventDate.startTime || !eventDate.endTime) {
             toast({
               title: "⚠️ Error",
               description: "Please fill in all date fields.",
@@ -188,7 +189,7 @@ export default function EditEventPage() {
             setIsSubmitting(false);
             return;
           }
-          if (eventDate.start_time >= eventDate.end_time) {
+          if (eventDate.startTime >= eventDate.endTime) {
             toast({
               title: "⚠️ Error",
               description: "Start time must be before end time.",
@@ -201,20 +202,20 @@ export default function EditEventPage() {
       }
 
       await editEvent({
-        creator_id: user?.id || "1",
+        creatorId: user?.id || "1",
         title: title,
         slug: slug,
         description: description,
-        event_image: "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage,
-        ad_image: adImage,
+        eventImage: "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage,
+        adImage: adImage,
         price: price,
         status: status,
         location: location,
-        is_dnd: isDnd,
-        created_at: event!.created_at,
-        updated_at: Timestamp.fromDate(new Date()),
+        isDnd: isDnd,
+        createdAt: event!.createdAt,
+        updatedAt: Timestamp.fromDate(new Date()),
         dates: eventDates,
-        event_id: event!.event_id,
+        id: event!.id,
       });
 
       toast({
@@ -305,7 +306,7 @@ export default function EditEventPage() {
                   <Input
                     id="location"
                     value={location}
-                    onChange={(e) => setLocaton(e.target.value)}
+                    onChange={(e) => setLocation(e.target.value)}
                     placeholder="Riyadh"
                     required
                   />
@@ -473,7 +474,7 @@ export default function EditEventPage() {
               <CardContent className="space-y-6">
                 {eventDates.map((eventDate, index) => (
                   <div
-                    key={eventDate.event_date_id}
+                    key={eventDate.id}
                     className="space-y-4 pb-4 border-b last:border-0"
                   >
                     <div className="flex items-center justify-between">
@@ -484,9 +485,7 @@ export default function EditEventPage() {
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-500"
-                          onClick={() =>
-                            removeEventDate(eventDate.event_date_id)
-                          }
+                          onClick={() => removeEventDate(eventDate.id)}
                         >
                           <Trash2 className="h-4 w-4 mr-1 text-red-500" />
                           Remove
@@ -527,7 +526,7 @@ export default function EditEventPage() {
                                       eventDate.date.getMinutes()
                                     );
                                     updateEventDate(
-                                      eventDate.event_date_id,
+                                      eventDate.id,
                                       "date",
                                       newDate
                                     );
@@ -544,7 +543,7 @@ export default function EditEventPage() {
                         <div className="flex space-x-2">
                           <Input
                             type="time"
-                            value={formatTime24H(eventDate.start_time)}
+                            value={formatTime24H(eventDate.startTime)}
                             onChange={(e) => {
                               const [hours, minutes] =
                                 e.target.value.split(":");
@@ -552,8 +551,8 @@ export default function EditEventPage() {
                               newDate.setHours(Number.parseInt(hours));
                               newDate.setMinutes(Number.parseInt(minutes));
                               updateEventDate(
-                                eventDate.event_date_id,
-                                "start_time",
+                                eventDate.id,
+                                "startTime",
                                 newDate
                               );
                             }}
@@ -564,7 +563,7 @@ export default function EditEventPage() {
                           <div className="flex space-x-2">
                             <Input
                               type="time"
-                              value={formatTime24H(eventDate.end_time)}
+                              value={formatTime24H(eventDate.endTime)}
                               onChange={(e) => {
                                 const [hours, minutes] =
                                   e.target.value.split(":");
@@ -572,8 +571,8 @@ export default function EditEventPage() {
                                 newDate.setHours(Number.parseInt(hours));
                                 newDate.setMinutes(Number.parseInt(minutes));
                                 updateEventDate(
-                                  eventDate.event_date_id,
-                                  "end_time",
+                                  eventDate.id,
+                                  "endTime",
                                   newDate
                                 );
                               }}
@@ -584,17 +583,17 @@ export default function EditEventPage() {
                     </div>
 
                     <div className="grid gap-2 mx-5">
-                      <Label htmlFor={`capacity-${eventDate.event_date_id}`}>
+                      <Label htmlFor={`capacity-${eventDate.id}`}>
                         Capacity
                       </Label>
                       <Input
-                        id={`capacity-${eventDate.event_date_id}`}
+                        id={`capacity-${eventDate.id}`}
                         type="number"
                         min="1"
                         value={eventDate.capacity}
                         onChange={(e) =>
                           updateEventDate(
-                            eventDate.event_date_id,
+                            eventDate.id,
                             "capacity",
                             Number.parseInt(e.target.value)
                           )

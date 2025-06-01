@@ -1,27 +1,15 @@
-import { EventDate } from "./event";
-import { Order } from "./order";
-import { User } from "./user";
-
-enum TicketStatus {
+export enum TicketStatus {
   VALID = "valid",
   USED = "used",
   CANCELLED = "cancelled",
 }
 
-interface Ticket {
-  ticket_id: string; //
-  order_id: string; // , foreign key to Order
-  user_id: string; // , foreign key to User
-  event_date_id: string; // , foreign key to EventDate
-  qr_code: string;
+export interface Ticket {
+  id: string; //
+  orderId: string; // foreign key to Order
+  userId: string; // foreign key to User
+  eventDateId: string; // foreign key to EventDate
+  qrCode: string;
   status: TicketStatus;
-  purchase_price: number;
-
-  // Relations
-  order?: Order;
-  user?: User;
-  event_date?: EventDate;
+  purchasePrice: number;
 }
-
-export { TicketStatus };
-export type { Ticket };

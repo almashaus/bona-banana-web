@@ -10,18 +10,21 @@ import {
   where,
   updateDoc,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import { User } from "firebase/auth";
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import { formatEventsDates } from "@/src/lib/utils/formatDate";
 import { Event, EventStatus } from "@/src/models/event";
+import { da } from "date-fns/locale";
 
 export async function getEvents() {
   const eventsQuery = query(
     collection(db, "events"),
-    orderBy("updated_at", "desc")
+    orderBy("updatedAt", "desc")
   );
   const querySnapshot = await getDocs(eventsQuery);
+
   const events = querySnapshot.docs.map((doc) => {
     const data = formatEventsDates(doc.data(), false);
 
@@ -31,18 +34,23 @@ export async function getEvents() {
 }
 
 export async function getEventsByStatus(status: string) {
-  const eventsQuery = query(
-    collection(db, "events"),
-    where("status", "==", status as EventStatus),
-    orderBy("updated_at", "desc")
-  );
-  const querySnapshot = await getDocs(eventsQuery);
-  const events = querySnapshot.docs.map((doc) => {
-    const data = formatEventsDates(doc.data(), false);
+  try {
+    const eventsQuery = query(
+      collection(db, "events"),
+      where("status", "==", status as EventStatus),
+      orderBy("updatedAt", "desc")
+    );
+    const querySnapshot = await getDocs(eventsQuery);
 
-    return data as Event;
-  });
-  return events;
+    const events = querySnapshot.docs.map((doc) => {
+      const data = formatEventsDates(doc.data(), false);
+
+      return data as Event;
+    });
+    return events;
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 export const getAllDocuments = async (
@@ -86,6 +94,22 @@ export const getDocumentById = async (
   }
 };
 
+export async function addDocToCollection<T extends object>(
+  collectionName: string,
+  data: T
+): Promise<string | null> {
+  try {
+    const docRef = doc(collection(db, collectionName));
+    (data as any).id = docRef.id;
+
+    await setDoc(docRef, data);
+
+    return docRef.id;
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function deleteDocById(collectionName: string, docId: string) {
   try {
     const docRef = doc(db, collectionName, docId);
@@ -105,8 +129,16 @@ export async function deleteDocById(collectionName: string, docId: string) {
 }
 
 export const syncUserWithFirestore = async (user: User) => {
-  if (!user) return;
+  try {
+    if (!user) return;
 
-  const userRef = doc(db, "users", user.uid);
-  await updateDoc(userRef, { last_login: serverTimestamp() });
+    const userRef = doc(db, "users", user.uid);
+    getDoc(userRef).then(async (userData) => {
+      if (userData.data()?.hasDashboardAccess) {
+        await updateDoc(userRef, { last_login: serverTimestamp() });
+      }
+    });
+  } catch (error) {
+    return;
+  }
 };
