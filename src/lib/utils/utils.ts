@@ -26,3 +26,12 @@ export function generateEventId(length = 10) {
 
   return result;
 }
+
+export function isSafeImageUrl(url?: string) {
+  if (!url) return false;
+  return (
+    url.startsWith("/") ||
+    url.startsWith("https://") ||
+    url.startsWith("http://")
+  );
+}

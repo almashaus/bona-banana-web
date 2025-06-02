@@ -12,29 +12,22 @@ import LoadingDots from "@/src/components/ui/loading-dots";
 import { deleteDocById, getEvents } from "@/src/lib/firebase/firestore";
 import Loading from "@/src/components/ui/loading";
 import { getStatusIcon } from "@/src/lib/utils/statusIcons";
+import useSWR from "swr";
 
 export default function Events() {
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const eventUrl = pathname?.includes("/events");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
   const [events, setEvents] = useState<Event[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    getEvents()
-      .then((events) => {
-        setEvents(events);
-      })
-      .catch(() => {
-        setError("Failed to fetch data. Please try again later.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+  const { data, error, isLoading } = useSWR("events", () => getEvents(), {
+    onSuccess: (fetchedData) => {
+      setEvents(fetchedData);
+    },
+  });
 
   const deleteEvent = async (eventId: string) => {
     try {
@@ -54,8 +47,6 @@ export default function Events() {
         throw new Error("Failed to delete event");
       }
     } catch (error) {
-      setError("Error deleting event");
-
       toast({
         title: "⚠️ Error deleting event",
         description: "Failed to delete event. Please try again later.",
@@ -81,7 +72,7 @@ export default function Events() {
       )}
 
       <div className={` bg-white rounded-lg ${eventUrl && " p-3"}`}>
-        {loading && (
+        {isLoading && (
           <div className="flex justify-center items-center py-12">
             <Loading />
           </div>
@@ -93,7 +84,7 @@ export default function Events() {
           </div>
         )}
 
-        {events.length === 0 && !loading && (
+        {events.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
               No events available. Create your first event.

@@ -24,28 +24,14 @@ import { getEvents } from "@/src/lib/firebase/firestore";
 import { useToast } from "@/src/components/ui/use-toast";
 import UsersPage from "./users/page";
 import Events from "./events/page";
+import useSWR from "swr";
 
 export default function AdminPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
 
-  useEffect(() => {
-    getEvents()
-      .then((events) => {
-        setEvents(events);
-      })
-      .catch((error) => {
-        console.error("Error fetching events:", error);
-        setError("Failed to fetch data. Please try again later.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+  const { data, error, isLoading } = useSWR("events", () => getEvents());
 
   useEffect(() => {
     if (!user?.isAdmin) {
@@ -76,7 +62,9 @@ export default function AdminPage() {
             <Ticket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{events.length}</div>
+            <div className="text-2xl font-bold">
+              {isLoading ? "..." : data?.length ?? 0}
+            </div>
             <p className="text-xs text-muted-foreground">+2 from last month</p>
           </CardContent>
         </Card>

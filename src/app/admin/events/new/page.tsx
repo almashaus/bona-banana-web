@@ -41,10 +41,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import { cn, generateEventId } from "@/src/lib/utils/utils";
+import { cn } from "@/src/lib/utils/utils";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
-import { setDoc, doc, Timestamp } from "firebase/firestore";
-import { db } from "@/src/lib/firebase/firebaseConfig";
+import { Timestamp } from "firebase/firestore";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { addDocToCollection } from "@/src/lib/firebase/firestore";
 

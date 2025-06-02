@@ -40,28 +40,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import {
-  formatDate,
-  formatEventsDates,
-  formatTime24H,
-} from "@/src/lib/utils/formatDate";
+import { formatDate, formatTime24H } from "@/src/lib/utils/formatDate";
 import { cn } from "@/src/lib/utils/utils";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
 import { setDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from "@/src/lib/firebase/firebaseConfig";
-import { getDocumentById } from "@/src/lib/firebase/firestore";
+import { getEventById } from "@/src/lib/firebase/firestore";
 import Loading from "@/src/components/ui/loading";
+import useSWR from "swr";
+import Link from "next/link";
 
 export default function EditEventPage() {
   const { id } = useParams();
-
+  console.log(id);
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
-
   const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Initialize state variables with default values
   const [title, setTitle] = useState("");
@@ -85,29 +80,30 @@ export default function EditEventPage() {
     },
   ]);
 
-  useEffect(() => {
-    if (id) {
-      getDocumentById("events", id as string)
-        .then((data) => {
-          const eventData = formatEventsDates(data, true);
-          setEvent(eventData as Event);
+  const { data, error, isLoading } = useSWR(id ? ["event", id] : null, () =>
+    getEventById(id as string)
+  );
 
-          // Populate state variables with data from Firestore
-          setTitle(eventData.title || "");
-          setSlug(eventData.slug || "");
-          setDescription(eventData.description || "");
-          setLocation(eventData.location || "Riyadh");
-          setEventImage(eventData.eventImage || "");
-          setAdImage(eventData.adImage || "");
-          setPrice(eventData.price || 0);
-          setStatus(eventData.status || EventStatus.DRAFT);
-          setisDnd(eventData.isDnd || false);
-          setEventDates(eventData.dates || []);
-        })
-        .catch((err) => setError(err.message))
-        .finally(() => setLoading(false));
+  useEffect(() => {
+    console.log("useEffect");
+    console.log(data);
+    const eventData: Event = data as Event;
+    if (eventData && eventData.dates && eventData.dates.length > 0) {
+      setEvent(eventData);
+
+      // Populate state variables with data from Firestore
+      setTitle(eventData.title || "");
+      setSlug(eventData.slug || "");
+      setDescription(eventData.description || "");
+      setLocation(eventData.location || "Riyadh");
+      setEventImage(eventData.eventImage || "");
+      setAdImage(eventData.adImage || "");
+      setPrice(eventData.price || 0);
+      setStatus(eventData.status || EventStatus.DRAFT);
+      setisDnd(eventData.isDnd || false);
+      setEventDates(eventData.dates || []);
     }
-  }, [id]);
+  }, [data]);
 
   // Redirect if not admin
   if (!user?.isAdmin) {
@@ -228,13 +224,27 @@ export default function EditEventPage() {
     } catch (error) {
       toast({
         title: "⚠️ Error",
-        description: `${error}`, //"There was an error updating the event ❗️"
+        description: "There was an error updating the event ❗️",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (error || !id || typeof id !== "string") {
+    return (
+      <div className="container py-10 text-center">
+        <h1 className="text-2xl font-bold mb-4">Event not found</h1>
+        <p className="mb-6">
+          The event you're looking for doesn't exist or has been removed.
+        </p>
+        <Button asChild>
+          <Link href="/admin">Back To Dashboard</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-10 lg:px-0 max-w-full">
@@ -245,11 +255,12 @@ export default function EditEventPage() {
           <span className="hidden md:inline">Cancel</span>
         </Button>
       </div>
-      {loading ? (
+      {isLoading && !event && (
         <div className="flex justify-center items-center py-56">
           <Loading />
         </div>
-      ) : (
+      )}
+      {event && (
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6 md:mx-16 lg:mx-40 mb-6">
             <Card>

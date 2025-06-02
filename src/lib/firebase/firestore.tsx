@@ -19,18 +19,22 @@ import { Event, EventStatus } from "@/src/models/event";
 import { da } from "date-fns/locale";
 
 export async function getEvents() {
-  const eventsQuery = query(
-    collection(db, "events"),
-    orderBy("updatedAt", "desc")
-  );
-  const querySnapshot = await getDocs(eventsQuery);
+  try {
+    const eventsQuery = query(
+      collection(db, "events"),
+      orderBy("updatedAt", "desc")
+    );
+    const querySnapshot = await getDocs(eventsQuery);
 
-  const events = querySnapshot.docs.map((doc) => {
-    const data = formatEventsDates(doc.data(), false);
+    const events = querySnapshot.docs.map((doc) => {
+      const data = formatEventsDates(doc.data(), false);
 
-    return data as Event;
-  });
-  return events;
+      return data as Event;
+    });
+    return events;
+  } catch (error) {
+    throw new Error("Error getting data!");
+  }
 }
 
 export async function getEventsByStatus(status: string) {
@@ -50,6 +54,7 @@ export async function getEventsByStatus(status: string) {
     return events;
   } catch (error) {
     console.error(error);
+    throw new Error("Error fetching data!");
   }
 }
 
@@ -69,6 +74,23 @@ export const getAllDocuments = async (
       throw new Error("No such data!");
     });
     return documents;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw new Error("Error fetching data!");
+  }
+};
+
+export const getEventById = async (docId: string) => {
+  try {
+    const docRef = doc(db, "events", docId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const eventData = formatEventsDates(docSnap.data(), true);
+      return eventData as Event;
+    } else {
+      throw new Error("No such data!");
+    }
   } catch (error) {
     console.error("Error fetching data:", error);
     throw new Error("Error fetching data!");
@@ -100,9 +122,9 @@ export async function addDocToCollection<T extends object>(
 ): Promise<string | null> {
   try {
     const docRef = doc(collection(db, collectionName));
-    (data as any).id = docRef.id;
+    const dataWithId = { ...data, id: docRef.id };
 
-    await setDoc(docRef, data);
+    await setDoc(docRef, dataWithId);
 
     return docRef.id;
   } catch (e) {

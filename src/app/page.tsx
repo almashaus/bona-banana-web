@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { Event, EventStatus } from "@/src/models/event";
@@ -9,32 +9,12 @@ import { CalendarDays, ClockIcon } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/src/components/ui/card";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
 import { getEventsByStatus } from "../lib/firebase/firestore";
+import useSWR from "swr";
 
 export default function Home() {
-  const [allEvents, setAllEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function events() {
-      try {
-        const events = await getEventsByStatus(EventStatus.PUBLISHED);
-
-        if (!events || events.length === 0) {
-          setError("No events found");
-          setLoading(false);
-          return;
-        }
-        setAllEvents(events);
-        setLoading(false);
-      } catch (error) {
-        setError("Failed to fetch data. Please try again later.");
-        setLoading(false);
-      }
-    }
-
-    events();
-  }, []);
+  const { data, error, isLoading } = useSWR("publishedEvents", () =>
+    getEventsByStatus(EventStatus.PUBLISHED)
+  );
 
   return (
     <div className="flex flex-col min-h-screen ">
@@ -66,31 +46,34 @@ export default function Home() {
               </p>
             </div>
           </div>
-          {loading ? (
+          {isLoading && (
             <div className="flex justify-center items-center py-12">
               <Loading />
             </div>
-          ) : allEvents.length > 0 ? (
+          )}
+          {data && (
             <div>
-              <EventsList allEvents={allEvents} />
+              <EventsList allEvents={data} />
               <div className="flex justify-center ">
                 <Button asChild>
                   <Link href="/">View All Events</Link>
                 </Button>
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col justify-center items-center py-12">
-              <img
-                src="/no-data.png"
-                alt="no data"
-                className="h-1/2 w-1/2 lg:h-1/4 lg:w-1/4"
-              />
-              <p className="text-muted-foreground text-center">
-                There is no event currently, Come back later!
-              </p>
-            </div>
           )}
+          {error ||
+            (data?.length == 0 && (
+              <div className="flex flex-col justify-center items-center py-12">
+                <img
+                  src="/no-data.png"
+                  alt="no data"
+                  className="h-1/2 w-1/2 lg:h-1/4 lg:w-1/4"
+                />
+                <p className="text-muted-foreground text-center">
+                  There is no event currently, Come back later!
+                </p>
+              </div>
+            ))}
         </div>
       </section>
     </div>
@@ -99,7 +82,7 @@ export default function Home() {
 
 function EventsList({ allEvents }: { allEvents: Event[] }) {
   return (
-    <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid max-w-5xl items-center gap-6 mx-6 lg:mx-auto py-12 sm:grid-cols-2 lg:grid-cols-3">
       {allEvents.map((event) => (
         <Link href={`/events/${event.id}`} key={event.id}>
           <Card className="overflow-hidden transition-all shadow-none hover:scale-105  bg-darkColor border-0">
