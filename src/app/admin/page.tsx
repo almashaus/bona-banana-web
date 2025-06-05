@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Ticket, Users } from "lucide-react";
@@ -19,17 +19,21 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { useAuth } from "@/src/features/auth/auth-provider";
-import { Event } from "@/src/models/event";
 import { getEvents } from "@/src/lib/firebase/firestore";
 import { useToast } from "@/src/components/ui/use-toast";
 import UsersPage from "./users/page";
 import Events from "./events/page";
 import useSWR from "swr";
+import { PanelLeft } from "lucide-react";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
 
 export default function AdminPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
   const { data, error, isLoading } = useSWR("events", () => getEvents());
 
@@ -45,14 +49,19 @@ export default function AdminPage() {
 
   return (
     <div className="container py-10">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-start items-center mb-6">
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex items-center p-2 rounded-lg text-neutral-400 dark:text-white"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open sidebar"
+          >
+            <PanelLeft />
+          </Button>
+        )}
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <Button asChild>
-          <Link href="/admin/events/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Event
-          </Link>
-        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3 mb-8">

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/src/components/ui/use-toast";
 import Link from "next/link";
-import { CalendarDays, ClockIcon, MapPin, Plus } from "lucide-react";
+import { CalendarDays, ClockIcon, MapPin, PanelLeft, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Event } from "@/src/models/event";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
@@ -13,12 +13,16 @@ import { deleteDocById, getEvents } from "@/src/lib/firebase/firestore";
 import Loading from "@/src/components/ui/loading";
 import { getStatusIcon } from "@/src/lib/utils/statusIcons";
 import useSWR from "swr";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
 
 export default function Events() {
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const eventUrl = pathname?.includes("/events");
+  const isMobile = useIsMobile();
+  const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
   const [events, setEvents] = useState<Event[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -60,14 +64,27 @@ export default function Events() {
   return (
     <div className={` ${eventUrl && "container my-10"}`}>
       {eventUrl && (
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-row justify-start items-center mb-8">
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex items-center p-2 rounded-lg text-neutral-400 dark:text-white"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open sidebar"
+            >
+              <PanelLeft />
+            </Button>
+          )}
           <h1 className="text-3xl font-bold">Events</h1>
-          <Button asChild>
-            <Link href="/admin/events/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Event
-            </Link>
-          </Button>
+          <div className="ms-auto">
+            <Button asChild>
+              <Link href="/admin/events/new">
+                <Plus className="me-2 h-4 w-4" />
+                Create Event
+              </Link>
+            </Button>
+          </div>
         </div>
       )}
 

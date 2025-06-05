@@ -1,0 +1,74 @@
+import {
+  CalendarRange,
+  LayoutDashboard,
+  LucideIcon,
+  ShieldCheck,
+  Ticket,
+  UserRound,
+  UserRoundCog,
+  UsersRound,
+  Percent,
+  ChartColumn,
+  FileText,
+} from "lucide-react";
+
+export type Item = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  notifications?: number;
+};
+
+export const sidebarData: Item[] = [
+  {
+    title: "Dashboard",
+    url: "/admin",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Events",
+    url: "/admin/events",
+    icon: CalendarRange,
+  },
+  {
+    title: "Tickets",
+    url: "/admin/tickets",
+    icon: Ticket,
+    notifications: 2,
+  },
+  {
+    title: "Customers",
+    url: "/admin/users",
+    icon: UsersRound,
+  },
+  {
+    title: "Team Members",
+    url: "/admin/members",
+    icon: UserRoundCog,
+  },
+  {
+    title: "Permission Management",
+    url: "/admin/permissions",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Coupons",
+    url: "/admin/coupons",
+    icon: Percent,
+  },
+  {
+    title: "Analytics",
+    url: "/admin/profile",
+    icon: ChartColumn,
+  },
+  {
+    title: "Reports",
+    url: "/admin/reports",
+    icon: FileText,
+  },
+  {
+    title: "Profile",
+    url: "/admin/profile",
+    icon: UserRound,
+  },
+];
