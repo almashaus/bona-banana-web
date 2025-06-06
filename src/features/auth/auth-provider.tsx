@@ -1,7 +1,13 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { auth } from "@/src/lib/firebase/firebaseConfig";
 import {
   signInWithEmailAndPassword,
@@ -15,19 +21,15 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/src/lib/stores/useAuthStore";
-import { syncUserWithFirestore } from "@/src/lib/firebase/firestore";
-
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-  token?: string;
-};
+import {
+  addDocToCollection,
+  getDocumentById,
+  syncUserWithFirestore,
+} from "@/src/lib/firebase/firestore";
+import type { AppUser } from "@/src/models/user";
 
 type AuthContextType = {
-  user: User | null;
+  user: AppUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
@@ -36,144 +38,170 @@ type AuthContextType = {
   resetPassword: (email: string) => Promise<void>;
 };
 
-// Local storage helpers
-const getUserFromStorage = (): User | null => {
-  const storedUser = localStorage.getItem("user");
+// Use sessionStorage for less persistent storage (mitigates XSS persistence)
+const getUserFromStorage = (): AppUser | null => {
+  if (typeof window === "undefined") return null;
+  const storedUser = sessionStorage.getItem("user");
   return storedUser ? JSON.parse(storedUser) : null;
 };
-const setUserToStorage = (user: User) => {
-  localStorage.setItem("user", JSON.stringify(user));
+const setUserToStorage = (user: AppUser) => {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem("user", JSON.stringify(user));
 };
 const removeUserFromStorage = () => {
-  localStorage.removeItem("user");
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem("user");
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AppUser | null>(null);
   const router = useRouter();
-  const setAuthUser = useAuthStore((state) => state.setUser);
 
-  // Helper to convert FirebaseUser to our User type
-  const mapFirebaseUser = (fbUser: FirebaseUser, token?: string): User => ({
-    id: fbUser.uid,
-    name: fbUser.displayName || fbUser.email?.split("@")[0] || "",
-    email: fbUser.email || "",
-    isAdmin: fbUser.email?.includes("admin") || false,
-    token: token || "",
-  });
+  // Map FirebaseUser to AppUser
+  const mapFirebaseUserToAppUser = useCallback(
+    (fbUser: FirebaseUser): AppUser => ({
+      id: fbUser.uid,
+      email: fbUser.email || "",
+      name: fbUser.displayName || fbUser.email?.split("@")[0] || "",
+      phoneNumber: fbUser.phoneNumber || "",
+      profileImage: fbUser.photoURL || "",
+      birthDate: "",
+      gender: "",
+      hasDashboardAccess: false,
+    }),
+    []
+  );
 
   useEffect(() => {
-    // Listen for Firebase Auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-      if (fbUser) {
-        setAuthUser(fbUser);
-        syncUserWithFirestore(fbUser);
+    // On mount, check session storage for user (for SSR hydration)
+    if (!user) {
+      const storedUser = getUserFromStorage();
+      if (storedUser) setUser(storedUser);
+    }
 
-        const mappedUser = mapFirebaseUser(fbUser);
-        setUser(mappedUser);
-        setUserToStorage(mappedUser);
+    // Listen for Firebase Auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        try {
+          // TODO:
+          // const appUser: AppUser = (await getDocumentById(
+          //   "users",
+          //   fbUser.uid
+          // )) as AppUser;
+          // setUser(appUser);
+          // setUserToStorage(appUser);
+        } catch {
+          setUser(null);
+          removeUserFromStorage();
+        }
       } else {
         setUser(null);
         removeUserFromStorage();
       }
       setLoading(false);
     });
-    // On mount, check local storage for user (for SSR hydration)
-    if (!user) {
-      const storedUser = getUserFromStorage();
-      if (storedUser) setUser(storedUser);
-    }
+
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const fbUser = result.user;
-      const token = await fbUser.getIdToken();
-
-      const mappedUser = mapFirebaseUser(fbUser, token);
-      setUser(mappedUser);
-      setUserToStorage(mappedUser);
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (name: string, email: string, password: string) => {
-    setLoading(true);
-    try {
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const fbUser = result.user;
-
-      if (fbUser && name) {
-        await updateProfile(fbUser, { displayName: name });
+      const appUser: AppUser = (await getDocumentById(
+        "users",
+        fbUser.uid
+      )) as AppUser;
+      setUser(appUser);
+      setUserToStorage(appUser);
+      if (appUser.hasDashboardAccess) {
+        await syncUserWithFirestore(appUser);
       }
-      const mappedUser = mapFirebaseUser(fbUser, name);
-      setUser(mappedUser);
-      setUserToStorage(mappedUser);
-    } catch (error) {
-      console.error("Registration failed:", error);
-      throw error;
+    } catch {
+      // Do not expose error details
+      throw new Error("Login failed");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const register = useCallback(
+    async (name: string, email: string, password: string) => {
+      setLoading(true);
+      try {
+        const result = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const fbUser = result.user;
+        if (fbUser) {
+          await updateProfile(fbUser, {
+            displayName: name || email?.split("@")[0],
+          });
+          const appUser = mapFirebaseUserToAppUser(fbUser);
+          setUser(appUser);
+          setUserToStorage(appUser);
+          await addDocToCollection("users", appUser, appUser.id);
+        }
+      } catch {
+        throw new Error("Registration failed");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [mapFirebaseUserToAppUser]
+  );
+
+  const logout = useCallback(() => {
     signOut(auth)
       .then(() => {
         setUser(null);
         removeUserFromStorage();
         router.push("/login");
       })
-      .catch((error) => {
-        console.error("Logout failed:", error);
+      .catch(() => {
+        throw new Error("Logout failed");
       });
-  };
+  }, [router]);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential?.accessToken;
-
       const fbUser = result.user;
-      const mappedUser = mapFirebaseUser(fbUser);
-      setUser(mappedUser);
-      setUserToStorage(mappedUser);
-    } catch (error) {
-      console.error("Google sign-in failed:", error);
-      throw error;
+
+      const appUser: AppUser =
+        // TODO:
+        // ((await getDocumentById("users", fbUser.uid)) as AppUser)
+        //  ||
+        mapFirebaseUserToAppUser(fbUser);
+      setUser(appUser);
+      setUserToStorage(appUser);
+      await syncUserWithFirestore(appUser);
+    } catch {
+      throw new Error("Google sign-in failed");
     } finally {
       setLoading(false);
     }
-  };
+  }, [mapFirebaseUserToAppUser]);
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-    } catch (error) {
-      console.error("Reset password failed:", error);
-      throw error;
+    } catch {
+      throw new Error("Reset password failed");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return (
     <AuthContext.Provider

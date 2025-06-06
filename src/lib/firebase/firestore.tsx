@@ -12,11 +12,10 @@ import {
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
-import { User } from "firebase/auth";
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import { formatEventsDates } from "@/src/lib/utils/formatDate";
 import { Event, EventStatus } from "@/src/models/event";
-import { da } from "date-fns/locale";
+import { AppUser } from "@/src/models/user";
 
 export async function getEvents() {
   try {
@@ -118,17 +117,23 @@ export const getDocumentById = async (
 
 export async function addDocToCollection<T extends object>(
   collectionName: string,
-  data: T
-): Promise<string | null> {
+  data: T,
+  id?: string
+): Promise<string> {
   try {
-    const docRef = doc(collection(db, collectionName));
-    const dataWithId = { ...data, id: docRef.id };
+    if (id) {
+      await setDoc(doc(db, collectionName, id), data);
+      return id;
+    } else {
+      const docRef = doc(collection(db, collectionName));
+      const dataWithId = { ...data, id: docRef.id };
 
-    await setDoc(docRef, dataWithId);
+      await setDoc(docRef, dataWithId);
 
-    return docRef.id;
+      return docRef.id;
+    }
   } catch (e) {
-    return null;
+    throw new Error("Failed to insert data. Please try again later.");
   }
 }
 
@@ -139,25 +144,23 @@ export async function deleteDocById(collectionName: string, docId: string) {
 
     if (docSnap.exists()) {
       await deleteDoc(docRef);
-      console.log(`Document with ID ${docId} found and deleted.`);
       return docId;
     } else {
       throw new Error(`Document with ID ${docId} does not exist.`);
     }
   } catch (error) {
-    console.error("Error deleting event:", error);
-    throw new Error("Failed to delete event. Please try again later.");
+    throw new Error("Failed to delete data. Please try again later.");
   }
 }
 
-export const syncUserWithFirestore = async (user: User) => {
+export const syncUserWithFirestore = async (user: AppUser) => {
   try {
     if (!user) return;
 
-    const userRef = doc(db, "users", user.uid);
+    const userRef = doc(db, "users", user.id);
     getDoc(userRef).then(async (userData) => {
       if (userData.data()?.hasDashboardAccess) {
-        await updateDoc(userRef, { last_login: serverTimestamp() });
+        await updateDoc(userRef, { lastLogin: serverTimestamp() });
       }
     });
   } catch (error) {

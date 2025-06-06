@@ -106,7 +106,7 @@ export default function EditEventPage() {
   }, [data]);
 
   // Redirect if not admin
-  if (!user?.isAdmin) {
+  if (!user?.hasDashboardAccess) {
     router.push("/");
     return null;
   }

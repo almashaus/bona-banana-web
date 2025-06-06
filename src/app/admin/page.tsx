@@ -38,12 +38,12 @@ export default function AdminPage() {
   const { data, error, isLoading } = useSWR("events", () => getEvents());
 
   useEffect(() => {
-    if (!user?.isAdmin) {
+    if (!user?.hasDashboardAccess) {
       router.push("/");
     }
   }, [user, router]);
 
-  if (!user?.isAdmin) {
+  if (!user?.hasDashboardAccess) {
     return null;
   }
 

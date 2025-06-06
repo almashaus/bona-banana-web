@@ -136,12 +136,12 @@ export default function UserProfilePage({
 
   // Redirect if not admin
   useEffect(() => {
-    if (!currentUser?.isAdmin) {
+    if (!currentUser?.hasDashboardAccess) {
       router.push("/");
     }
   }, [currentUser, router]);
 
-  if (!currentUser?.isAdmin) {
+  if (!currentUser?.hasDashboardAccess) {
     return null;
   }
 

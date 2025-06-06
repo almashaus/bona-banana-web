@@ -14,16 +14,9 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { useAuth } from "@/src/features/auth/auth-provider";
+import { AppUser } from "@/src/models/user";
 
-type UserNavProps = {
-  user: {
-    name: string;
-    email: string;
-    isAdmin?: boolean;
-  };
-};
-
-export function UserNav({ user }: UserNavProps) {
+export function UserNav({ user }: { user: AppUser }) {
   const { logout } = useAuth();
   const router = useRouter();
 
@@ -58,7 +51,7 @@ export function UserNav({ user }: UserNavProps) {
           <DropdownMenuItem onClick={() => router.push("/profile/tickets")}>
             My Tickets
           </DropdownMenuItem>
-          {user.isAdmin && (
+          {user.hasDashboardAccess && (
             <DropdownMenuItem
               className="text-redColor"
               onClick={() => router.push("/admin")}

@@ -114,12 +114,12 @@ export default function UsersPage() {
 
   // Redirect if not admin
   useEffect(() => {
-    if (!user?.isAdmin) {
+    if (!user?.hasDashboardAccess) {
       router.push("/");
     }
   }, [user, router]);
 
-  if (!user?.isAdmin) {
+  if (!user?.hasDashboardAccess) {
     return null;
   }
 

@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,6 +21,7 @@ import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
+
   const router = useRouter();
   const { toast } = useToast();
 
@@ -38,14 +38,11 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsUpdating(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsUpdating(false);
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
-      });
-    }, 1000);
+    setIsUpdating(false);
+    toast({
+      title: "Profile updated",
+      description: "Your profile has been updated successfully",
+    });
   };
 
   return (
@@ -111,7 +108,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="tickets">
-            <div className="rounded-lg border p-6 shadow-sm">
+            <div className="rounded-lg border p-6 shadow-sm bg-white">
               <h2 className="text-xl font-semibold mb-4">My Tickets</h2>
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">
@@ -125,7 +122,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="settings">
-            <div className="rounded-lg border p-6 shadow-sm">
+            <div className="rounded-lg border p-6 shadow-sm bg-white">
               <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
 
               <div className="space-y-6">

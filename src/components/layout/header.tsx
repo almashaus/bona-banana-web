@@ -47,7 +47,7 @@ export default function Header() {
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="default">
-            {user?.isAdmin && (
+            {user?.hasDashboardAccess && (
               <Link href="/admin">
                 <MonitorCog className="text-redColor" />
               </Link>
