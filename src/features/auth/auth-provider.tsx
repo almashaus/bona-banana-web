@@ -56,50 +56,50 @@ const removeUserFromStorage = () => {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<AppUser | null>(null);
   const router = useRouter();
 
   // Map FirebaseUser to AppUser
-  const mapFirebaseUserToAppUser = useCallback(
-    (fbUser: FirebaseUser): AppUser => ({
-      id: fbUser.uid,
-      email: fbUser.email || "",
-      name: fbUser.displayName || fbUser.email?.split("@")[0] || "",
-      phoneNumber: fbUser.phoneNumber || "",
-      profileImage: fbUser.photoURL || "",
-      birthDate: "",
-      gender: "",
-      hasDashboardAccess: false,
-    }),
-    []
-  );
+  const mapFirebaseUserToAppUser = (fbUser: FirebaseUser): AppUser => ({
+    id: fbUser.uid,
+    email: fbUser.email || "",
+    name: fbUser.displayName || fbUser.email?.split("@")[0] || "",
+    phoneNumber: fbUser.phoneNumber || "",
+    profileImage: fbUser.photoURL || "",
+    birthDate: "",
+    gender: "",
+    hasDashboardAccess: false,
+  });
 
   useEffect(() => {
     // On mount, check session storage for user (for SSR hydration)
     if (!user) {
       const storedUser = getUserFromStorage();
-      if (storedUser) setUser(storedUser);
+      if (storedUser) {
+        setUser(storedUser);
+      }
     }
 
     // Listen for Firebase Auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        try {
-          // TODO:
-          // const appUser: AppUser = (await getDocumentById(
-          //   "users",
-          //   fbUser.uid
-          // )) as AppUser;
-          // setUser(appUser);
-          // setUserToStorage(appUser);
-        } catch {
+      if (!loading) {
+        if (fbUser) {
+          try {
+            const appUser = await getDocumentById("users", fbUser.uid);
+
+            if (appUser) {
+              setUser(appUser as AppUser);
+              setUserToStorage(appUser as AppUser);
+            }
+          } catch {
+            setUser(null);
+            removeUserFromStorage();
+          }
+        } else {
           setUser(null);
           removeUserFromStorage();
         }
-      } else {
-        setUser(null);
-        removeUserFromStorage();
       }
       setLoading(false);
     });
@@ -112,18 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      const fbUser = result.user;
-      const appUser: AppUser = (await getDocumentById(
-        "users",
-        fbUser.uid
-      )) as AppUser;
-      setUser(appUser);
-      setUserToStorage(appUser);
-      if (appUser.hasDashboardAccess) {
-        await syncUserWithFirestore(appUser);
-      }
     } catch {
-      // Do not expose error details
       throw new Error("Login failed");
     } finally {
       setLoading(false);
@@ -140,10 +129,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password
         );
         const fbUser = result.user;
+
         if (fbUser) {
           await updateProfile(fbUser, {
             displayName: name || email?.split("@")[0],
           });
+
           const appUser = mapFirebaseUserToAppUser(fbUser);
           setUser(appUser);
           setUserToStorage(appUser);
@@ -177,14 +168,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
 
-      const appUser: AppUser =
-        // TODO:
-        // ((await getDocumentById("users", fbUser.uid)) as AppUser)
-        //  ||
-        mapFirebaseUserToAppUser(fbUser);
-      setUser(appUser);
-      setUserToStorage(appUser);
-      await syncUserWithFirestore(appUser);
+      if (fbUser) {
+        await updateProfile(fbUser, {
+          displayName: fbUser.displayName || fbUser.email?.split("@")[0],
+        });
+
+        const appUser = mapFirebaseUserToAppUser(fbUser);
+        setUser(appUser);
+        setUserToStorage(appUser);
+        await addDocToCollection("users", appUser, appUser.id);
+      }
     } catch {
       throw new Error("Google sign-in failed");
     } finally {

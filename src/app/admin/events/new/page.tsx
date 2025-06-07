@@ -133,7 +133,7 @@ export default function CreateEventPage() {
         throw new Error("Couldn't add a new event");
       }
     } catch (e) {
-      console.error("Error adding event: ", e);
+      throw new Error("Couldn't add a new event");
     }
   };
 

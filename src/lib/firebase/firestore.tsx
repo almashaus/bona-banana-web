@@ -15,7 +15,7 @@ import {
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import { formatEventsDates } from "@/src/lib/utils/formatDate";
 import { Event, EventStatus } from "@/src/models/event";
-import { AppUser } from "@/src/models/user";
+import { User } from "firebase/auth";
 
 export async function getEvents() {
   try {
@@ -99,7 +99,7 @@ export const getEventById = async (docId: string) => {
 export const getDocumentById = async (
   collectionName: string,
   docId: string
-) => {
+): Promise<DocumentData | null> => {
   try {
     const docRef = doc(db, collectionName, docId);
     const docSnap = await getDoc(docRef);
@@ -107,7 +107,7 @@ export const getDocumentById = async (
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
-      throw new Error("No such data!");
+      return null;
     }
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -153,11 +153,11 @@ export async function deleteDocById(collectionName: string, docId: string) {
   }
 }
 
-export const syncUserWithFirestore = async (user: AppUser) => {
+export const syncUserWithFirestore = async (user: User) => {
   try {
     if (!user) return;
 
-    const userRef = doc(db, "users", user.id);
+    const userRef = doc(db, "users", user.uid);
     getDoc(userRef).then(async (userData) => {
       if (userData.data()?.hasDashboardAccess) {
         await updateDoc(userRef, { lastLogin: serverTimestamp() });

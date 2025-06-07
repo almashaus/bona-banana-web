@@ -52,7 +52,6 @@ import Link from "next/link";
 
 export default function EditEventPage() {
   const { id } = useParams();
-  console.log(id);
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -85,8 +84,6 @@ export default function EditEventPage() {
   );
 
   useEffect(() => {
-    console.log("useEffect");
-    console.log(data);
     const eventData: Event = data as Event;
     if (eventData && eventData.dates && eventData.dates.length > 0) {
       setEvent(eventData);
@@ -158,12 +155,10 @@ export default function EditEventPage() {
 
   // Add new event to Firestore
   const editEvent = async (event: Event) => {
-    console.log(event.id);
     try {
       await setDoc(doc(db, "events", event.id), event);
-      console.log("Document written with ID: ", event.id);
     } catch (e) {
-      console.error("Error edit event: ", e);
+      throw new Error("Error edit event");
     }
   };
 
