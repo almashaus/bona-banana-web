@@ -19,7 +19,7 @@ export default function Header() {
         <div className="flex justify-start items-center">
           <Link href="/" className="flex items-center space-x-2">
             <img src="/logo.svg" alt="Bona Banana Logo" className="h-10" />
-            <span className="hidden font-bold sm:inline-block">
+            <span className="hidden text-black font-bold sm:inline-block">
               Bona Banana
             </span>
           </Link>

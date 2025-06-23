@@ -23,16 +23,22 @@ import {
 import { useRouter } from "next/navigation";
 import {
   addDocToCollection,
+  addDocToSubCollection,
   getDocumentById,
   syncUserWithFirestore,
 } from "@/src/lib/firebase/firestore";
-import type { AppUser } from "@/src/models/user";
+import type { AppUser, DashboardUser } from "@/src/models/user";
 
 type AuthContextType = {
   user: AppUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  registerMember: (
+    memebr: AppUser,
+    dashboard: DashboardUser,
+    password: string
+  ) => Promise<void>;
   logout: () => void;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -87,7 +93,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (fbUser) {
           try {
             const appUser = await getDocumentById("users", fbUser.uid);
-
             if (appUser) {
               setUser(appUser as AppUser);
               setUserToStorage(appUser as AppUser);
@@ -149,6 +154,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [mapFirebaseUserToAppUser]
   );
 
+  const registerMember = useCallback(
+    async (memebr: AppUser, dashboard: DashboardUser, password: string) => {
+      setLoading(true);
+      try {
+        const result = await createUserWithEmailAndPassword(
+          auth,
+          memebr.email,
+          password
+        );
+        const fbUser = result.user;
+
+        if (fbUser) {
+          await updateProfile(fbUser, {
+            displayName: memebr.name || memebr.email?.split("@")[0],
+          });
+
+          await addDocToCollection(
+            "users",
+            { ...memebr, id: fbUser.uid },
+            fbUser.uid
+          );
+          await addDocToSubCollection(
+            "users",
+            "dashboard",
+            dashboard,
+            fbUser.uid
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        throw new Error("Registration failed");
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   const logout = useCallback(() => {
     signOut(auth)
       .then(() => {
@@ -203,6 +246,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         login,
         register,
+        registerMember,
         logout,
         signInWithGoogle,
         resetPassword,

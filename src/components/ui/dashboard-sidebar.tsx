@@ -66,13 +66,13 @@ export function DashboardSidebar() {
             : "Collapse sidebar"
         }
       >
-        {(collapsed && !isMobile) || !isMobile ? (
-          <PanelLeftOpen
+        {!collapsed || isMobile ? (
+          <PanelLeftClose
             className="w-5 h-5 transition-transform duration-200"
             strokeWidth={1.5}
           />
         ) : (
-          <PanelLeftClose
+          <PanelLeftOpen
             className="w-5 h-5 transition-transform duration-200"
             strokeWidth={1.5}
           />

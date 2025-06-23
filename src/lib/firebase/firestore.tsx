@@ -16,6 +16,7 @@ import { db } from "@/src/lib/firebase/firebaseConfig";
 import { formatEventsDates } from "@/src/lib/utils/formatDate";
 import { Event, EventStatus } from "@/src/models/event";
 import { User } from "firebase/auth";
+import { AppUser, DashboardUser } from "@/src/models/user";
 
 export async function getEvents() {
   try {
@@ -133,6 +134,30 @@ export async function addDocToCollection<T extends object>(
       return docRef.id;
     }
   } catch (e) {
+    console.error(e);
+    throw new Error("Failed to insert data. Please try again later.");
+  }
+}
+
+export async function addDocToSubCollection<T extends object>(
+  collectionName: string,
+  subcollectionName: string,
+  data: T,
+  id: string
+): Promise<string> {
+  try {
+    const dashboardDocRef = doc(
+      db,
+      collectionName,
+      id,
+      subcollectionName,
+      "default"
+    );
+    await setDoc(dashboardDocRef, data);
+
+    return dashboardDocRef.id;
+  } catch (e) {
+    console.error(e);
     throw new Error("Failed to insert data. Please try again later.");
   }
 }
@@ -167,3 +192,125 @@ export const syncUserWithFirestore = async (user: User) => {
     return;
   }
 };
+
+export async function getUserAndDashboard(
+  userID: string
+): Promise<AppUser | null> {
+  try {
+    // References to user and dashboard documents
+    const userRef = doc(db, "users", userID);
+    const dashboardRef = doc(db, "users", userID, "dashboard", "default");
+
+    // Fetch documents
+    const [userSnap, dashboardSnap] = await Promise.all([
+      getDoc(userRef),
+      getDoc(dashboardRef),
+    ]);
+
+    // Check existence
+    if (!userSnap.exists() || !dashboardSnap.exists()) {
+      console.warn("User or Dashboard document does not exist.");
+      return null;
+    }
+
+    const userData = userSnap.data() as AppUser;
+    const dashboardData = dashboardSnap.data() as DashboardUser;
+
+    return {
+      ...userData,
+      dashboard: dashboardData,
+    };
+  } catch (error) {
+    console.error("Error fetching user and dashboard:", error);
+    return null;
+  }
+}
+
+export async function getUsersWithDashboardAccess(): Promise<AppUser[]> {
+  try {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("hasDashboardAccess", "==", true));
+    const querySnapshot = await getDocs(q);
+
+    const usersWithDashboard: AppUser[] = [];
+
+    for (const docSnap of querySnapshot.docs) {
+      const userData = docSnap.data() as AppUser;
+      const userId = docSnap.id;
+
+      const dashboardDocRef = doc(db, "users", userId, "dashboard", "default");
+      const dashboardSnap = await getDoc(dashboardDocRef);
+
+      let dashboardData: DashboardUser | undefined = undefined;
+      if (dashboardSnap.exists()) {
+        dashboardData = dashboardSnap.data() as DashboardUser;
+      }
+
+      usersWithDashboard.push({
+        ...userData,
+        dashboard: dashboardData,
+      });
+    }
+
+    return usersWithDashboard;
+  } catch (error) {
+    console.error("Failed to fetch users with dashboard access:", error);
+    return [];
+  }
+}
+
+export async function updateDocument(
+  collectionName: string,
+  id: string,
+  data: Partial<Record<string, any>>
+): Promise<void> {
+  try {
+    const eventRef = doc(db, collectionName, id);
+    await updateDoc(eventRef, data);
+  } catch (error) {
+    console.error("Error updating data:", error);
+    throw new Error("Failed to update data. Please try again later.");
+  }
+}
+
+export async function updateSubcollectionField(
+  collectionName: string,
+  docId: string,
+  subcollectionName: string,
+  subDocId: string,
+  data: Partial<Record<string, any>>
+): Promise<void> {
+  try {
+    const subDocRef = doc(
+      db,
+      collectionName,
+      docId,
+      subcollectionName,
+      subDocId
+    );
+    await updateDoc(subDocRef, data);
+  } catch (error) {
+    console.error("Error updating data:", error);
+    throw new Error("Failed to update data. Please try again later.");
+  }
+}
+
+export async function deleteSubcollection(
+  collectionName: string,
+  docId: string,
+  subcollectionName: string
+): Promise<void> {
+  try {
+    const subColRef = collection(db, collectionName, docId, subcollectionName);
+    const subColSnapshot = await getDocs(subColRef);
+
+    const deletePromises = subColSnapshot.docs.map((docSnap) =>
+      deleteDoc(docSnap.ref)
+    );
+
+    await Promise.all(deletePromises);
+  } catch (error) {
+    console.error("Error deleting subcollection:", error);
+    throw new Error("Failed to delete subcollection. Please try again later.");
+  }
+}

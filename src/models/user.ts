@@ -1,14 +1,14 @@
-export enum UserRole {
-  USER = "user",
-  ADMIN = "admin",
-  EDITOR = "editor",
-  VIEWER = "viewer",
-  SUPPORT = "support",
-  ANALYST = "analyst",
-  PARTNER = "partner",
+import { Timestamp } from "firebase/firestore";
+
+export enum MemberRole {
+  ADMIN = "Admin",
+  ORGANIZER = "Organizer",
+  SUPPORT = "Support",
+  ANALYST = "Analyst",
+  PARTNER = "Partner",
 }
 
-export enum Status {
+export enum MemberStatus {
   ACTIVE = "Active",
   SUSPENDED = "Suspended",
 }
@@ -22,12 +22,12 @@ export interface AppUser {
   birthDate: string;
   gender: string;
   hasDashboardAccess: boolean;
+  dashboard?: DashboardUser;
 }
 
 export interface DashboardUser {
-  id: string;
-  role: UserRole;
-  status: Status;
-  lastLogin: Date;
+  role: MemberRole;
+  status: MemberStatus;
+  joinedDate?: Timestamp | undefined;
   eventsManaged: number;
 }

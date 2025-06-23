@@ -21,7 +21,7 @@ import {
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { getEvents } from "@/src/lib/firebase/firestore";
 import { useToast } from "@/src/components/ui/use-toast";
-import UsersPage from "./users/page";
+import UsersPage from "./members/page";
 import Events from "./events/page";
 import useSWR from "swr";
 import { PanelLeft } from "lucide-react";
@@ -37,24 +37,24 @@ export default function AdminPage() {
 
   const { data, error, isLoading } = useSWR("events", () => getEvents());
 
-  useEffect(() => {
-    if (!user?.hasDashboardAccess) {
-      router.push("/");
-    }
-  }, [user, router]);
+  // useEffect(() => {
+  //   if (!user?.hasDashboardAccess) {
+  //     router.push("/");
+  //   }
+  // }, [user, router]);
 
-  if (!user?.hasDashboardAccess) {
-    return null;
-  }
+  // if (!user?.hasDashboardAccess) {
+  //   return null;
+  // }
 
   return (
-    <div className="container py-10">
-      <div className="flex justify-start items-center mb-6">
+    <div className="container py-6">
+      <div className="mb-6">
         {isMobile && (
           <Button
             variant="ghost"
             size="icon"
-            className="flex items-center p-2 rounded-lg text-neutral-400 dark:text-white"
+            className="flex justify-start items-center rounded-lg text-neutral-400 dark:text-white hover:bg-transparent"
             onClick={() => setMobileOpen(true)}
             aria-label="Open sidebar"
           >

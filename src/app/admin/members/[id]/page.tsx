@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Edit, Shield, Key, Activity, FileText } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -39,20 +39,12 @@ import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 import { formatDate, formatDateTime } from "@/src/lib/utils/formatDate";
-
-// Mock user data
-const mockUser = {
-  id: "1",
-  name: "John Doe",
-  email: "john@example.com",
-  role: "Admin",
-  status: "Active",
-  avatar: "",
-  phone: "+1 (555) 123-4567",
-  lastLogin: "2024-01-15 14:30",
-  eventsManaged: 12,
-  joinedDate: "2023-06-15",
-};
+import useSWR from "swr";
+import { getUserAndDashboard } from "@/src/lib/firebase/firestore";
+import { MemberStatus, MemberRole } from "@/src/models/user";
+import { Timestamp } from "firebase/firestore";
+import Link from "next/link";
+import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
 
 // Mock permissions data
 const mockPermissions = [
@@ -121,35 +113,53 @@ const mockActivityLog = [
   },
 ];
 
-export default function UserProfilePage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const { user: currentUser } = useAuth();
+export default function UserProfilePage() {
+  const { user, resetPassword } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [user, setUser] = useState(mockUser);
   const [permissions, setPermissions] = useState(mockPermissions);
   const [internalNotes, setInternalNotes] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const { id } = useParams();
+
+  const { data, error, isLoading } = useSWR(["member", id], () =>
+    getUserAndDashboard(id as string)
+  );
 
   // Redirect if not admin
-  useEffect(() => {
-    if (!currentUser?.hasDashboardAccess) {
-      router.push("/");
+  // useEffect(() => {
+  //   if (!currentUser?.hasDashboardAccess) {
+  //     router.push("/");
+  //   }
+  // }, [currentUser, router]);
+
+  // if (!currentUser?.hasDashboardAccess) {
+  //   return null;
+  // }
+
+  const handleResetPassword = async () => {
+    try {
+      if (data?.email) {
+        await resetPassword(data.email);
+
+        toast({
+          title: "Password reset email sent",
+          description: `A password reset link has been sent to ${data?.email}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Email not found for this user.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send password reset email. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [currentUser, router]);
-
-  if (!currentUser?.hasDashboardAccess) {
-    return null;
-  }
-
-  const handleResetPassword = () => {
-    toast({
-      title: "Password reset email sent",
-      description: `A password reset link has been sent to ${user.email}`,
-    });
   };
 
   const handlePermissionChange = (
@@ -179,30 +189,6 @@ export default function UserProfilePage({
     });
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "Admin":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      case "Organizer":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "Finance":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-    }
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "Suspended":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-    }
-  };
-
   return (
     <div className="container py-10">
       {/* Header */}
@@ -211,43 +197,45 @@ export default function UserProfilePage({
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">User Profile</h1>
-          <p className="text-muted-foreground">View and manage user details</p>
+          <h1 className="text-3xl font-bold">Member Profile</h1>
+          <p className="text-muted-foreground">
+            View and manage member details
+          </p>
         </div>
-        <Button variant="outline">
-          <Edit className="mr-2 h-4 w-4" />
-          Edit User
-        </Button>
       </div>
 
       {/* User Header Card */}
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex items-center gap-6">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={user.avatar} alt={user.name} />
+            <Avatar className="h-20 w-20 border">
+              <AvatarImage src={data?.profileImage} alt={data?.name} />
               <AvatarFallback className="text-lg">
-                {user.name
+                {data?.name
                   .split(" ")
                   .map((n) => n[0])
                   .join("")}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold">{user.name}</h2>
-              <p className="text-muted-foreground">{user.email}</p>
+              <h2 className="text-2xl font-bold">{data?.name}</h2>
+              <p className="text-muted-foreground">{data?.email}</p>
               <div className="flex items-center gap-4 mt-2">
-                <Badge className={getRoleBadgeColor(user.role)}>
-                  {user.role}
+                <Badge
+                  className={getRoleBadgeColor(
+                    data?.dashboard?.role as MemberRole
+                  )}
+                >
+                  {data?.dashboard?.role}
                 </Badge>
-                <Badge className={getStatusBadgeColor(user.status)}>
-                  {user.status}
+                <Badge
+                  className={getStatusBadgeColor(
+                    data?.dashboard?.status as MemberStatus
+                  )}
+                >
+                  {data?.dashboard?.status}
                 </Badge>
               </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Last Login</p>
-              <p className="font-medium">{user.lastLogin}</p>
             </div>
           </div>
         </CardContent>
@@ -268,52 +256,90 @@ export default function UserProfilePage({
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
               <CardDescription>
-                User account details and settings
+                Member account details and settings
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" value={user.name} readOnly />
+                  <Input
+                    id="name"
+                    value={data?.name}
+                    className="focus-visible:ring-0"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" value={user.email} readOnly />
+                  <Input
+                    id="email"
+                    value={data?.email}
+                    className="focus-visible:ring-0"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
-                  <Input id="role" value={user.role} readOnly />
+                  <Input
+                    id="role"
+                    value={data?.dashboard?.role}
+                    className="focus-visible:ring-0"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" value={user.phone} readOnly />
+                  <Input
+                    id="phone"
+                    value={data?.phoneNumber}
+                    className="focus-visible:ring-0"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Input id="status" value={user.status} readOnly />
+                  <Input
+                    id="status"
+                    value={data?.dashboard?.status}
+                    className="focus-visible:ring-0"
+                    readOnly
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="joined">Joined Date</Label>
                   <Input
                     id="joined"
-                    value={formatDateTime(new Date(user.lastLogin))}
+                    value={data?.dashboard?.joinedDate
+                      ?.toDate()
+                      ?.toDateString()}
+                    className="focus-visible:ring-0"
                     readOnly
                   />
                 </div>
               </div>
 
               <div className="pt-4 border-t">
-                <Button
-                  onClick={handleResetPassword}
-                  className="flex items-center gap-2"
-                >
-                  <Key className="h-4 w-4" />
-                  Reset Password
-                </Button>
-                <p className="text-sm text-muted-foreground mt-2">
+                <h2 className="text-lg font-medium mb-6">Settings</h2>
+                <div className="flex flex-col lg:flex-row gap-6">
+                  <Button asChild>
+                    <Link href={`/admin/members/${id}/edit`}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Member
+                    </Link>
+                  </Button>
+
+                  <Button
+                    onClick={handleResetPassword}
+                    className="flex items-center gap-2"
+                  >
+                    <Key className="h-4 w-4" />
+                    Reset Password
+                  </Button>
+                </div>
+                {/* <p className="text-sm text-muted-foreground mt-2">
                   This will send a password reset email to the user
-                </p>
+                </p> */}
               </div>
             </CardContent>
           </Card>

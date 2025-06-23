@@ -62,22 +62,25 @@ export default function Events() {
   };
 
   return (
-    <div className={` ${eventUrl && "container my-10"}`}>
+    <div className={` ${eventUrl && "container py-6"}`}>
       {eventUrl && (
-        <div className="flex flex-row justify-start items-center mb-8">
-          {isMobile && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="flex items-center p-2 rounded-lg text-neutral-400 dark:text-white"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Open sidebar"
-            >
-              <PanelLeft />
-            </Button>
-          )}
-          <h1 className="text-3xl font-bold">Events</h1>
-          <div className="ms-auto">
+        <div className="flex flex-row justify-between items-end md:items-center gap-4 mb-6">
+          <div className="">
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex justify-start items-center rounded-lg text-neutral-400 dark:text-white hover:bg-transparent"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open sidebar"
+              >
+                <PanelLeft />
+              </Button>
+            )}
+            <h1 className="text-3xl font-bold">Events</h1>
+          </div>
+
+          <div className="">
             <Button asChild>
               <Link href="/admin/events/new">
                 <Plus className="me-2 h-4 w-4" />
@@ -88,7 +91,7 @@ export default function Events() {
         </div>
       )}
 
-      <div className={` bg-white rounded-lg ${eventUrl && " p-3"}`}>
+      <div className={` bg-white rounded-lg ${eventUrl && "border p-6"}`}>
         {isLoading && (
           <div className="flex justify-center items-center py-12">
             <Loading />
@@ -109,10 +112,12 @@ export default function Events() {
           </div>
         )}
 
-        {events.map((event: Event) => (
+        {events.map((event: Event, index, array) => (
           <div
             key={event.id}
-            className="flex items-center justify-between border-b mb-4 pb-4"
+            className={`flex items-center justify-between ${
+              index !== array.length - 1 && "border-b pb-4"
+            }  mb-4 `}
           >
             <div className="flex items-center gap-2 md:gap-4">
               <div className="h-16 w-16 overflow-hidden rounded-md">

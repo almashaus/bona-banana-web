@@ -46,11 +46,11 @@ export const sidebarData: Item[] = [
     url: "/admin/members",
     icon: UserRoundCog,
   },
-  {
-    title: "Permission Management",
-    url: "/admin/permissions",
-    icon: ShieldCheck,
-  },
+  // {
+  //   title: "Permission Management",
+  //   url: "/admin/permissions",
+  //   icon: ShieldCheck,
+  // },
   {
     title: "Coupons",
     url: "/admin/coupons",

@@ -92,7 +92,7 @@ export default function RegisterPage() {
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
-                  placeholder="John Doe"
+                  placeholder="Ahmad Ali"
                   type="text"
                   autoCapitalize="none"
                   autoCorrect="off"

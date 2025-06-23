@@ -27,7 +27,7 @@ export function UserNav({ user }: { user: AppUser }) {
           variant="outline"
           className="relative h-10 w-10 rounded-lg bg-muted"
         >
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10 text-black">
             <AvatarFallback>
               <User className="h-[1.2rem] w-[1.2rem]" />
             </AvatarFallback>
