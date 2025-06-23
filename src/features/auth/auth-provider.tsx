@@ -23,7 +23,6 @@ import {
 import { useRouter } from "next/navigation";
 import {
   addDocToCollection,
-  addDocToSubCollection,
   getDocumentById,
   syncUserWithFirestore,
 } from "@/src/lib/firebase/firestore";
@@ -34,11 +33,7 @@ type AuthContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  registerMember: (
-    memebr: AppUser,
-    dashboard: DashboardUser,
-    password: string
-  ) => Promise<void>;
+  registerMember: (memebr: AppUser, password: string) => Promise<void>;
   logout: () => void;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -155,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const registerMember = useCallback(
-    async (memebr: AppUser, dashboard: DashboardUser, password: string) => {
+    async (memebr: AppUser, password: string) => {
       setLoading(true);
       try {
         const result = await createUserWithEmailAndPassword(
@@ -173,12 +168,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await addDocToCollection(
             "users",
             { ...memebr, id: fbUser.uid },
-            fbUser.uid
-          );
-          await addDocToSubCollection(
-            "users",
-            "dashboard",
-            dashboard,
             fbUser.uid
           );
         }

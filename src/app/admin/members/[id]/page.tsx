@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Edit, Shield, Key, Activity, FileText } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -40,8 +40,8 @@ import { useToast } from "@/src/components/ui/use-toast";
 import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 import { formatDate, formatDateTime } from "@/src/lib/utils/formatDate";
 import useSWR from "swr";
-import { getUserAndDashboard } from "@/src/lib/firebase/firestore";
-import { MemberStatus, MemberRole } from "@/src/models/user";
+import { getDocumentById } from "@/src/lib/firebase/firestore";
+import { MemberStatus, MemberRole, AppUser } from "@/src/models/user";
 import { Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
@@ -117,15 +117,20 @@ export default function UserProfilePage() {
   const { user, resetPassword } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [member, setMember] = useState<AppUser>({} as AppUser);
   const [permissions, setPermissions] = useState(mockPermissions);
   const [internalNotes, setInternalNotes] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const { id } = useParams();
 
   const { data, error, isLoading } = useSWR(["member", id], () =>
-    getUserAndDashboard(id as string)
+    getDocumentById("users", id as string)
   );
-
+  useEffect(() => {
+    if (data) {
+      setMember(data as AppUser);
+    }
+  }, [data]);
   // Redirect if not admin
   // useEffect(() => {
   //   if (!currentUser?.hasDashboardAccess) {
@@ -209,31 +214,31 @@ export default function UserProfilePage() {
         <CardContent className="pt-6">
           <div className="flex items-center gap-6">
             <Avatar className="h-20 w-20 border">
-              <AvatarImage src={data?.profileImage} alt={data?.name} />
+              <AvatarImage src={member?.profileImage} alt={member?.name} />
               <AvatarFallback className="text-lg">
-                {data?.name
+                {(member?.name || "")
                   .split(" ")
                   .map((n) => n[0])
                   .join("")}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold">{data?.name}</h2>
-              <p className="text-muted-foreground">{data?.email}</p>
+              <h2 className="text-2xl font-bold">{member?.name}</h2>
+              <p className="text-muted-foreground">{member?.email}</p>
               <div className="flex items-center gap-4 mt-2">
                 <Badge
                   className={getRoleBadgeColor(
-                    data?.dashboard?.role as MemberRole
+                    member?.dashboard?.role as MemberRole
                   )}
                 >
-                  {data?.dashboard?.role}
+                  {member?.dashboard?.role}
                 </Badge>
                 <Badge
                   className={getStatusBadgeColor(
-                    data?.dashboard?.status as MemberStatus
+                    member?.dashboard?.status as MemberStatus
                   )}
                 >
-                  {data?.dashboard?.status}
+                  {member?.dashboard?.status}
                 </Badge>
               </div>
             </div>
@@ -265,7 +270,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    value={data?.name}
+                    value={member?.name}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -274,7 +279,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
-                    value={data?.email}
+                    value={member?.email}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -283,7 +288,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="role">Role</Label>
                   <Input
                     id="role"
-                    value={data?.dashboard?.role}
+                    value={member?.dashboard?.role}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -292,7 +297,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
-                    value={data?.phoneNumber}
+                    value={member?.phoneNumber}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -301,7 +306,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="status">Status</Label>
                   <Input
                     id="status"
-                    value={data?.dashboard?.status}
+                    value={member?.dashboard?.status}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -310,7 +315,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="joined">Joined Date</Label>
                   <Input
                     id="joined"
-                    value={data?.dashboard?.joinedDate
+                    value={member?.dashboard?.joinedDate
                       ?.toDate()
                       ?.toDateString()}
                     className="focus-visible:ring-0"

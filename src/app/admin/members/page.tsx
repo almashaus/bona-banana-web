@@ -15,6 +15,7 @@ import {
   Upload,
   Settings2,
   PanelLeft,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -50,10 +51,8 @@ import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
 import {
-  deleteSubcollection,
   getUsersWithDashboardAccess,
   updateDocument,
-  updateSubcollectionField,
 } from "@/src/lib/firebase/firestore";
 import useSWR, { mutate } from "swr";
 import { AppUser, MemberStatus } from "@/src/models/user";
@@ -61,6 +60,7 @@ import Loading from "@/src/components/ui/loading";
 import { MemberRole } from "@/src/models/user";
 import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { da } from "date-fns/locale";
 
 export default function membersPage() {
   const { user } = useAuth();
@@ -73,20 +73,20 @@ export default function membersPage() {
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
-  const { data, error, isLoading } = useSWR("members", () =>
+  const { data, error, isLoading } = useSWR<AppUser[]>("members", () =>
     getUsersWithDashboardAccess()
   );
 
   // Redirect if not admin
-  // useEffect(() => {
-  //   if (!user?.hasDashboardAccess) {
-  //     router.push("/");
-  //   }
-  // }, [user, router]);
+  useEffect(() => {
+    if (!user?.hasDashboardAccess) {
+      router.push("/");
+    }
+  }, [user, router]);
 
-  // if (!user?.hasDashboardAccess) {
-  //   return null;
-  // }
+  if (!user?.hasDashboardAccess) {
+    return null;
+  }
 
   // Filter members based on search and filters
   useEffect(() => {
@@ -109,12 +109,16 @@ export default function membersPage() {
 
   // Handle user suspension/activation
   const handleSuspendUser = async (userId: string) => {
-    await updateSubcollectionField("users", userId, "dashboard", "default", {
-      status:
-        data!.find((u) => u.id === userId)?.dashboard?.status ===
-        MemberStatus.ACTIVE
-          ? MemberStatus.SUSPENDED
-          : MemberStatus.ACTIVE,
+    const dashboard = data?.find((u) => u.id === userId)?.dashboard;
+
+    await updateDocument("users", userId, {
+      dashboard: {
+        ...dashboard,
+        status:
+          dashboard?.status === MemberStatus.ACTIVE
+            ? MemberStatus.SUSPENDED
+            : MemberStatus.ACTIVE,
+      },
     });
 
     // Revalidate SWR data
@@ -140,9 +144,8 @@ export default function membersPage() {
 
       await updateDocument("users", userId, {
         hasDashboardAccess: false,
+        dashboard: null,
       });
-
-      await deleteSubcollection("users", userId, "dashboard");
 
       // Revalidate SWR data
       await mutate("members");
@@ -150,7 +153,7 @@ export default function membersPage() {
       toast({
         title: "User deleted",
         description: `${user?.name} has been deleted successfully.`,
-        variant: "destructive",
+        variant: "success",
       });
     } catch (error) {
       toast({
@@ -282,21 +285,11 @@ export default function membersPage() {
                 role="row"
                 tabIndex={0}
                 className={`${
-                  user?.dashboard?.role === MemberRole.ADMIN
-                    ? "cursor-pointer"
-                    : ""
+                  user?.dashboard?.role === MemberRole.ADMIN && "cursor-pointer"
                 }`}
                 onClick={(e) => {
                   if (user?.dashboard?.role === MemberRole.ADMIN) {
-                    // Prevent navigation if clicking on actions
-                    const target = e.target as HTMLElement;
-                    if (
-                      target.closest("button") ||
-                      target.closest("a") ||
-                      target.closest('[role="menu"]')
-                    ) {
-                      return;
-                    }
+                    e.stopPropagation();
                     router.push(`/admin/members/${member.id}`);
                   }
                 }}
@@ -342,54 +335,63 @@ export default function membersPage() {
                   onClick={(e) => e.stopPropagation()}
                   style={{ minWidth: 120 }}
                 >
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Settings2 className="h-4 w-4 text-orangeColor" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/members/${member.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Profile
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/members/${member.id}/edit`}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Member
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/members/${member.id}/permissions`}>
-                          <Shield className="mr-2 h-4 w-4" />
-                          Permissions
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleSuspendUser(member.id)}
-                        className={
-                          member.dashboard?.status === "Active"
-                            ? "text-orange-600"
-                            : "text-green-600"
-                        }
-                      >
-                        <UserX className="mr-2 h-4 w-4" />
-                        {member.dashboard?.status === "Active"
-                          ? "Suspend"
-                          : "Activate"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteUser(member.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {user?.dashboard?.role === MemberRole.ADMIN && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Settings2 className="h-4 w-4 text-orangeColor" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/members/${member.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Profile
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/members/${member.id}/edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Member
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href={`/admin/members/${member.id}/permissions`}
+                          >
+                            <Shield className="mr-2 h-4 w-4" />
+                            Permissions
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleSuspendUser(member.id)}
+                          className={
+                            member.dashboard?.status === "Active"
+                              ? "text-orange-600"
+                              : "text-green-600"
+                          }
+                        >
+                          {member.dashboard?.status === "Active" ? (
+                            <>
+                              <UserX className="mr-2 h-4 w-4" /> Suspend
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="mr-2 h-4 w-4" /> Activate
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteUser(member.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

@@ -17,11 +17,7 @@ import { Label } from "@/src/components/ui/label";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import useSWR from "swr";
-import {
-  getUserAndDashboard,
-  updateDocument,
-  updateSubcollectionField,
-} from "@/src/lib/firebase/firestore";
+import { getDocumentById, updateDocument } from "@/src/lib/firebase/firestore";
 import { MemberStatus, MemberRole } from "@/src/models/user";
 import {
   Select,
@@ -47,7 +43,7 @@ export default function UserProfilePage() {
   });
 
   const { data, error, isLoading } = useSWR(["member", id], () =>
-    getUserAndDashboard(id as string)
+    getDocumentById("users", id as string)
   );
 
   useEffect(() => {
@@ -76,22 +72,14 @@ export default function UserProfilePage() {
       const appUser = {
         name: formData.name,
         phoneNumber: formData.phone,
-      };
-
-      const dashboard = {
-        role: formData.role as MemberRole,
-        status: formData.status as MemberStatus,
+        dashboard: {
+          ...data?.dashboard,
+          role: formData.role as MemberRole,
+          status: formData.status as MemberStatus,
+        },
       };
 
       await updateDocument("users", id as string, appUser);
-
-      await updateSubcollectionField(
-        "users",
-        id as string,
-        "dashboard",
-        "default",
-        dashboard
-      );
 
       toast({
         title: "✅ Member updated",

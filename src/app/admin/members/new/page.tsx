@@ -132,6 +132,13 @@ export default function NewUserPage() {
 
     setIsSubmitting(true);
 
+    const dashboard: DashboardUser = {
+      role: formData.role as MemberRole,
+      status: formData.status as MemberStatus,
+      joinedDate: Timestamp.now(),
+      eventsManaged: 0,
+    };
+
     const appUser: AppUser = {
       id: "",
       email: formData.email,
@@ -141,17 +148,11 @@ export default function NewUserPage() {
       birthDate: formData.birthDate,
       gender: formData.gender,
       hasDashboardAccess: true,
-    };
-
-    const dashboard: DashboardUser = {
-      role: formData.role as MemberRole,
-      status: formData.status as MemberStatus,
-      joinedDate: Timestamp.now(),
-      eventsManaged: 0,
+      dashboard: dashboard,
     };
 
     try {
-      await registerMember(appUser, dashboard, formData.password);
+      await registerMember(appUser, formData.password);
 
       toast({
         title: "User created successfully",
