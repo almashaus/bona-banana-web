@@ -52,7 +52,8 @@ export default function EventPage() {
   const [event, setEvent] = useState<Event | null>(null);
 
   // get event ID from params
-  const { id } = useParams();
+  const params = useParams<{ id: string }>();
+  const id: string = params?.id!;
 
   const { data, error, isLoading } = useSWR(id ? ["event", id] : null, () =>
     getEventById(id as string)

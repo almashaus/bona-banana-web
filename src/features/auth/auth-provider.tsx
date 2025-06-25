@@ -8,7 +8,7 @@ import {
   useState,
   useCallback,
 } from "react";
-import { auth } from "@/src/lib/firebase/firebaseConfig";
+import { auth, functions } from "@/src/lib/firebase/firebaseConfig";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -24,9 +24,11 @@ import { useRouter } from "next/navigation";
 import {
   addDocToCollection,
   getDocumentById,
-  syncUserWithFirestore,
 } from "@/src/lib/firebase/firestore";
-import type { AppUser, DashboardUser } from "@/src/models/user";
+import { httpsCallable } from "firebase/functions";
+import type { AppUser } from "@/src/models/user";
+import axios from "axios";
+import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 
 type AuthContextType = {
   user: AppUser | null;
@@ -39,26 +41,12 @@ type AuthContextType = {
   resetPassword: (email: string) => Promise<void>;
 };
 
-// Use sessionStorage for less persistent storage (mitigates XSS persistence)
-const getUserFromStorage = (): AppUser | null => {
-  if (typeof window === "undefined") return null;
-  const storedUser = sessionStorage.getItem("user");
-  return storedUser ? JSON.parse(storedUser) : null;
-};
-const setUserToStorage = (user: AppUser) => {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem("user", JSON.stringify(user));
-};
-const removeUserFromStorage = () => {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem("user");
-};
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<AppUser | null>(null);
+  const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const router = useRouter();
 
   // Map FirebaseUser to AppUser
@@ -74,44 +62,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    // On mount, check session storage for user (for SSR hydration)
     if (!user) {
-      const storedUser = getUserFromStorage();
-      if (storedUser) {
-        setUser(storedUser);
-      }
-    }
-
-    // Listen for Firebase Auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (!loading) {
-        if (fbUser) {
-          try {
-            const appUser = await getDocumentById("users", fbUser.uid);
-            if (appUser) {
-              setUser(appUser as AppUser);
-              setUserToStorage(appUser as AppUser);
+      // Listen for Firebase Auth state changes
+      const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+        if (!loading) {
+          if (fbUser) {
+            try {
+              const result = await getDocumentById("users", fbUser.uid);
+              const appUser: AppUser = result as AppUser;
+              if (appUser) {
+                setUser(appUser as AppUser);
+              }
+            } catch {
+              setUser(null);
             }
-          } catch {
+          } else {
             setUser(null);
-            removeUserFromStorage();
           }
-        } else {
-          setUser(null);
-          removeUserFromStorage();
         }
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      });
 
-    return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      return () => unsubscribe();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }
+  }, [loading, setUser, user]);
 
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
+      // const token = await result.user.getIdToken();
+      const user = await getDocumentById("users", result.user.uid);
+      const appUser: AppUser = user as AppUser;
+
+      setUser(appUser);
+
+      if (appUser) {
+        if (appUser.hasDashboardAccess) {
+          await axios.post("/api/login", { member: "true" });
+        }
+      }
     } catch {
       throw new Error("Login failed");
     } finally {
@@ -137,7 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           const appUser = mapFirebaseUserToAppUser(fbUser);
           setUser(appUser);
-          setUserToStorage(appUser);
           await addDocToCollection("users", appUser, appUser.id);
         }
       } catch {
@@ -150,26 +140,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const registerMember = useCallback(
-    async (memebr: AppUser, password: string) => {
+    async (member: AppUser, password: string) => {
       setLoading(true);
       try {
-        const result = await createUserWithEmailAndPassword(
-          auth,
-          memebr.email,
-          password
-        );
-        const fbUser = result.user;
+        const createMemberFn = httpsCallable(functions, "createNewMember");
 
-        if (fbUser) {
-          await updateProfile(fbUser, {
-            displayName: memebr.name || memebr.email?.split("@")[0],
-          });
+        const result = await createMemberFn({
+          email: member.email,
+          password: password,
+          member: member,
+        });
 
-          await addDocToCollection(
-            "users",
-            { ...memebr, id: fbUser.uid },
-            fbUser.uid
-          );
+        const typedResult = result as { data: { success: boolean } };
+
+        if (!typedResult.data.success) {
+          throw new Error("Registration failed");
         }
       } catch (error) {
         console.error(error);
@@ -183,9 +168,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     signOut(auth)
-      .then(() => {
+      .then(async () => {
+        await axios.get("/api/logout");
+
         setUser(null);
-        removeUserFromStorage();
         router.push("/login");
       })
       .catch(() => {
@@ -207,7 +193,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const appUser = mapFirebaseUserToAppUser(fbUser);
         setUser(appUser);
-        setUserToStorage(appUser);
         await addDocToCollection("users", appUser, appUser.id);
       }
     } catch {
@@ -253,3 +238,8 @@ export function useAuth() {
   }
   return context;
 }
+
+/*
+
+  
+  */

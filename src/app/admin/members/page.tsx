@@ -16,6 +16,8 @@ import {
   Settings2,
   PanelLeft,
   UserCheck,
+  UserPlus,
+  UserPen,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -51,6 +53,7 @@ import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
 import {
+  getAllDocuments,
   getUsersWithDashboardAccess,
   updateDocument,
 } from "@/src/lib/firebase/firestore";
@@ -60,7 +63,17 @@ import Loading from "@/src/components/ui/loading";
 import { MemberRole } from "@/src/models/user";
 import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
 import { useIsMobile } from "@/src/hooks/use-mobile";
-import { da } from "date-fns/locale";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+  DialogClose,
+  DialogTrigger,
+} from "@/src/components/ui/dialog";
+import { DocumentData } from "firebase/firestore";
 
 export default function membersPage() {
   const { user } = useAuth();
@@ -70,6 +83,10 @@ export default function membersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [email, setEmail] = useState("");
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
@@ -77,16 +94,9 @@ export default function membersPage() {
     getUsersWithDashboardAccess()
   );
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (!user?.hasDashboardAccess) {
-      router.push("/");
-    }
-  }, [user, router]);
-
-  if (!user?.hasDashboardAccess) {
-    return null;
-  }
+  const usersCall = useSWR<DocumentData[]>("users", () =>
+    getAllDocuments("users")
+  );
 
   // Filter members based on search and filters
   useEffect(() => {
@@ -106,6 +116,12 @@ export default function membersPage() {
       setMembers(filteredData);
     }
   }, [data, searchTerm, roleFilter, statusFilter]);
+
+  useEffect(() => {
+    if (usersCall.data) {
+      setUsers(usersCall.data as AppUser[]);
+    }
+  }, [usersCall.data]);
 
   // Handle user suspension/activation
   const handleSuspendUser = async (userId: string) => {
@@ -137,7 +153,8 @@ export default function membersPage() {
     });
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  // Handle user removing
+  const handleRemoveUser = async (userId: string) => {
     try {
       const user = data?.find((u) => u.id === userId);
       setMembers(data!.filter((u) => u.id !== userId));
@@ -151,24 +168,59 @@ export default function membersPage() {
       await mutate("members");
 
       toast({
-        title: "User deleted",
-        description: `${user?.name} has been deleted successfully.`,
+        title: "User removed",
+        description: `${user?.name} has been removed successfully.`,
         variant: "success",
       });
     } catch (error) {
       toast({
-        title: "Error deleting user",
-        description: "Failed to delete user. Please try again.",
+        title: "Error removing user",
+        description: "Failed to remove user. Please try again.",
         variant: "destructive",
       });
     }
   };
 
+  // handle user coverting
+  const handleConvertUserToMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      setIsConverting(true);
+      const user = users?.find((u) => u.email === email);
+
+      await updateDocument("users", user?.id!, { hasDashboardAccess: true });
+
+      //wait for the user to be updated in Firestore
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      setConvertDialogOpen(false);
+      // Revalidate SWR data
+      await mutate("members");
+      await mutate("users");
+      setEmail("");
+
+      toast({
+        title: "User Converted",
+        description: `${user?.name} has been converted successfully.`,
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error converting user",
+        description: "Failed to convert user. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   const exportMembers = (format: string) => {
-    toast({
-      title: "Export started",
-      description: `Exporting members to ${format.toUpperCase()} format...`,
-    });
+    // toast({
+    //   title: "Export started",
+    //   description: `Exporting members to ${format.toUpperCase()} format...`,
+    // });
   };
 
   return (
@@ -193,14 +245,65 @@ export default function membersPage() {
           </p>
         </div>
         {user?.dashboard?.role === MemberRole.ADMIN && (
-          <Button asChild>
-            <Link href="/admin/members/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Member
-            </Link>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Member
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/admin/members/new">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Create new account
+                </Link>
+              </DropdownMenuItem>
+              {/* Convert user to member dialog trigger */}
+              <DropdownMenuItem onClick={() => setConvertDialogOpen(true)}>
+                <UserPen className="mr-2 h-4 w-4" />
+                Convert user to member
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
+
+      {/* Convert User to Member Dialog */}
+      <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Convert User to Member</DialogTitle>
+            <DialogDescription>
+              Select a user to grant dashboard access.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 my-4">
+            {users && users.length > 0 && !usersCall.isLoading && (
+              <Select value={email} onValueChange={setEmail}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Emails" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.email}>
+                      {user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={handleConvertUserToMember} disabled={isConverting}>
+              {isConverting ? "Converting..." : "Convert"}
+            </Button>
+            <DialogClose asChild>
+              <Button variant="outline">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -383,11 +486,11 @@ export default function membersPage() {
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDeleteUser(member.id)}
+                          onClick={() => handleRemoveUser(member.id)}
                           className="text-red-600"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -407,7 +510,7 @@ export default function membersPage() {
 
       {/* No results message */}
       {members?.length === 0 && !isLoading && (
-        <div className="text-center py-8 bg-white">
+        <div className="text-center py-8 bg-white rounded-md border">
           <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No members found</h3>
           <p className="text-muted-foreground mb-4">

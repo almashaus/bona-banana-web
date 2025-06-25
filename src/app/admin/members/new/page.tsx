@@ -76,12 +76,6 @@ export default function NewUserPage() {
   const [date, setDate] = useState<Date | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect if not admin
-  if (!user?.hasDashboardAccess) {
-    router.push("/");
-    return null;
-  }
-
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,

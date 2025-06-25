@@ -21,10 +21,8 @@ import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
-
   const router = useRouter();
   const { toast } = useToast();
-
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [isUpdating, setIsUpdating] = useState(false);
@@ -55,8 +53,8 @@ export default function ProfilePage() {
             </AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-3xl font-bold">{user.name}</h1>
-            <p className="text-muted-foreground">{user.email}</p>
+            <h1 className="text-3xl font-bold">{user?.name}</h1>
+            <p className="text-muted-foreground">{user?.email}</p>
           </div>
         </div>
 

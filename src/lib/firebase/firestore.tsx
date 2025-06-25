@@ -73,6 +73,7 @@ export const getAllDocuments = async (
       }
       throw new Error("No such data!");
     });
+
     return documents;
   } catch (error) {
     console.error("Error fetching data:", error);

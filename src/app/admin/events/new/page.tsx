@@ -75,10 +75,10 @@ export default function CreateEventPage() {
   ]);
 
   // Redirect if not admin
-  if (!user?.hasDashboardAccess) {
-    router.push("/");
-    return null;
-  }
+  // if (!user?.hasDashboardAccess) {
+  //   router.push("/");
+  //   return null;
+  // }
 
   // Generate slug from title
   const generateSlug = (title: string) => {
@@ -180,8 +180,8 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="container py-10 lg:px-0 max-w-full">
-      <div className="flex items-center justify-between md:mx-16 lg:mx-40 mb-6">
+    <div className="container py-6">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Create New Event</h1>
         <Button variant="outline" onClick={() => router.back()}>
           <XIcon className="h-4 w-4 md:me-2" />
@@ -190,7 +190,7 @@ export default function CreateEventPage() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 md:mx-16 lg:mx-40 mb-6">
+        <div className="grid gap-6 mb-6">
           <Card>
             <CardHeader>
               <CardTitle>Event Details</CardTitle>
@@ -547,7 +547,7 @@ export default function CreateEventPage() {
           </Card>
         </div>
 
-        <div className="flex justify-end gap-4 md:mx-16 lg:mx-40">
+        <div className="flex justify-end gap-4">
           <Button variant="outline" type="button" onClick={() => router.back()}>
             <XIcon className="h-4 w-4 me-2" /> Cancel
           </Button>

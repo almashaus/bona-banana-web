@@ -53,7 +53,9 @@ export default function Home() {
           )}
           {data && (
             <div>
-              <EventsList allEvents={data} />
+              <div className="flex justify-center">
+                <EventsList allEvents={data} />
+              </div>
               <div className="flex justify-center ">
                 <Button asChild>
                   <Link href="/">View All Events</Link>
@@ -82,7 +84,7 @@ export default function Home() {
 
 function EventsList({ allEvents }: { allEvents: Event[] }) {
   return (
-    <div className="grid max-w-5xl items-center gap-6 mx-6 lg:mx-auto py-12 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 sm:grid-cols-2 lg:grid-cols-3">
       {allEvents.map((event) => (
         <Link href={`/events/${event.id}`} key={event.id}>
           <Card className="overflow-hidden transition-all shadow-none hover:scale-105  bg-darkColor border-0">

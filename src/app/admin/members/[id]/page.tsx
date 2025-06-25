@@ -37,12 +37,9 @@ import {
 } from "@/src/components/ui/table";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
-import { useAuthStore } from "@/src/lib/stores/useAuthStore";
-import { formatDate, formatDateTime } from "@/src/lib/utils/formatDate";
 import useSWR from "swr";
 import { getDocumentById } from "@/src/lib/firebase/firestore";
 import { MemberStatus, MemberRole, AppUser } from "@/src/models/user";
-import { Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
 
@@ -121,7 +118,8 @@ export default function UserProfilePage() {
   const [permissions, setPermissions] = useState(mockPermissions);
   const [internalNotes, setInternalNotes] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const { id } = useParams();
+  const params = useParams<{ id: string }>();
+  const id: string = params?.id!;
 
   const { data, error, isLoading } = useSWR(["member", id], () =>
     getDocumentById("users", id as string)
@@ -131,16 +129,6 @@ export default function UserProfilePage() {
       setMember(data as AppUser);
     }
   }, [data]);
-  // Redirect if not admin
-  // useEffect(() => {
-  //   if (!currentUser?.hasDashboardAccess) {
-  //     router.push("/");
-  //   }
-  // }, [currentUser, router]);
-
-  // if (!currentUser?.hasDashboardAccess) {
-  //   return null;
-  // }
 
   const handleResetPassword = async () => {
     try {

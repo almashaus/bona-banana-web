@@ -31,7 +31,8 @@ export default function UserProfilePage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { id } = useParams();
+  const params = useParams<{ id: string }>();
+  const id: string = params?.id!;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({

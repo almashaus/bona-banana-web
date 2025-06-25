@@ -7,15 +7,7 @@ interface AuthState {
   setUser: (u: AppUser | null) => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      setUser: (u) => set({ user: u }),
-    }),
-    {
-      name: "auth-storage", // LocalStorage key
-      partialize: (state) => ({ user: state.user }),
-    }
-  )
-);
+export const useAuthStore = create<AuthState>()((set) => ({
+  user: null,
+  setUser: (u) => set({ user: u }),
+}));

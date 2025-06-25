@@ -37,16 +37,6 @@ export default function AdminPage() {
 
   const { data, error, isLoading } = useSWR("events", () => getEvents());
 
-  useEffect(() => {
-    if (!user?.hasDashboardAccess) {
-      router.push("/");
-    }
-  }, [user, router]);
-
-  if (!user?.hasDashboardAccess) {
-    return null;
-  }
-
   return (
     <div className="container py-6">
       <div className="mb-6">

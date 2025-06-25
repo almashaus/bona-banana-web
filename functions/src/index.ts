@@ -4,50 +4,188 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 
 const db = admin.firestore();
+const auth = admin.auth();
 
-// Triggered when a user is deleted
+/*
+  [ 1 ]
+  Triggered when a user is deleted
+*/
 export const deleteUserDoc = functions.auth.user().onDelete(async (user) => {
   const { uid } = user;
 
   try {
     await db.collection("users").doc(uid).delete();
-    console.log(`User document deleted`);
   } catch (error) {
     console.error(`Error deleting user`);
   }
 });
 
-// Triggered when change a user to admin
+/*
+  [ 2 ]
+  Triggered when change a user to admin 
+*/
 export const onMemberAdded = functions.firestore
   .document("users/{userId}")
   .onUpdate(async (change, context) => {
     if (!change) {
-      console.log("No data associated with the event");
       return;
     }
+    try {
+      const before = change.before.data();
+      const after = change.after.data();
 
-    const before = change.before.data();
-    const after = change.after.data();
+      // if hasDashboardAccess changes to true only
+      if (
+        before.hasDashboardAccess !== true &&
+        after.hasDashboardAccess === true
+      ) {
+        const dashboard = {
+          dashboard: {
+            role: "Support",
+            status: "Active",
+            joinedDate: admin.firestore.FieldValue.serverTimestamp(),
+            eventsManaged: 0,
+          },
+        };
 
-    // Trigger only if hasDashboardAccess changes from false to true
-    if (
-      before.hasDashboardAccess !== true &&
-      after.hasDashboardAccess === true
-    ) {
-      const dashboardData = {
-        role: "Support",
-        status: "Active",
-        joinedDate: admin.firestore.FieldValue.serverTimestamp(),
-        eventsManaged: 0,
-      };
+        // update the user document with dashboard data
+        await db.collection("users").doc(after.id).update(dashboard);
 
-      await change.after.ref
-        .collection("dashboard")
-        .doc("default")
-        .set(dashboardData);
+        // add admin custom claims
+        const customClaims = {
+          admin: true,
+        };
 
-      console.log(`Created dashboard for admin user`);
+        await auth.setCustomUserClaims(after.id, customClaims);
+      }
+    } catch (error) {
+      console.error(`Error creating dashboard for admin user`, error);
+    }
+  });
+
+/*
+  [ 3 ]
+  Callable function to create a new user
+*/
+export const createNewMember = functions.https.onCall(async (data, context) => {
+  try {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Request had no auth."
+      );
     }
 
-    return null;
+    const { email, password, member } = data;
+
+    if (!email || !password) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Email and password are required."
+      );
+    }
+
+    // Add validation for member object
+    if (!member || typeof member !== "object") {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Member data is required."
+      );
+    }
+
+    const fbUser = await auth.createUser({
+      email,
+      password,
+    });
+
+    // Set custom claims for the user
+    const customClaims = {
+      admin: true,
+    };
+
+    if (fbUser) {
+      await auth.setCustomUserClaims(fbUser.uid, customClaims);
+      await db
+        .collection("users")
+        .doc(fbUser.uid)
+        .set({ ...member, id: fbUser.uid });
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error: any) {
+    throw new functions.https.HttpsError("internal", "");
+  }
+});
+
+/*
+  [ 4 ]
+  Callable function to verfiy ID token
+*/
+export const verifyIdToken = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Request had no auth."
+    );
+  }
+
+  const idToken = data.idToken;
+  if (!idToken) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "ID token is required."
+    );
+  }
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    if (!decodedToken) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Invalid ID token."
+      );
+    }
+    return {
+      success: true,
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      claims: decodedToken,
+    };
+  } catch (error: any) {
+    throw new functions.https.HttpsError("internal", error.message);
+  }
+});
+
+/*
+  [ 5 ]
+  Triggered when a new event is added; increments eventsManaged for the creator
+*/
+export const onEventCreated = functions.firestore
+  .document("events/{eventId}")
+  .onCreate(async (snap, context) => {
+    const eventData = snap.data();
+    const creatorId = eventData?.creatorId;
+    if (!creatorId) {
+      return;
+    }
+    try {
+      // Increment dashboard.eventsManaged by 1 for the user
+      await db
+        .collection("users")
+        .doc(creatorId)
+        .update({
+          "dashboard.eventsManaged": admin.firestore.FieldValue.increment(1),
+        });
+    } catch (error) {
+      console.error(
+        `Error incrementing eventsManaged for user ${creatorId}:`,
+        error
+      );
+    }
   });
+
+/*
+Deploy the functions command:
+`firebase deploy --only functions`
+*/
