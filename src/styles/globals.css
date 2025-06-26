@@ -80,7 +80,7 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gradient-to-b from-stone-100/80 to-stone-50 text-foreground;
   }
 }
 

@@ -25,14 +25,12 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="/css/riyal.css" />
       </head>
-      <body
-        className={inter.className + " bg-gradient-to-b from-muted/50 to-muted"}
-      >
+      <body className={inter.className}>
         <AuthProvider>
           <LanguageProvider>
-            <div className="flex min-h-screen min-w-full flex-col">
+            <div className="flex flex-col min-h-screen min-w-full">
               <Header />
-              <main className="flex-1">{children}</main>
+              <main className="flex-grow pt-16">{children}</main>
               <Footer />
             </div>
             <Toaster />

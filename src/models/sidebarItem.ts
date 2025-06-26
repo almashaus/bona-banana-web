@@ -10,6 +10,7 @@ import {
   Percent,
   ChartColumn,
   FileText,
+  Settings,
 } from "lucide-react";
 
 export type Item = {
@@ -65,6 +66,11 @@ export const sidebarData: Item[] = [
     title: "Reports",
     url: "/admin/reports",
     icon: FileText,
+  },
+  {
+    title: "Settings",
+    url: "/admin/settings",
+    icon: Settings,
   },
   {
     title: "Profile",
