@@ -8,7 +8,7 @@ export default async function handler(
   const { member } = req.body;
 
   if (!member) {
-    return res.status(400).json({ error: "Missing token" });
+    return res.status(400).json({ error: "Missing member" });
   }
 
   setCookie("member", member, {
@@ -18,7 +18,7 @@ export default async function handler(
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
-    maxAge: 60 * 60 * 24, // يوم
+    maxAge: 60 * 60 * 24 * 30, // month
   });
 
   res.status(200).json({ message: "Token saved" });

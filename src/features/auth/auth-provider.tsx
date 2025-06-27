@@ -72,6 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const appUser: AppUser = result as AppUser;
               if (appUser) {
                 setUser(appUser as AppUser);
+                if (appUser.hasDashboardAccess) {
+                  await axios.post("/api/login", { member: "true" });
+                }
               }
             } catch {
               setUser(null);

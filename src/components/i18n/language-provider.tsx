@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { createContext, useContext, useState, useEffect } from "react";
+import { translations } from "./language-translations";
 
 type Language = "en" | "ar";
 
@@ -10,40 +11,6 @@ type LanguageContextType = {
   language: Language;
   setLanguage: (language: Language) => void;
   t: (key: string) => string;
-};
-
-const translations = {
-  en: {
-    "home.title": "Discover Events",
-    "home.subtitle": "Find and book tickets for the best events near you",
-    "event.buyTicket": "Buy Ticket",
-    "event.date": "Date",
-    "event.location": "Location",
-    "event.price": "Price",
-    "auth.login": "Login",
-    "auth.register": "Register",
-    "auth.email": "Email",
-    "auth.password": "Password",
-    "checkout.summary": "Order Summary",
-    "checkout.pay": "Pay Now",
-    // Add more translations as needed
-  },
-  ar: {
-    "home.title": "Descubrir Eventos",
-    "home.subtitle":
-      "Encuentra y reserva entradas para los mejores eventos cerca de ti",
-    "event.buyTicket": "Comprar Entrada",
-    "event.date": "Fecha",
-    "event.location": "Ubicación",
-    "event.price": "Precio",
-    "auth.login": "Iniciar Sesión",
-    "auth.register": "Registrarse",
-    "auth.email": "Correo Electrónico",
-    "auth.password": "Contraseña",
-    "checkout.summary": "Resumen del Pedido",
-    "checkout.pay": "Pagar Ahora",
-    // Add more translations as needed
-  },
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(
@@ -55,7 +22,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("language") as Language;
-    if (savedLanguage && ["en", "es", "fr", "de"].includes(savedLanguage)) {
+    if (savedLanguage && ["en", "ar"].includes(savedLanguage)) {
       setLanguage(savedLanguage);
     }
   }, []);

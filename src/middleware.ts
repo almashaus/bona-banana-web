@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const cookie = request.cookies.get("member")?.value;
   const isAdmin = cookie === "true";
-
+  console.log(cookie);
   if (isAdmin) {
     return NextResponse.next();
   } else {

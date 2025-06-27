@@ -1,6 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Almarai } from "next/font/google";
 import "../styles/globals.css";
 import Header from "@/src/components/layout/header";
 import Footer from "@/src/components/layout/footer";
@@ -8,7 +8,10 @@ import { Toaster } from "@/src/components/ui/toaster";
 import { AuthProvider } from "@/src/features/auth/auth-provider";
 import { LanguageProvider } from "@/src/components/i18n/language-provider";
 
-const inter = Inter({ subsets: ["latin"] });
+const almarai = Almarai({
+  subsets: ["arabic"],
+  weight: ["300", "400", "700", "800"],
+});
 
 export const metadata: Metadata = {
   title: "Bona Banana",
@@ -25,7 +28,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="/css/riyal.css" />
       </head>
-      <body className={inter.className}>
+      <body className={almarai.className}>
         <AuthProvider>
           <LanguageProvider>
             <div className="flex flex-col min-h-screen min-w-full">

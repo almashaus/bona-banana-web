@@ -8,10 +8,12 @@ import Loading from "@/src/components/ui/loading";
 import { CalendarDays, ClockIcon } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/src/components/ui/card";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
-import { getEventsByStatus } from "../lib/firebase/firestore";
+import { getEventsByStatus } from "@/src/lib/firebase/firestore";
 import useSWR from "swr";
+import { useLanguage } from "@/src/components/i18n/language-provider";
 
 export default function Home() {
+  const { t } = useLanguage();
   const { data, error, isLoading } = useSWR("publishedEvents", () =>
     getEventsByStatus(EventStatus.PUBLISHED)
   );
@@ -39,10 +41,10 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">
-                Featured Events
+                {t("home.title")}
               </h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Discover the most popular events happening near you
+                {t("home.subtitle")}
               </p>
             </div>
           </div>
