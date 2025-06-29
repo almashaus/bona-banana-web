@@ -1,6 +1,6 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Almarai } from "next/font/google";
+import localFont from "next/font/local";
 import "../styles/globals.css";
 import Header from "@/src/components/layout/header";
 import Footer from "@/src/components/layout/footer";
@@ -8,9 +8,35 @@ import { Toaster } from "@/src/components/ui/toaster";
 import { AuthProvider } from "@/src/features/auth/auth-provider";
 import { LanguageProvider } from "@/src/components/i18n/language-provider";
 
-const almarai = Almarai({
-  subsets: ["arabic"],
-  weight: ["300", "400", "700", "800"],
+const DINNextLT = localFont({
+  src: [
+    {
+      path: "../../public/font/din-next-lt/DINNextLTArabic-UltraLight.ttf",
+      weight: "200",
+      style: "normal",
+    },
+    {
+      path: "../../public/font/din-next-lt/DINNextLTArabic-Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../../public/font/din-next-lt/DINNextLTArabic-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/font/din-next-lt/DINNextLTArabic-Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/font/din-next-lt/DINNextLTArabic-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-custom",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +54,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="/css/riyal.css" />
       </head>
-      <body className={almarai.className}>
+      <body className={DINNextLT.className}>
         <AuthProvider>
           <LanguageProvider>
             <div className="flex flex-col min-h-screen min-w-full">
