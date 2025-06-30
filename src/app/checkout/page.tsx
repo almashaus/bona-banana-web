@@ -8,7 +8,7 @@ import {
   ClockIcon,
   CreditCard,
   MapPin,
-  Ticket,
+  TicketIcon,
   XIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -22,15 +22,18 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { useToast } from "@/src/components/ui/use-toast";
-import { generateOrderNumber } from "@/src/lib/utils/utils";
+import { generateIDNumber } from "@/src/lib/utils/utils";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { Event } from "@/src/models/event";
-import { getEventById } from "@/src/lib/firebase/firestore";
+import { Order, OrderStatus } from "@/src/models/order";
+import { Ticket, TicketStatus } from "@/src/models/ticket";
+import { addDocToCollection, getEventById } from "@/src/lib/firebase/firestore";
 import { eventDateTimeString } from "@/src/lib/utils/formatDate";
 import Loading from "@/src/components/ui/loading";
 import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
 import useSWR from "swr";
 import { useLanguage } from "@/src/components/i18n/language-provider";
+import { Timestamp } from "firebase/firestore";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -68,18 +71,57 @@ export default function CheckoutPage() {
   const fees = (total - subtotal).toFixed(2);
 
   // handle payment
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    setTimeout(() => {
-      const orderNumber = generateOrderNumber();
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to proceed with the checkout.",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+      return;
+    }
 
-      // Navigate to confirmation page
-      router.push(
-        `/confirmation?orderNumber=${orderNumber}&eventId=${eventId}&date=${dateId}&quantity=${quantity}`
-      );
-    }, 2000);
+    const orderId = generateIDNumber("ORDER");
+
+    const tickets: Ticket[] = [];
+
+    for (let i = 0; i < quantity; i++) {
+      const ticketId = generateIDNumber("TICKET");
+
+      const ticket: Ticket = {
+        id: ticketId,
+        orderId: orderId,
+        userId: user.id,
+        eventId: eventId,
+        eventDate: event?.dates.find((item) => item.id === dateId)?.date!,
+        qrCode: "",
+        status: TicketStatus.VALID,
+        purchasePrice: event?.price || 0,
+      };
+      tickets.push(ticket);
+      await addDocToCollection("tickets", ticket, ticketId);
+    }
+
+    const order: Order = {
+      id: orderId,
+      userId: user.id,
+      eventId: eventId,
+      orderDate: Timestamp.fromDate(new Date()),
+      status: OrderStatus.PAID, // TODO: status of the payment
+      totalAmount: total,
+      promoCodeId: null,
+      discountAmount: 0,
+
+      tickets: tickets,
+    };
+
+    await addDocToCollection("orders", order, orderId);
+    // Navigate to confirmation page
+    router.push(`/confirmation?orderNumber=${orderId}`);
   };
 
   if (!eventId || !dateId || error) {
@@ -146,7 +188,7 @@ export default function CheckoutPage() {
                   {event.location}
                 </div>
                 <div className="flex items-center text-sm mt-1">
-                  <Ticket className="mr-1 h-4 w-4 text-redColor" />
+                  <TicketIcon className="mr-1 h-4 w-4 text-redColor" />
                   {quantity}{" "}
                   {quantity === 1 ? t("event.ticket") : t("event.tickets")}
                 </div>
@@ -207,13 +249,13 @@ export default function CheckoutPage() {
                 <TabsTrigger value="paypal">PayPal</TabsTrigger>
               </TabsList>
               <TabsContent value="card" className="space-y-4">
-                <div>
+                <div className="space-y-1">
                   <Label htmlFor="name">
                     {t("checkout.cardholderName") || "Cardholder Name"}
                   </Label>
                   <Input id="name" defaultValue={user?.name || ""} required />
                 </div>
-                <div>
+                <div className="space-y-1">
                   <Label htmlFor="card-number">
                     {t("checkout.cardNumber") || "Card Number"}
                   </Label>
@@ -224,13 +266,13 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="space-y-1">
                     <Label htmlFor="expiry">
                       {t("checkout.expiryDate") || "Expiry Date"}
                     </Label>
                     <Input id="expiry" placeholder="MM/YY" required />
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <Label htmlFor="cvc">{t("checkout.cvc") || "CVC"}</Label>
                     <Input id="cvc" placeholder="123" required />
                   </div>

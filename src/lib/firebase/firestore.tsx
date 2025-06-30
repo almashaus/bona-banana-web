@@ -109,7 +109,7 @@ export const getDocumentById = async (
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
-      return null;
+      throw new Error("Error fetching data!");
     }
   } catch (error) {
     console.error("Error fetching data:", error);

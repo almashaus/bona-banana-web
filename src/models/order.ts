@@ -1,3 +1,4 @@
+import { Timestamp } from "firebase/firestore";
 import { Ticket } from "./ticket";
 
 export enum OrderStatus {
@@ -10,7 +11,8 @@ export enum OrderStatus {
 export interface Order {
   id: string; //
   userId: string; // foreign key to User
-  orderDate: Date;
+  eventId: string; // foreign key to event
+  orderDate: Timestamp;
   status: OrderStatus;
   totalAmount: number;
   promoCodeId: string | null; // foreign key to PromoCode, nullable

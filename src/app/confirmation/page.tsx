@@ -2,37 +2,76 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { CalendarDays, Download, MapPin, Ticket } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  CalendarDays,
+  CheckCircle,
+  Download,
+  MapPin,
+  Ticket,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
-import { formatDate, generateQRCode } from "@/src/lib/utils/utils";
-import { events } from "@/src/models/events";
+import { generateQRCode } from "@/src/lib/utils/utils";
+import { formatDate } from "@/src/lib/utils/formatDate";
+import { getDocumentById, getEventById } from "@/src/lib/firebase/firestore";
+import { Event } from "@/src/models/event";
+import useSWR from "swr";
+import { useLanguage } from "@/src/components/i18n/language-provider";
+import { Order } from "@/src/models/order";
+import { Timestamp } from "firebase/firestore";
+import Loading from "@/src/components/ui/loading";
 
 export default function ConfirmationPage() {
+  const [event, setEvent] = useState<Event | null>(null);
+  const [date, setDate] = useState<Date | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
+
+  const router = useRouter();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(true);
-
-  const orderNumber = searchParams.get("orderNumber");
-  const eventId = searchParams.get("eventId");
-  const date = searchParams.get("date");
-  const quantity = Number.parseInt(searchParams.get("quantity") || "1");
-
-  const event = events.find((e) => e.id === eventId);
+  const orderNumber = searchParams?.get("orderNumber");
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    if (!orderNumber) {
+      router.push("/");
+    }
+  }, [orderNumber, router]);
 
-    return () => clearTimeout(timer);
-  }, []);
+  const { data, error, isLoading } = useSWR(
+    orderNumber ? ["order", orderNumber] : null,
+    () => getDocumentById("orders", orderNumber as string)
+  );
 
-  if (!event || !date || !orderNumber) {
+  // Get eventId from order `data`
+  const eventId = data?.eventId;
+  const eventCall = useSWR(eventId ? ["event", eventId] : null, () =>
+    getEventById(eventId as string)
+  );
+
+  useEffect(() => {
+    if (data) {
+      setOrder(data as Order);
+      setQuantity(data.tickets.length);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    const eventData: Event = eventCall.data as Event;
+    if (eventData && eventData.dates && eventData.dates.length > 0) {
+      setEvent(eventData as Event);
+
+      const sDate = (data?.tickets[0].eventDate as Timestamp).toDate();
+
+      setDate(sDate);
+    }
+  }, [eventCall.data]);
+
+  if (error) {
     return (
-      <div className="container py-10 text-center">
+      <div className="container py-20 text-center">
         <h1 className="text-2xl font-bold mb-4">
           Invalid confirmation information
         </h1>
@@ -44,40 +83,50 @@ export default function ConfirmationPage() {
     );
   }
 
-  const subtotal = event.price * quantity;
-  const fees = subtotal * 0.05; // 5% service fee
-  const total = subtotal + fees;
-  const qrCodeUrl = generateQRCode(orderNumber);
+  if (isLoading || !event || !date || !orderNumber) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <Loading />
+      </div>
+    );
+  }
+
+  // Calculate totals
+  const total = event?.price! * quantity;
+  const subtotal = total - total * 0.15;
+  const fees = (total - subtotal).toFixed(2);
+
+  const qrCodeUrl = generateQRCode(orderNumber); //TODO: API QR generator
 
   return (
     <div className="container py-10">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-4">
-            <Ticket className="h-6 w-6" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600 mb-4">
+            <CheckCircle className="h-10 w-10" />
           </div>
-          <h1 className="text-3xl font-bold">Order Confirmed!</h1>
-          <p className="text-muted-foreground mt-2">
-            Your tickets have been successfully purchased.
-          </p>
+          <h1 className="text-3xl font-bold">{t("confirm.confirm")}</h1>
+          <p className="text-muted-foreground mt-2">{t("confirm.purchase")}</p>
         </div>
 
         <Card className="mb-6">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-xl font-semibold">{event.name}</h2>
+                <h2 className="text-xl font-semibold">{event.title}</h2>
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                   <CalendarDays className="mr-1 h-4 w-4" />
                   {formatDate(date)}
                 </div>
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                   <MapPin className="mr-1 h-4 w-4" />
-                  {event.venue}, {event.location}
+                  {event.location}
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm text-muted-foreground">Order #</div>
+                <div className="text-sm text-muted-foreground">
+                  {t("confirm.orderNumber")}
+                </div>
                 <div className="font-medium">{orderNumber}</div>
               </div>
             </div>
@@ -94,7 +143,7 @@ export default function ConfirmationPage() {
                   />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Present this QR code at the venue
+                  {t("confirm.presentQR")}
                 </p>
               </div>
             </div>
@@ -103,21 +152,28 @@ export default function ConfirmationPage() {
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Tickets</span>
+                <span className="text-muted-foreground">
+                  {t("event.tickets").charAt(0).toUpperCase() +
+                    t("event.tickets").slice(1)}
+                </span>
                 <span>
                   {quantity} × <span className="icon-saudi_riyal" />
                   {event.price}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-muted-foreground">
+                  {t("checkout.subtotal")}
+                </span>
                 <span>
                   <span className="icon-saudi_riyal" />
                   {subtotal}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Service Fee</span>
+                <span className="text-muted-foreground">
+                  {t("checkout.tax")}
+                </span>
                 <span>
                   <span className="icon-saudi_riyal" />
                   {fees}
@@ -125,7 +181,12 @@ export default function ConfirmationPage() {
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between font-bold">
-                <span>Total</span>
+                <span>
+                  {t("event.total")}{" "}
+                  <span className="text-xs font-light text-muted-foreground">
+                    *{t("checkout.VAT")}
+                  </span>
+                </span>
                 <span>
                   <span className="icon-saudi_riyal" />
                   {total}
@@ -138,10 +199,11 @@ export default function ConfirmationPage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button className="flex items-center gap-2">
             <Download className="h-4 w-4" />
-            Download Ticket
+            {t("confirm.download")}{" "}
+            {quantity > 1 ? t("confirm.tickets") : t("confirm.ticket")}
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/profile/tickets">View My Tickets</Link>
+            <Link href="/profile/tickets">{t("confirm.myTickets")}</Link>
           </Button>
         </div>
       </div>

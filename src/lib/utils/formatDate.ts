@@ -3,6 +3,7 @@ import { Event, EventDate } from "@/src/models/event";
 
 export function formatDate(date: Date): string {
   return date.toLocaleString("en-UK", {
+    weekday: "long",
     year: "numeric",
     month: "numeric",
     day: "numeric",

@@ -8,7 +8,8 @@ export interface Ticket {
   id: string; //
   orderId: string; // foreign key to Order
   userId: string; // foreign key to User
-  eventDateId: string; // foreign key to EventDate
+  eventId: string; // foreign key to event
+  eventDate: Date;
   qrCode: string;
   status: TicketStatus;
   purchasePrice: number;
