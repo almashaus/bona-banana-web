@@ -70,6 +70,7 @@ export default function CreateEventPage() {
       startTime: new Date(),
       endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
+      availableTickets: 50,
       eventId: "",
     },
   ]);
@@ -103,6 +104,7 @@ export default function CreateEventPage() {
       startTime: new Date(),
       endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
+      availableTickets: 50,
       eventId: "",
     };
     setEventDates([...eventDates, newDate]);
@@ -519,13 +521,18 @@ export default function CreateEventPage() {
                       type="number"
                       min="1"
                       value={eventDate.capacity}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         updateEventDate(
                           eventDate.id,
                           "capacity",
                           Number.parseInt(e.target.value)
-                        )
-                      }
+                        );
+                        updateEventDate(
+                          eventDate.id,
+                          "availableTickets",
+                          Number.parseInt(e.target.value)
+                        );
+                      }}
                       placeholder="50"
                       className="w-24"
                       required

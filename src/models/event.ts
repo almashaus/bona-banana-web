@@ -44,6 +44,7 @@ export interface EventDate {
   startTime: Date;
   endTime: Date;
   capacity: number;
+  availableTickets: number;
 
   // Relations
   tickets?: Ticket[];

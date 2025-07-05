@@ -227,7 +227,7 @@ export default function membersPage() {
     <div className="container py-6">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div className="">
+        <div>
           {isMobile && (
             <Button
               variant="ghost"
@@ -370,7 +370,7 @@ export default function membersPage() {
       <div className="rounded-lg border bg-white">
         <Table>
           <TableHeader>
-            <TableRow className=" bg-muted ">
+            <TableRow>
               <TableHead className="w-[10px]"></TableHead>
               <TableHead>User</TableHead>
               <TableHead>Email</TableHead>
@@ -510,7 +510,7 @@ export default function membersPage() {
 
       {/* No results message */}
       {members?.length === 0 && !isLoading && (
-        <div className="text-center py-8 bg-white rounded-md border">
+        <div className="text-center py-8 bg-white rounded-b-md border-x border-b">
           <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No members found</h3>
           <p className="text-muted-foreground mb-4">

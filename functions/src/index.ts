@@ -186,6 +186,47 @@ export const onEventCreated = functions.firestore
   });
 
 /*
+  [ 6 ]
+  Triggered when a new ticket is added; decrements availableTickets for the event date
+*/
+export const onTicketCreated = functions.firestore
+  .document("tickets/{ticketId}")
+  .onCreate(async (snap, context) => {
+    const ticket = snap.data();
+    const { eventId, eventDateId } = ticket || {};
+    if (!eventId || !eventDateId) {
+      return;
+    }
+    try {
+      const eventRef = db.collection("events").doc(eventId);
+      await db.runTransaction(async (transaction) => {
+        const eventDoc = await transaction.get(eventRef);
+        if (!eventDoc.exists) return;
+
+        const eventData = eventDoc.data();
+        const dates = eventData?.dates || [];
+        const updatedDates = dates.map((date: any) => {
+          if (date.id === eventDateId) {
+            const currentAvailable = date.availableTickets || 0;
+            return {
+              ...date,
+              availableTickets: currentAvailable > 0 ? currentAvailable - 1 : 0,
+            };
+          }
+          return date;
+        });
+
+        transaction.update(eventRef, { dates: updatedDates });
+      });
+    } catch (error) {
+      console.error(
+        `Error decrementing availableTickets for event ${eventId}, date ${eventDateId}:`,
+        error
+      );
+    }
+  });
+
+/*
 Deploy the functions command:
 `firebase deploy --only functions`
 */

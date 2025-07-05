@@ -63,8 +63,9 @@ export default function ConfirmationPage() {
     if (eventData && eventData.dates && eventData.dates.length > 0) {
       setEvent(eventData as Event);
 
-      const sDate = (data?.tickets[0].eventDate as Timestamp).toDate();
-
+      const sDate = eventData.dates.find(
+        (item) => item.id === data?.tickets[0].eventDateId
+      )?.date!;
       setDate(sDate);
     }
   }, [eventCall.data]);

@@ -32,8 +32,8 @@ export const sidebarData: Item[] = [
     icon: CalendarRange,
   },
   {
-    title: "Tickets",
-    url: "/admin/tickets",
+    title: "Reservations",
+    url: "/admin/reservations",
     icon: Ticket,
     notifications: 2,
   },

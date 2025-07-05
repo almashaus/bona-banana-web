@@ -97,7 +97,7 @@ export default function CheckoutPage() {
         orderId: orderId,
         userId: user.id,
         eventId: eventId,
-        eventDate: event?.dates.find((item) => item.id === dateId)?.date!,
+        eventDateId: event?.dates.find((item) => item.id === dateId)?.id!,
         qrCode: "",
         status: TicketStatus.VALID,
         purchasePrice: event?.price || 0,
@@ -113,8 +113,9 @@ export default function CheckoutPage() {
       orderDate: Timestamp.fromDate(new Date()),
       status: OrderStatus.PAID, // TODO: status of the payment
       totalAmount: total,
-      promoCodeId: null,
-      discountAmount: 0,
+      promoCodeId: null, // V-2.0
+      discountAmount: 0, // V-2.0
+      paymentMethod: "Visa", // TODO: the payment method
 
       tickets: tickets,
     };

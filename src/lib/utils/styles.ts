@@ -1,4 +1,5 @@
-import { MemberRole } from "@/src/models/user";
+import { OrderStatus } from "@/src/models/order";
+import { MemberRole, MemberStatus } from "@/src/models/user";
 
 export const getRoleBadgeColor = (role: string) => {
   switch (role) {
@@ -19,11 +20,26 @@ export const getRoleBadgeColor = (role: string) => {
 
 export const getStatusBadgeColor = (status: string) => {
   switch (status) {
-    case "Active":
+    case MemberStatus.ACTIVE:
       return "bg-green-100 text-green-800";
-    case "Suspended":
+    case MemberStatus.SUSPENDED:
       return "bg-red-100 text-red-800";
     default:
       return "bg-gray-100 text-gray-800";
+  }
+};
+
+export const getOrderStatusBadgeColor = (status: string) => {
+  switch (status) {
+    case OrderStatus.PAID:
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+    case OrderStatus.PENDING:
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+    case OrderStatus.CANCELLED:
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+    case OrderStatus.REFUNDED:
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+    default:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
   }
 };
