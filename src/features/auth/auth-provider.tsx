@@ -73,7 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (appUser) {
                 setUser(appUser as AppUser);
                 if (appUser.hasDashboardAccess) {
-                  await axios.post("/api/login", { member: "true" });
+                  await fetch("/api/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ member: "true" }),
+                  });
                 }
               }
             } catch {
@@ -172,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     signOut(auth)
       .then(async () => {
-        await axios.get("/api/logout");
+        await fetch("/api/logout");
 
         setUser(null);
         router.push("/login");

@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  CalendarDays,
-  CheckCircle,
-  Download,
-  MapPin,
-  Ticket,
-} from "lucide-react";
+import { CalendarDays, CheckCircle, Download, MapPin } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
@@ -20,8 +14,9 @@ import { Event } from "@/src/models/event";
 import useSWR from "swr";
 import { useLanguage } from "@/src/components/i18n/language-provider";
 import { Order } from "@/src/models/order";
-import { Timestamp } from "firebase/firestore";
 import Loading from "@/src/components/ui/loading";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 export default function ConfirmationPage() {
   const [event, setEvent] = useState<Event | null>(null);
@@ -33,6 +28,7 @@ export default function ConfirmationPage() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("orderNumber");
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!orderNumber) {
@@ -69,6 +65,35 @@ export default function ConfirmationPage() {
       setDate(sDate);
     }
   }, [eventCall.data]);
+
+  // Download PDF handler
+  const handleDownloadPDF = async () => {
+    if (!cardRef.current) return;
+    const canvas = await html2canvas(cardRef.current, {
+      scale: 2,
+      useCORS: true,
+    });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "pt",
+      format: "a4",
+    });
+    // Calculate width/height to fit A4
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    // Calculate scale to fit both width and height
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    const maxHeight = pageHeight - margin * 2;
+    const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
+    const imgWidth = canvas.width * ratio;
+    const imgHeight = canvas.height * ratio;
+    const x = (pageWidth - imgWidth) / 2;
+    const y = (pageHeight - imgHeight) / 2;
+    pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+    pdf.save(`${orderNumber}.pdf`);
+  };
 
   if (error) {
     return (
@@ -110,11 +135,11 @@ export default function ConfirmationPage() {
           <p className="text-muted-foreground mt-2">{t("confirm.purchase")}</p>
         </div>
 
-        <Card className="mb-6">
+        <Card className="mb-6" ref={cardRef}>
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-xl font-semibold">{event.title}</h2>
+                <div className="text-xl font-semibold">{event.title}</div>
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                   <CalendarDays className="mr-1 h-4 w-4" />
                   {formatDate(date)}
@@ -124,7 +149,7 @@ export default function ConfirmationPage() {
                   {event.location}
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right items-end">
                 <div className="text-sm text-muted-foreground">
                   {t("confirm.orderNumber")}
                 </div>
@@ -136,16 +161,23 @@ export default function ConfirmationPage() {
 
             <div className="flex justify-center mb-4">
               <div className="text-center">
-                <div className="bg-white p-2 rounded-lg inline-block mb-2">
-                  <img
-                    src={qrCodeUrl || "/no-image.svg"}
-                    alt="QR Code"
-                    className="w-40 h-40"
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {t("confirm.presentQR")}
-                </p>
+                {order?.tickets?.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    className="flex flex-col items-center gap-1 mb-4"
+                  >
+                    <span className="text-sm text-muted-foreground">
+                      {ticket.id}
+                    </span>
+                    <div className="bg-white p-2 rounded-lg inline-block mb-2">
+                      <img
+                        src={qrCodeUrl || "/no-image.svg"}
+                        alt="QR Code"
+                        className="w-40 h-40"
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -198,7 +230,10 @@ export default function ConfirmationPage() {
         </Card>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button className="flex items-center gap-2">
+          <Button
+            className="flex items-center gap-2"
+            onClick={handleDownloadPDF}
+          >
             <Download className="h-4 w-4" />
             {t("confirm.download")}{" "}
             {quantity > 1 ? t("confirm.tickets") : t("confirm.ticket")}

@@ -27,7 +27,11 @@ import { useAuth } from "@/src/features/auth/auth-provider";
 import { Event } from "@/src/models/event";
 import { Order, OrderStatus } from "@/src/models/order";
 import { Ticket, TicketStatus } from "@/src/models/ticket";
-import { addDocToCollection, getEventById } from "@/src/lib/firebase/firestore";
+import {
+  addDocToCollection,
+  getDocumentById,
+  getEventById,
+} from "@/src/lib/firebase/firestore";
 import { eventDateTimeString } from "@/src/lib/utils/formatDate";
 import Loading from "@/src/components/ui/loading";
 import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
@@ -121,9 +125,38 @@ export default function CheckoutPage() {
     };
 
     await addDocToCollection("orders", order, orderId);
+
+    // Send order confirmation email
+    if (user.email) {
+      await sendOrderConfirmationEmail(user.email, orderId);
+    }
+
     // Navigate to confirmation page
     router.push(`/confirmation?orderNumber=${orderId}`);
   };
+
+  // Send order confirmation email
+  async function sendOrderConfirmationEmail(
+    email: string,
+    orderNumber: string
+  ) {
+    const order: Order = (await getDocumentById(
+      "orders",
+      orderNumber
+    )) as Order;
+
+    if (order && event) {
+      await fetch("/api/send-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "hadeel-4102@outlook.com", //TODO : replace
+          order: order,
+          event: event,
+        }),
+      });
+    }
+  }
 
   if (!eventId || !dateId || error) {
     return (

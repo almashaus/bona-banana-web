@@ -61,7 +61,7 @@ import {
 import { useToast } from "@/src/components/ui/use-toast";
 import useSWR, { mutate } from "swr";
 import Loading from "@/src/components/ui/loading";
-import { OrderResponse, OrderStatus } from "@/src/models/order";
+import { Order, OrderResponse, OrderStatus } from "@/src/models/order";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { getOrderStatusBadgeColor } from "@/src/lib/utils/styles";
 import { useIsMobile } from "@/src/hooks/use-mobile";
@@ -73,7 +73,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { updateDocument } from "@/src/lib/firebase/firestore";
+import { getDocumentById, updateDocument } from "@/src/lib/firebase/firestore";
+import { Event } from "@/src/models/event";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -189,7 +190,29 @@ export default function ReservationsPage() {
     });
   };
 
-  const handleResendTicket = (reservationId: string) => {
+  const handleResendTicket = async (reservationId: string) => {
+    const order: Order = (await getDocumentById(
+      "orders",
+      reservationId
+    )) as Order;
+
+    const event: Event = (await getDocumentById(
+      "events",
+      order.eventId
+    )) as Event;
+
+    if (order && event) {
+      await fetch("/api/send-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "hadeel-4102@outlook.com", //TODO : replace
+          order: order,
+          event: event,
+        }),
+      });
+    }
+
     toast({
       title: "Ticket Resent",
       description: "The ticket has been resent to the customer's email.",

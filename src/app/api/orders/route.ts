@@ -1,4 +1,3 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import {
   collection,
@@ -11,10 +10,7 @@ import {
 } from "firebase/firestore";
 import { OrderResponse } from "@/src/models/order";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export async function GET() {
   try {
     const eventsQuery = query(
       collection(db, "orders"),
@@ -57,10 +53,14 @@ export default async function handler(
         } as OrderResponse;
       })
     );
-
-    res.status(200).json(orders);
+    return new Response(JSON.stringify(orders), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ error: "Failed to fetch orders" });
+    return new Response(JSON.stringify({ error: "Failed to fetch orders" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
