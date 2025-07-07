@@ -27,7 +27,7 @@ export async function getEvents() {
     const querySnapshot = await getDocs(eventsQuery);
 
     const events = querySnapshot.docs.map((doc) => {
-      const data = formatEventsDates(doc.data(), false);
+      const data = formatEventsDates(doc.data(), true);
 
       return data as Event;
     });

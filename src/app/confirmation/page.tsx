@@ -17,6 +17,7 @@ import { Order } from "@/src/models/order";
 import Loading from "@/src/components/ui/loading";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
 
 export default function ConfirmationPage() {
   const [event, setEvent] = useState<Event | null>(null);
@@ -29,6 +30,7 @@ export default function ConfirmationPage() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("orderNumber");
   const cardRef = useRef<HTMLDivElement>(null);
+  const dateId = useCheckoutStore((state) => state.eventDateId); // TODO: get DateId of the ticket
 
   useEffect(() => {
     if (!orderNumber) {
@@ -49,19 +51,19 @@ export default function ConfirmationPage() {
 
   useEffect(() => {
     if (data) {
+      console.log(data);
       setOrder(data as Order);
       setQuantity(data.tickets.length);
     }
   }, [data]);
 
   useEffect(() => {
+    console.log(eventCall.data);
     const eventData: Event = eventCall.data as Event;
     if (eventData && eventData.dates && eventData.dates.length > 0) {
       setEvent(eventData as Event);
 
-      const sDate = eventData.dates.find(
-        (item) => item.id === data?.tickets[0].eventDateId
-      )?.date!;
+      const sDate = eventData.dates.find((item) => item.id === dateId)?.date!;
       setDate(sDate);
     }
   }, [eventCall.data]);
@@ -161,13 +163,13 @@ export default function ConfirmationPage() {
 
             <div className="flex justify-center mb-4">
               <div className="text-center">
-                {order?.tickets?.map((ticket) => (
+                {order?.tickets?.map((ticketId) => (
                   <div
-                    key={ticket.id}
+                    key={ticketId}
                     className="flex flex-col items-center gap-1 mb-4"
                   >
                     <span className="text-sm text-muted-foreground">
-                      {ticket.id}
+                      {ticketId}
                     </span>
                     <div className="bg-white p-2 rounded-lg inline-block mb-2">
                       <img

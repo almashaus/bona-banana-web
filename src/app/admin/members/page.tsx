@@ -119,7 +119,10 @@ export default function membersPage() {
 
   useEffect(() => {
     if (usersCall.data) {
-      setUsers(usersCall.data as AppUser[]);
+      const filteredUsers = usersCall.data.filter(
+        (item) => !item.hasDashboardAccess
+      );
+      setUsers(filteredUsers as AppUser[]);
     }
   }, [usersCall.data]);
 

@@ -91,7 +91,7 @@ export default function CheckoutPage() {
 
     const orderId = generateIDNumber("ORDER");
 
-    const tickets: Ticket[] = [];
+    const tickets: string[] = [];
 
     for (let i = 0; i < quantity; i++) {
       const ticketId = generateIDNumber("TICKET");
@@ -106,7 +106,7 @@ export default function CheckoutPage() {
         status: TicketStatus.VALID,
         purchasePrice: event?.price || 0,
       };
-      tickets.push(ticket);
+      tickets.push(ticketId);
       await addDocToCollection("tickets", ticket, ticketId);
     }
 
@@ -153,6 +153,7 @@ export default function CheckoutPage() {
           email: "hadeel-4102@outlook.com", //TODO : replace
           order: order,
           event: event,
+          dateId: dateId,
         }),
       });
     }

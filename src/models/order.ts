@@ -20,7 +20,7 @@ export interface Order {
   paymentMethod: string;
 
   // Relations
-  tickets?: Ticket[];
+  tickets?: string[];
 }
 
 export interface OrderResponse {

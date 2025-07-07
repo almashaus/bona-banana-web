@@ -1,4 +1,5 @@
 import { OrderStatus } from "@/src/models/order";
+import { TicketStatus } from "@/src/models/ticket";
 import { MemberRole, MemberStatus } from "@/src/models/user";
 
 export const getRoleBadgeColor = (role: string) => {
@@ -41,5 +42,18 @@ export const getOrderStatusBadgeColor = (status: string) => {
       return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
     default:
       return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+  }
+};
+
+export const getTicketStatusBadgeColor = (status: string) => {
+  switch (status) {
+    case TicketStatus.VALID:
+      return "bg-green-100 text-green-800";
+    case TicketStatus.USED:
+      return "bg-blue-100 text-blue-800";
+    case TicketStatus.CANCELLED:
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
   }
 };

@@ -11,9 +11,8 @@ import {
   Check,
   Calendar,
   CreditCard,
-  Phone,
   User,
-  Ticket,
+  TicketIcon,
   QrCode,
   CheckCircle,
   Settings2,
@@ -73,14 +72,20 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { getDocumentById, updateDocument } from "@/src/lib/firebase/firestore";
+import {
+  getAllDocuments,
+  getDocumentById,
+  updateDocument,
+} from "@/src/lib/firebase/firestore";
 import { Event } from "@/src/models/event";
+import { Ticket } from "@/src/models/ticket";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ReservationsPage() {
   const { toast } = useToast();
   const [reservations, setReservations] = useState<OrderResponse[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -93,6 +98,17 @@ export default function ReservationsPage() {
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
   const { data: orders, error, isLoading } = useSWR("/api/orders", fetcher);
+
+  const {
+    data: ticketsData,
+    error: ticketsError,
+    isLoading: isTicketsLoading,
+  } = useSWR("tickets", () => getAllDocuments("tickets"), {
+    // TODO: remove getting all tickets + remove "onSuccess"
+    onSuccess: (fetchedData) => {
+      setTickets(fetchedData as Ticket[]);
+    },
+  });
 
   useEffect(() => {
     // Filter reservations
@@ -122,21 +138,6 @@ export default function ReservationsPage() {
 
     setReservations(filteredReservations as OrderResponse[]);
   }, [orders, searchTerm, eventFilter, statusFilter, paymentMethodFilter]);
-
-  const getPaymentMethodIcon = (method: string) => {
-    switch (method) {
-      case "Visa":
-        return <CreditCard className="h-4 w-4" />;
-      case "Apple Pay":
-        return <Phone className="h-4 w-4" />;
-      case "STC Pay":
-        return <Phone className="h-4 w-4" />;
-      case "Free":
-        return <Ticket className="h-4 w-4" />;
-      default:
-        return <CreditCard className="h-4 w-4" />;
-    }
-  };
 
   const copyOrderNumber = (orderNumber: string) => {
     navigator.clipboard.writeText(orderNumber);
@@ -209,6 +210,9 @@ export default function ReservationsPage() {
           email: "hadeel-4102@outlook.com", //TODO : replace
           order: order,
           event: event,
+          dateId: reservations.find(
+            (item) => order.tickets?.[0] === item.tickets[0].id
+          )?.tickets[0].eventDateId,
         }),
       });
     }
@@ -405,7 +409,8 @@ export default function ReservationsPage() {
                       <span className="text-sm">{order.paymentMethod}</span>
                     </TableCell>
                     <TableCell>
-                      {order.total} <span className="icon-saudi_riyal" />
+                      <span className="icon-saudi_riyal" />
+                      {order.total}
                     </TableCell>
                     <TableCell>
                       {formatDate(new Date(order.orderDate))}
@@ -472,7 +477,7 @@ export default function ReservationsPage() {
           {/* No results message */}
           {reservations?.length === 0 && (
             <div className="text-center py-8 bg-white rounded-b-md border-x border-b">
-              <Ticket className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">
                 No reservations found
               </h3>
@@ -617,9 +622,6 @@ export default function ReservationsPage() {
                         Payment Method
                       </Label>
                       <div className="flex items-center gap-2">
-                        {getPaymentMethodIcon(
-                          selectedReservation.paymentMethod
-                        )}
                         <span>{selectedReservation.paymentMethod}</span>
                       </div>
                     </div>
@@ -636,7 +638,9 @@ export default function ReservationsPage() {
                       <Label className="text-sm font-medium text-muted-foreground">
                         Order Date
                       </Label>
-                      <p>{formatDate(selectedReservation.orderDate)}</p>
+                      <p>
+                        {formatDate(new Date(selectedReservation.orderDate))}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -653,24 +657,27 @@ export default function ReservationsPage() {
                 <CardContent>
                   <div className="p-8 bg-muted rounded-lg">
                     <div className="flex items-center justify-center gap-6">
-                      {selectedReservation.tickets.map((ticket) => (
-                        <div className="flex flex-col items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            {ticket.id}
-                          </span>
-                          <div className="w-32 h-32 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mb-4">
-                            <Image
-                              src={"/images/qr-code.png"}
-                              alt="qr code"
-                              width={100}
-                              height={100}
-                            />
+                      {selectedReservation.tickets.map((t) => {
+                        const ticket = tickets.find(
+                          (item) => item.id === t.id
+                        )!;
+                        return (
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="text-sm text-muted-foreground">
+                              {ticket.id}
+                            </span>
+                            <div className="w-32 h-32 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                              <Image
+                                src={"/images/qr-code.png"}
+                                alt="qr code"
+                                width={100}
+                                height={100}
+                              />
+                            </div>
+                            <p className="font-mono text-sm">{ticket.qrCode}</p>
                           </div>
-                        </div>
-                      ))}
-                      <p className="font-mono text-sm">
-                        {selectedReservation.tickets[0].qrCode}
-                      </p>
+                        );
+                      })}
                     </div>
                   </div>
                 </CardContent>

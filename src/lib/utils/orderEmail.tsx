@@ -17,7 +17,11 @@ import { Event } from "@/src/models/event";
 
 const baseUrl = process.env.BASE_URL ? `https://${process.env.BASE_URL}` : "";
 
-export function OrderConfirmationEmail(order?: Order, event?: Event) {
+export function OrderConfirmationEmail(
+  order?: Order,
+  event?: Event,
+  dateId?: string
+) {
   if (!order || !event) return null;
 
   const quantity = order.tickets?.length || 1;
@@ -25,9 +29,7 @@ export function OrderConfirmationEmail(order?: Order, event?: Event) {
   const subtotal = total - total * 0.15;
   const fees = (total - subtotal).toFixed(2);
 
-  const eventDateObj = event.dates?.find(
-    (d) => d.id === order.tickets?.[0]?.eventDateId
-  );
+  const eventDateObj = event.dates?.find((d) => d.id === dateId);
 
   const eventDate = eventDateObj?.date
     ? new Date(eventDateObj.date)
@@ -96,20 +98,20 @@ export function OrderConfirmationEmail(order?: Order, event?: Event) {
           <Section style={{ padding: "24px" }}>
             <Text style={{ fontWeight: 700, fontSize: 20 }}>Tickets</Text>
             {order.tickets?.map((ticket) => (
-              <Row key={ticket.id} style={{ marginBottom: 24 }}>
+              <Row key={ticket} style={{ marginBottom: 24 }}>
                 <Column>
                   <Text style={ticketId}>
                     Ticket ID:{" "}
                     <span style={{ ...ticketId, fontWeight: 500 }}>
                       {" "}
-                      {ticket.id}{" "}
+                      {ticket}{" "}
                     </span>
                   </Text>
                 </Column>
                 <Column align="right">
                   {/* Placeholder QR code */}
                   <Img
-                    src={`${baseUrl}/api/qr?data=${ticket.id}`}
+                    src={`${baseUrl}/api/qr?data=${ticket}`}
                     alt="QR Code"
                     width="200"
                     height="200"

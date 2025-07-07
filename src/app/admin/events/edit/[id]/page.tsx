@@ -76,6 +76,7 @@ export default function EditEventPage() {
       startTime: new Date(),
       endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
+      availableTickets: 50,
       eventId: id as string,
     },
   ]);
@@ -126,6 +127,7 @@ export default function EditEventPage() {
       startTime: new Date(),
       endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
       capacity: 50,
+      availableTickets: 50,
       eventId: event?.id || "",
     };
     setEventDates([...eventDates, newDate]);

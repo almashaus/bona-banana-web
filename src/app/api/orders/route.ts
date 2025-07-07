@@ -7,6 +7,7 @@ import {
   orderBy,
   query,
   Timestamp,
+  where,
 } from "firebase/firestore";
 import { OrderResponse } from "@/src/models/order";
 
@@ -23,10 +24,14 @@ export async function GET() {
         const orderData = docData.data();
         const orderId = docData.id;
 
-        const ticket = orderData.tickets?.[0];
-        if (!ticket) return null;
+        const ticketsQuery = query(
+          collection(db, "tickets"),
+          where("orderId", "==", orderId)
+        );
+        const ticketsSnapshot = await getDocs(ticketsQuery);
+        const ticketData = ticketsSnapshot.docs.map((doc) => doc.data());
 
-        const userRef = doc(db, "users", ticket.userId);
+        const userRef = doc(db, "users", ticketData[0].userId);
         const userDoc = await getDoc(userRef);
         const userData = userDoc.exists() ? userDoc.data() : {};
 
@@ -42,13 +47,10 @@ export async function GET() {
             phone: userData?.phoneNumber || "-",
           },
           eventName: eventData?.title || "Unknown Event",
-          tickets: orderData.tickets,
+          tickets: ticketData,
           status: orderData.status,
           paymentMethod: orderData.paymentMethod,
-          total: orderData.tickets.reduce(
-            (sum: number, t: any) => sum + t.purchasePrice,
-            0
-          ),
+          total: orderData.totalAmount,
           orderDate: (orderData.orderDate as Timestamp).toDate(),
         } as OrderResponse;
       })

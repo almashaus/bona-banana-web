@@ -1,7 +1,7 @@
 export enum TicketStatus {
-  VALID = "valid",
-  USED = "used",
-  CANCELLED = "cancelled",
+  VALID = "Valid",
+  USED = "Used",
+  CANCELLED = "Cancelled",
 }
 
 export interface Ticket {

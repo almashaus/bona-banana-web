@@ -4,17 +4,55 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/src/components/ui/use-toast";
 import Link from "next/link";
-import { CalendarDays, ClockIcon, MapPin, PanelLeft, Plus } from "lucide-react";
+import {
+  CheckSquare,
+  ChevronDown,
+  ChevronUp,
+  Edit2,
+  MapPin,
+  PanelLeft,
+  Plus,
+  TicketIcon,
+  Trash,
+} from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/src/components/ui/collapsible";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
-import { Event } from "@/src/models/event";
+import { Event, EventDate } from "@/src/models/event";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
 import LoadingDots from "@/src/components/ui/loading-dots";
-import { deleteDocById, getEvents } from "@/src/lib/firebase/firestore";
+import {
+  deleteDocById,
+  getAllDocuments,
+  getEvents,
+  updateDocument,
+} from "@/src/lib/firebase/firestore";
 import Loading from "@/src/components/ui/loading";
 import { getStatusIcon } from "@/src/lib/utils/statusIcons";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
+import { Badge } from "@/src/components/ui/badge";
+import { Ticket, TicketStatus } from "@/src/models/ticket";
+import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
 
 export default function Events() {
   const { toast } = useToast();
@@ -24,12 +62,30 @@ export default function Events() {
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
-  const [events, setEvents] = useState<Event[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [openCollapsibleIds, setOpenCollapsibleIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [selectedEventDate, setSelectedEventDate] = useState<EventDate | null>(
+    null
+  );
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { data, error, isLoading } = useSWR("events", () => getEvents(), {
+  const {
+    data: events,
+    error,
+    isLoading,
+  } = useSWR("events", () => getEvents());
+
+  const {
+    data: ticketsData,
+    error: ticketsError,
+    isLoading: isTicketsLoading,
+  } = useSWR("tickets", () => getAllDocuments("tickets"), {
+    // TODO: remove tickets call
     onSuccess: (fetchedData) => {
-      setEvents(fetchedData);
+      setTickets(fetchedData as Ticket[]);
     },
   });
 
@@ -39,10 +95,7 @@ export default function Events() {
       const result = await deleteDocById("events", eventId);
 
       if (result) {
-        setEvents((prevEvents) =>
-          prevEvents.filter((event) => event.id !== eventId)
-        );
-
+        await mutate("events");
         toast({
           title: "✅ Event deleted",
           description: "Your event has been deleted successfully",
@@ -61,8 +114,20 @@ export default function Events() {
     }
   };
 
+  const handleViewDetails = (eventDate: EventDate) => {
+    setSelectedEventDate(eventDate);
+    setIsDialogOpen(true);
+  };
+
+  const handleValidToUsedTicket = async (ticketId: string) => {
+    try {
+      await updateDocument("tickets", ticketId, { status: TicketStatus.USED });
+      await mutate("tickets");
+    } catch (error) {}
+  };
+
   return (
-    <div className={` ${eventUrl && "container py-6"}`}>
+    <div className="container py-6">
       {eventUrl && (
         <div className="flex flex-row justify-between items-end md:items-center gap-4 mb-6">
           <div className="">
@@ -77,10 +142,13 @@ export default function Events() {
                 <PanelLeft />
               </Button>
             )}
-            <h1 className="text-3xl font-bold">Events</h1>
+            <h1 className="text-3xl font-bold">Events Management</h1>
+            <p className="text-muted-foreground">
+              Manage your events, edit details, or remove events
+            </p>
           </div>
 
-          <div className="">
+          <div>
             <Button asChild>
               <Link href="/admin/events/new">
                 <Plus className="me-2 h-4 w-4" />
@@ -91,7 +159,7 @@ export default function Events() {
         </div>
       )}
 
-      <div className={` bg-white rounded-lg ${eventUrl && "border p-6"}`}>
+      <div className={` bg-white rounded-lg ${eventUrl && "border"}`}>
         {isLoading && (
           <div className="flex justify-center items-center py-12">
             <Loading />
@@ -104,7 +172,7 @@ export default function Events() {
           </div>
         )}
 
-        {events.length === 0 && !isLoading && (
+        {events?.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
               No events available. Create your first event.
@@ -112,58 +180,205 @@ export default function Events() {
           </div>
         )}
 
-        {events.map((event: Event, index, array) => (
+        {events?.map((event: Event, index, array) => (
           <div
             key={event.id}
-            className={`flex items-center justify-between ${
-              index !== array.length - 1 && "border-b pb-4"
-            }  mb-4 `}
+            className={`${index !== array.length - 1 && "border-b pb-6"} p-5 mb-3 `}
           >
-            <div className="flex items-center gap-2 md:gap-4">
-              <div className="h-16 w-16 overflow-hidden rounded-md">
-                <img
-                  src={event.eventImage || "/no-image.svg"}
-                  alt={event.title}
-                  className="h-full w-full object-cover"
-                />
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-2 md:gap-4">
+                <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-md">
+                  <img
+                    src={event.eventImage || "/no-image.svg"}
+                    alt={event.title}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-lg">{event.title}</h3>
+                  </div>
+
+                  <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
+                    <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
+                    {event.location}
+                  </div>
+                  <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
+                    <span className="icon-saudi_riyal text-orangeColor" />
+                    {event.price}
+                  </div>
+                  <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
+                    {getStatusIcon(event.status)}
+                    {event.status}
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-lg">{event.title}</h3>
-                  {getStatusIcon(event.status)}
-                </div>
-                <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                  <CalendarDays className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                  {`${formatDate(event.dates[0].date)}`}
-                </div>
-                <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                  <ClockIcon className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                  {`${formatTime(event.dates[0].startTime)} - ${formatTime(
-                    event.dates[0].endTime
-                  )}`}
-                </div>
-                <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                  <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                  {event.location}
-                </div>
+              <div className="flex flex-col gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/admin/events/edit/${event.id}`}>
+                    <Edit2 className="h-3 w-3" /> Edit
+                  </Link>
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={isDeleting}
+                  onClick={() => deleteEvent(event.id)}
+                >
+                  {isDeleting ? (
+                    <LoadingDots />
+                  ) : (
+                    <>
+                      <Trash className="h-3 w-3" /> Delete
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/admin/events/edit/${event.id}`}>Edit</Link>
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={isDeleting}
-                onClick={() => deleteEvent(event.id)}
-              >
-                {isDeleting ? <LoadingDots /> : "Delete"}
-              </Button>
-            </div>
+            <Collapsible
+              open={openCollapsibleIds.has(event.id)}
+              onOpenChange={(open) => {
+                setOpenCollapsibleIds((prev) => {
+                  const newSet = new Set(prev);
+                  if (open) {
+                    newSet.add(event.id);
+                  } else {
+                    newSet.delete(event.id);
+                  }
+                  return newSet;
+                });
+              }}
+            >
+              <CollapsibleTrigger className="flex items-end mt-2 font-medium gap-1">
+                {openCollapsibleIds.has(event.id) ? (
+                  <ChevronUp />
+                ) : (
+                  <ChevronDown />
+                )}
+                <span> Dates & Tickets</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Start Time</TableHead>
+                        <TableHead>End Time</TableHead>
+                        <TableHead>Available Tickets</TableHead>
+                        <TableHead>Purchased Tickets</TableHead>
+                        <TableHead>View Tickets</TableHead>
+                      </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                      {event.dates?.map((data) => (
+                        <TableRow key={data.id}>
+                          <TableCell className="font-medium">
+                            {formatDate(data.date)}
+                          </TableCell>
+                          <TableCell>{formatTime(data.startTime)}</TableCell>
+                          <TableCell>{formatTime(data.endTime)}</TableCell>
+                          <TableCell>
+                            <Badge
+                              className={`${data.availableTickets < 5 ? "bg-orange-100 text-orange-600" : "bg-green-100 text-green-700"} pb-1`}
+                            >
+                              {data.availableTickets}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {data.capacity - data.availableTickets}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleViewDetails(data)}
+                            >
+                              <TicketIcon className="h-4 w-4 text-orangeColor" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         ))}
       </div>
+
+      {/* ----------- Tickets Dialog ----------- */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="bg-stone-100 max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Tickets List</DialogTitle>
+            <DialogDescription>
+              The complete information for tickets
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-white mt-2 rounded-md border">
+            {!tickets.find(
+              (ticket) => ticket.eventDateId === selectedEventDate?.id
+            ) ? (
+              <p className="text-center p-6">No tickets</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>QR Code</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Attend</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {tickets.map((ticket) => {
+                    if (ticket.eventDateId === selectedEventDate?.id)
+                      return (
+                        <TableRow key={ticket.id}>
+                          <TableCell className="font-medium">
+                            {ticket.id}
+                          </TableCell>
+                          <TableCell>
+                            <div className="bg-white p-2 rounded-lg inline-block mb-2">
+                              <img
+                                src="/images/qr-code.png"
+                                alt="QR Code"
+                                className="w-20 h-20"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={`${getTicketStatusBadgeColor(ticket.status)}`}
+                            >
+                              {ticket.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                ticket.status === TicketStatus.VALID &&
+                                handleValidToUsedTicket(ticket.id)
+                              }
+                            >
+                              <CheckSquare className="h-4 w-4 text-green-600" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
