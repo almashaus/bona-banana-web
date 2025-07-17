@@ -5,9 +5,11 @@ import { useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/src/components/ui/use-toast";
 import Link from "next/link";
 import {
+  Check,
   CheckSquare,
   ChevronDown,
   ChevronUp,
+  CircleAlertIcon,
   Edit2,
   MapPin,
   PanelLeft,
@@ -39,12 +41,6 @@ import { Button } from "@/src/components/ui/button";
 import { Event, EventDate } from "@/src/models/event";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
 import LoadingDots from "@/src/components/ui/loading-dots";
-import {
-  deleteDocById,
-  getAllDocuments,
-  getEvents,
-  updateDocument,
-} from "@/src/lib/firebase/firestore";
 import Loading from "@/src/components/ui/loading";
 import { getStatusIcon } from "@/src/lib/utils/statusIcons";
 import useSWR, { mutate } from "swr";
@@ -53,16 +49,21 @@ import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
 import { Badge } from "@/src/components/ui/badge";
 import { Ticket, TicketStatus } from "@/src/models/ticket";
 import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
+import { getAuth } from "firebase/auth";
 
 export default function Events() {
   const { toast } = useToast();
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
   const router = useRouter();
   const pathname = usePathname();
   const eventUrl = pathname?.includes("/events");
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
+  const [events, setEvents] = useState<Event[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isValidtion, setIsValidtion] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [openCollapsibleIds, setOpenCollapsibleIds] = useState<Set<string>>(
     () => new Set()
@@ -72,30 +73,35 @@ export default function Events() {
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const {
-    data: events,
-    error,
-    isLoading,
-  } = useSWR("events", () => getEvents());
+  interface Response {
+    events: Event[];
+    tickets: Ticket[];
+  }
 
-  const {
-    data: ticketsData,
-    error: ticketsError,
-    isLoading: isTicketsLoading,
-  } = useSWR("tickets", () => getAllDocuments("tickets"), {
-    // TODO: remove tickets call
-    onSuccess: (fetchedData) => {
-      setTickets(fetchedData as Ticket[]);
-    },
-  });
+  const { data, error, isLoading } = useSWR<Response>("/api/admin/events");
+
+  useEffect(() => {
+    if (data) {
+      setEvents(data.events);
+      setTickets(data.tickets);
+    }
+  }, [data]);
 
   const deleteEvent = async (eventId: string) => {
     try {
       setIsDeleting(true);
-      const result = await deleteDocById("events", eventId);
 
-      if (result) {
-        await mutate("events");
+      const idToken = await authUser.getIdToken();
+      const response = await fetch(`/api/admin/events?eventId=${eventId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      if (response.ok) {
+        await mutate("/api/admin/events");
         toast({
           title: "✅ Event deleted",
           description: "Your event has been deleted successfully",
@@ -121,9 +127,33 @@ export default function Events() {
 
   const handleValidToUsedTicket = async (ticketId: string) => {
     try {
-      await updateDocument("tickets", ticketId, { status: TicketStatus.USED });
-      await mutate("tickets");
-    } catch (error) {}
+      setIsValidtion(true);
+      const idToken = await authUser.getIdToken();
+
+      const response = await fetch("/api/admin/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          id: ticketId,
+          data: { status: TicketStatus.USED },
+        }),
+      });
+
+      if (response.ok) {
+        await mutate("/api/admin/events");
+      }
+    } catch (error) {
+      toast({
+        title: "⚠️ Error",
+        description: "Failed to validate the ticket. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidtion(false);
+    }
   };
 
   return (
@@ -168,12 +198,23 @@ export default function Events() {
 
         {error && (
           <div className="text-red-500 text-center py-12">
-            <p>{error}</p>
+            <p>
+              {typeof error === "string"
+                ? error
+                : error instanceof Error
+                  ? error.message
+                  : "An error occurred."}
+            </p>
           </div>
         )}
 
         {events?.length === 0 && !isLoading && (
           <div className="text-center py-12">
+            <CircleAlertIcon
+              strokeWidth={1.25}
+              className="mx-auto h-12 w-12 text-muted-foreground mb-4"
+            />
+
             <p className="text-muted-foreground">
               No events available. Create your first event.
             </p>
@@ -355,20 +396,25 @@ export default function Events() {
                             <Badge
                               className={`${getTicketStatusBadgeColor(ticket.status)}`}
                             >
-                              {ticket.status}
+                              {isValidtion ? "....." : ticket.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                ticket.status === TicketStatus.VALID &&
-                                handleValidToUsedTicket(ticket.id)
-                              }
-                            >
-                              <CheckSquare className="h-4 w-4 text-green-600" />
-                            </Button>
+                            {ticket.status === TicketStatus.VALID ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  handleValidToUsedTicket(ticket.id)
+                                }
+                              >
+                                <CheckSquare className="h-4 w-4 text-green-600" />
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="icon" disabled>
+                                <Check className="h-4 w-4 text-gray-600" />
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );

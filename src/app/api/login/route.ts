@@ -7,7 +7,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
     const { member } = body;
 
     if (!member) {
-      return new Response(JSON.stringify({ error: "Missing member" }), {
+      return new Response(JSON.stringify({ data: "Missing member" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: "" }), {
+    return new Response(JSON.stringify({ data: "Error" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });

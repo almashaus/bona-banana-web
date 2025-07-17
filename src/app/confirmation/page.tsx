@@ -9,7 +9,6 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
 import { generateQRCode } from "@/src/lib/utils/utils";
 import { formatDate } from "@/src/lib/utils/formatDate";
-import { getDocumentById, getEventById } from "@/src/lib/firebase/firestore";
 import { Event } from "@/src/models/event";
 import useSWR from "swr";
 import { useLanguage } from "@/src/components/i18n/language-provider";
@@ -17,7 +16,7 @@ import { Order } from "@/src/models/order";
 import Loading from "@/src/components/ui/loading";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
+import { Ticket } from "@/src/models/ticket";
 
 export default function ConfirmationPage() {
   const [event, setEvent] = useState<Event | null>(null);
@@ -30,7 +29,6 @@ export default function ConfirmationPage() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("orderNumber");
   const cardRef = useRef<HTMLDivElement>(null);
-  const dateId = useCheckoutStore((state) => state.eventDateId); // TODO: get DateId of the ticket
 
   useEffect(() => {
     if (!orderNumber) {
@@ -38,35 +36,32 @@ export default function ConfirmationPage() {
     }
   }, [orderNumber, router]);
 
-  const { data, error, isLoading } = useSWR(
-    orderNumber ? ["order", orderNumber] : null,
-    () => getDocumentById("orders", orderNumber as string)
-  );
+  interface Response {
+    order: Order;
+    event: Event;
+    tickets: Ticket[];
+  }
 
-  // Get eventId from order `data`
-  const eventId = data?.eventId;
-  const eventCall = useSWR(eventId ? ["event", eventId] : null, () =>
-    getEventById(eventId as string)
+  const { data, error, isLoading } = useSWR<Response>(
+    `/api/order?orderNumber=${orderNumber}`
   );
 
   useEffect(() => {
     if (data) {
-      console.log(data);
-      setOrder(data as Order);
-      setQuantity(data.tickets.length);
+      setOrder(data.order as Order);
+      setQuantity(data.order.tickets.length);
+
+      const eventData: Event = data.event as Event;
+      if (eventData && eventData.dates && eventData.dates.length > 0) {
+        setEvent(eventData as Event);
+
+        const sDate = eventData.dates.find(
+          (item) => item.id === data.tickets[0].eventDateId
+        )?.date!;
+        setDate(sDate);
+      }
     }
   }, [data]);
-
-  useEffect(() => {
-    console.log(eventCall.data);
-    const eventData: Event = eventCall.data as Event;
-    if (eventData && eventData.dates && eventData.dates.length > 0) {
-      setEvent(eventData as Event);
-
-      const sDate = eventData.dates.find((item) => item.id === dateId)?.date!;
-      setDate(sDate);
-    }
-  }, [eventCall.data]);
 
   // Download PDF handler
   const handleDownloadPDF = async () => {

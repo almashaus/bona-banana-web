@@ -3,20 +3,17 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
-import { Event, EventStatus } from "@/src/models/event";
+import { Event } from "@/src/models/event";
 import Loading from "@/src/components/ui/loading";
 import { CalendarDays, ClockIcon } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/src/components/ui/card";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
-import { getEventsByStatus } from "@/src/lib/firebase/firestore";
 import useSWR from "swr";
 import { useLanguage } from "@/src/components/i18n/language-provider";
 
 export default function Home() {
   const { t } = useLanguage();
-  const { data, error, isLoading } = useSWR("publishedEvents", () =>
-    getEventsByStatus(EventStatus.PUBLISHED)
-  );
+  const { data, error, isLoading } = useSWR<Event[]>("/api/published-events");
 
   return (
     <div className="flex flex-col min-h-screen ">
@@ -53,14 +50,14 @@ export default function Home() {
               <Loading />
             </div>
           )}
-          {data && (
+          {data && data?.length > 0 && (
             <div>
               <div className="flex justify-center">
                 <EventsList allEvents={data} />
               </div>
               <div className="flex justify-center ">
                 <Button asChild>
-                  <Link href="/">View All Events</Link>
+                  <Link href="/"> {t("home.allEvents")}</Link>
                 </Button>
               </div>
             </div>

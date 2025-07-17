@@ -7,37 +7,8 @@ import Footer from "@/src/components/layout/footer";
 import { Toaster } from "@/src/components/ui/toaster";
 import { AuthProvider } from "@/src/features/auth/auth-provider";
 import { LanguageProvider } from "@/src/components/i18n/language-provider";
-
-const DINNextLT = localFont({
-  src: [
-    {
-      path: "../../public/font/din-next-lt/DINNextLTArabic-UltraLight.ttf",
-      weight: "200",
-      style: "normal",
-    },
-    {
-      path: "../../public/font/din-next-lt/DINNextLTArabic-Light.ttf",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "../../public/font/din-next-lt/DINNextLTArabic-Regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../../public/font/din-next-lt/DINNextLTArabic-Medium.ttf",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../../public/font/din-next-lt/DINNextLTArabic-Bold.ttf",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-custom",
-});
+import { MySWRProvider } from "@/src/features/context/swr-provider";
+import { DINNextLT } from "../styles/fonts";
 
 export const metadata: Metadata = {
   title: "Bona Banana",
@@ -56,14 +27,16 @@ export default function RootLayout({
       </head>
       <body className={DINNextLT.className}>
         <AuthProvider>
-          <LanguageProvider>
-            <div className="flex flex-col min-h-screen min-w-full">
-              <Header />
-              <main className="flex-grow pt-16">{children}</main>
-              <Footer />
-            </div>
-            <Toaster />
-          </LanguageProvider>
+          <MySWRProvider>
+            <LanguageProvider>
+              <div className="flex flex-col min-h-screen min-w-full">
+                <Header />
+                <main className="flex-grow pt-16">{children}</main>
+                <Footer />
+              </div>
+              <Toaster />
+            </LanguageProvider>
+          </MySWRProvider>
         </AuthProvider>
       </body>
     </html>

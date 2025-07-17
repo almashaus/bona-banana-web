@@ -35,7 +35,6 @@ export const sidebarData: Item[] = [
     title: "Reservations",
     url: "/admin/reservations",
     icon: Ticket,
-    notifications: 2,
   },
   {
     title: "Customers",

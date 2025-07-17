@@ -8,16 +8,15 @@ import {
   Plus,
   Eye,
   Edit,
-  Shield,
   UserX,
   Trash2,
-  User,
   Upload,
   Settings2,
   PanelLeft,
   UserCheck,
   UserPlus,
   UserPen,
+  CircleAlertIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -52,11 +51,6 @@ import {
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
-import {
-  getAllDocuments,
-  getUsersWithDashboardAccess,
-  updateDocument,
-} from "@/src/lib/firebase/firestore";
 import useSWR, { mutate } from "swr";
 import { AppUser, MemberStatus } from "@/src/models/user";
 import Loading from "@/src/components/ui/loading";
@@ -71,12 +65,13 @@ import {
   DialogFooter,
   DialogDescription,
   DialogClose,
-  DialogTrigger,
 } from "@/src/components/ui/dialog";
-import { DocumentData } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 export default function membersPage() {
   const { user } = useAuth();
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
   const router = useRouter();
   const { toast } = useToast();
   const [members, setMembers] = useState<AppUser[]>([]);
@@ -90,91 +85,112 @@ export default function membersPage() {
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
-  const { data, error, isLoading } = useSWR<AppUser[]>("members", () =>
-    getUsersWithDashboardAccess()
-  );
+  interface Response {
+    members: AppUser[];
+    users: AppUser[];
+  }
 
-  const usersCall = useSWR<DocumentData[]>("users", () =>
-    getAllDocuments("users")
-  );
+  const { data, error, isLoading } = useSWR<Response>("/api/admin/members");
 
   // Filter members based on search and filters
   useEffect(() => {
     if (data) {
-      const filteredData = data.filter((user) => {
+      const filteredData = data.members.filter((member) => {
         const matchesSearch =
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase());
+          member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          member.email.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesRole =
-          roleFilter === "all" || user.dashboard?.role === roleFilter;
+          roleFilter === "all" || member.dashboard?.role === roleFilter;
         const matchesStatus =
-          statusFilter === "all" || user.dashboard?.status === statusFilter;
+          statusFilter === "all" || member.dashboard?.status === statusFilter;
 
         return matchesSearch && matchesRole && matchesStatus;
       });
       setMembers(filteredData);
-    }
-  }, [data, searchTerm, roleFilter, statusFilter]);
 
-  useEffect(() => {
-    if (usersCall.data) {
-      const filteredUsers = usersCall.data.filter(
-        (item) => !item.hasDashboardAccess
+      const filteredUsers = data.users.filter(
+        (user) => !user.hasDashboardAccess
       );
       setUsers(filteredUsers as AppUser[]);
     }
-  }, [usersCall.data]);
+  }, [data, searchTerm, roleFilter, statusFilter]);
 
   // Handle user suspension/activation
   const handleSuspendUser = async (userId: string) => {
-    const dashboard = data?.find((u) => u.id === userId)?.dashboard;
+    const dashboard = data?.members?.find((u) => u.id === userId)?.dashboard;
 
-    await updateDocument("users", userId, {
-      dashboard: {
-        ...dashboard,
-        status:
-          dashboard?.status === MemberStatus.ACTIVE
-            ? MemberStatus.SUSPENDED
-            : MemberStatus.ACTIVE,
+    const idToken = await authUser.getIdToken();
+
+    const response = await fetch("/api/admin/members", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
       },
+      body: JSON.stringify({
+        id: userId,
+        data: {
+          dashboard: {
+            ...dashboard,
+            status:
+              dashboard?.status === MemberStatus.ACTIVE
+                ? MemberStatus.SUSPENDED
+                : MemberStatus.ACTIVE,
+          },
+        },
+      }),
     });
 
-    // Revalidate SWR data
-    await mutate("members");
+    if (response.ok) {
+      await mutate("/api/admin/members");
 
-    const user = data?.find((u) => u.id === userId);
-    const action =
-      user?.dashboard?.status === MemberStatus.ACTIVE
-        ? "suspended"
-        : "activated";
+      const user = data?.members.find((u) => u.id === userId);
+      const action =
+        user?.dashboard?.status === MemberStatus.ACTIVE
+          ? "suspended"
+          : "activated";
 
-    toast({
-      title: `User ${action}`,
-      description: `${user?.name} has been ${action} successfully.`,
-      variant: "success",
-    });
+      toast({
+        title: `User ${action}`,
+        description: `${user?.name} has been ${action} successfully.`,
+        variant: "success",
+      });
+    }
   };
 
   // Handle user removing
   const handleRemoveUser = async (userId: string) => {
     try {
-      const user = data?.find((u) => u.id === userId);
-      setMembers(data!.filter((u) => u.id !== userId));
+      const user = data?.members.find((u) => u.id === userId);
+      setMembers(data!.members.filter((u) => u.id !== userId));
 
-      await updateDocument("users", userId, {
-        hasDashboardAccess: false,
-        dashboard: null,
+      const idToken = await authUser.getIdToken();
+
+      const response = await fetch("/api/admin/members", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          id: userId,
+          data: {
+            hasDashboardAccess: false,
+            dashboard: null,
+          },
+        }),
       });
 
-      // Revalidate SWR data
-      await mutate("members");
+      if (response.ok) {
+        await mutate("/api/admin/members");
 
-      toast({
-        title: "User removed",
-        description: `${user?.name} has been removed successfully.`,
-        variant: "success",
-      });
+        toast({
+          title: "User removed",
+          description: `${user?.name} has been removed successfully.`,
+          variant: "success",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error removing user",
@@ -192,22 +208,34 @@ export default function membersPage() {
       setIsConverting(true);
       const user = users?.find((u) => u.email === email);
 
-      await updateDocument("users", user?.id!, { hasDashboardAccess: true });
+      const idToken = await authUser.getIdToken();
+
+      const response = await fetch("/api/admin/members/new", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          id: user?.id!,
+          data: { hasDashboardAccess: true },
+        }),
+      });
 
       //wait for the user to be updated in Firestore
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (response.ok) {
+        setConvertDialogOpen(false);
+        // Revalidate SWR data
+        await mutate("/api/admin/members");
+        setEmail("");
 
-      setConvertDialogOpen(false);
-      // Revalidate SWR data
-      await mutate("members");
-      await mutate("users");
-      setEmail("");
-
-      toast({
-        title: "User Converted",
-        description: `${user?.name} has been converted successfully.`,
-        variant: "success",
-      });
+        toast({
+          title: "User Converted",
+          description: `${user?.name} has been converted successfully.`,
+          variant: "success",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error converting user",
@@ -282,7 +310,7 @@ export default function membersPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 my-4">
-            {users && users.length > 0 && !usersCall.isLoading && (
+            {users && users.length > 0 && !isLoading && (
               <Select value={email} onValueChange={setEmail}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Emails" />
@@ -448,6 +476,7 @@ export default function membersPage() {
                           <Settings2 className="h-4 w-4 text-orangeColor" />
                         </Button>
                       </DropdownMenuTrigger>
+
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/members/${member.id}`}>
@@ -455,26 +484,20 @@ export default function membersPage() {
                             View Profile
                           </Link>
                         </DropdownMenuItem>
+
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/members/${member.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Member
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/admin/members/${member.id}/permissions`}
-                          >
-                            <Shield className="mr-2 h-4 w-4" />
-                            Permissions
-                          </Link>
-                        </DropdownMenuItem>
+
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleSuspendUser(member.id)}
                           className={
                             member.dashboard?.status === "Active"
-                              ? "text-orange-600"
+                              ? "text-orange-500"
                               : "text-green-600"
                           }
                         >
@@ -514,7 +537,10 @@ export default function membersPage() {
       {/* No results message */}
       {members?.length === 0 && !isLoading && (
         <div className="text-center py-8 bg-white rounded-b-md border-x border-b">
-          <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <CircleAlertIcon
+            strokeWidth={1.25}
+            className="mx-auto h-12 w-12 text-muted-foreground mb-4"
+          />
           <h3 className="text-lg font-semibold mb-2">No members found</h3>
           <p className="text-muted-foreground mb-4">
             Try adjusting your search or filter criteria.

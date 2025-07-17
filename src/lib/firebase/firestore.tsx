@@ -33,21 +33,21 @@ export async function getEvents() {
     });
     return events;
   } catch (error) {
-    throw new Error("Error getting data!");
+    throw new Error(`${error}`);
   }
 }
 
-export async function getEventsByStatus(status: string) {
+export async function getEventsByStatus(status: EventStatus) {
   try {
     const eventsQuery = query(
       collection(db, "events"),
-      where("status", "==", status as EventStatus),
+      where("status", "==", status),
       orderBy("updatedAt", "desc")
     );
     const querySnapshot = await getDocs(eventsQuery);
 
     const events = querySnapshot.docs.map((doc) => {
-      const data = formatEventsDates(doc.data(), false);
+      const data = formatEventsDates(doc.data(), true);
 
       return data as Event;
     });
@@ -63,15 +63,9 @@ export const getAllDocuments = async (
 ): Promise<DocumentData[]> => {
   try {
     const querySnapshot = await getDocs(collection(db, collectionName));
-    if (querySnapshot.empty) {
-      throw new Error("No documents found in the collection!");
-    }
 
     const documents = querySnapshot.docs.map((doc) => {
-      if (doc.exists()) {
-        return doc.data();
-      }
-      throw new Error("No such data!");
+      return doc.data();
     });
 
     return documents;
@@ -93,7 +87,7 @@ export const getEventById = async (docId: string) => {
       throw new Error("No such data!");
     }
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("Error:", error);
     throw new Error("Error fetching data!");
   }
 };

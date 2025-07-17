@@ -37,7 +37,6 @@ import {
 import { Event } from "@/src/models/event";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
-import { getEventById } from "@/src/lib/firebase/firestore";
 import Loading from "@/src/components/ui/loading";
 import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
 import useSWR from "swr";
@@ -57,9 +56,7 @@ export default function EventPage() {
   const params = useParams<{ id: string }>();
   const id: string = params?.id!;
 
-  const { data, error, isLoading } = useSWR(id ? ["event", id] : null, () =>
-    getEventById(id as string)
-  );
+  const { data, error, isLoading } = useSWR<Event>(`/api/events/${id}`);
 
   useEffect(() => {
     const eventData: Event = data as Event;
@@ -72,7 +69,7 @@ export default function EventPage() {
   const handleBuyTicket = () => {
     // Set event details in the checkout store
     useCheckoutStore.setState((state) => ({
-      eventId: event?.id,
+      event: event,
       eventDateId: selectedDate.split("-")[0],
       quantity: quantity,
     }));
@@ -158,12 +155,12 @@ export default function EventPage() {
                     {selectedDate
                       ? `${selectedDate.split("-")[1]}`
                       : event.dates && event.dates.length > 0
-                      ? event.dates.length > 1
-                        ? `${formatDate(event.dates[0].date)} - ${formatDate(
-                            event.dates[event.dates.length - 1].date
-                          )}`
-                        : `${formatDate(event.dates[0].date)}`
-                      : t("event.noDatesAvailable") || "No dates available"}
+                        ? event.dates.length > 1
+                          ? `${formatDate(event.dates[0].date)} - ${formatDate(
+                              event.dates[event.dates.length - 1].date
+                            )}`
+                          : `${formatDate(event.dates[0].date)}`
+                        : t("event.noDatesAvailable") || "No dates available"}
                   </p>
                 </div>
               </div>
@@ -177,10 +174,10 @@ export default function EventPage() {
                           selectedDate.split("-")[3]
                         }`
                       : event.dates && event.dates.length > 0
-                      ? `${formatTime(event.dates[0].startTime)} - ${formatTime(
-                          event.dates[0].endTime
-                        )}`
-                      : t("event.noTimesAvailable") || "No times available"}
+                        ? `${formatTime(event.dates[0].startTime)} - ${formatTime(
+                            event.dates[0].endTime
+                          )}`
+                        : t("event.noTimesAvailable") || "No times available"}
                   </p>
                 </div>
               </div>

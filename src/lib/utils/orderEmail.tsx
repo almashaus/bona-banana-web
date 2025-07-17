@@ -14,35 +14,34 @@ import {
 import type * as React from "react";
 import { Order } from "@/src/models/order";
 import { Event } from "@/src/models/event";
+import { Ticket } from "@/src/models/ticket";
 
 const baseUrl = process.env.BASE_URL ? `https://${process.env.BASE_URL}` : "";
 
 export function OrderConfirmationEmail(
   order?: Order,
-  event?: Event,
-  dateId?: string
+  tickets?: Ticket[],
+  event?: Event
 ) {
-  if (!order || !event) return null;
+  if (!order || !tickets || !event) return null;
 
   const quantity = order.tickets?.length || 1;
   const total = (event.price || 0) * quantity;
   const subtotal = total - total * 0.15;
   const fees = (total - subtotal).toFixed(2);
 
-  const eventDateObj = event.dates?.find((d) => d.id === dateId);
+  const eventDateObj = event.dates?.find(
+    (d) => d.id === tickets[0].eventDateId
+  );
 
-  const eventDate = eventDateObj?.date
-    ? new Date(eventDateObj.date)
-    : undefined;
+  const eventDate = new Date(eventDateObj!.date);
 
-  const formatDate = (date: Date | undefined) =>
-    date
-      ? date.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })
-      : "";
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
   return (
     <Html>
@@ -97,21 +96,21 @@ export function OrderConfirmationEmail(
 
           <Section style={{ padding: "24px" }}>
             <Text style={{ fontWeight: 700, fontSize: 20 }}>Tickets</Text>
-            {order.tickets?.map((ticket) => (
-              <Row key={ticket} style={{ marginBottom: 24 }}>
+            {tickets.map((ticket) => (
+              <Row key={ticket.id} style={{ marginBottom: 24 }}>
                 <Column>
                   <Text style={ticketId}>
                     Ticket ID:{" "}
                     <span style={{ ...ticketId, fontWeight: 500 }}>
                       {" "}
-                      {ticket}{" "}
+                      {ticket.id}{" "}
                     </span>
                   </Text>
                 </Column>
                 <Column align="right">
                   {/* Placeholder QR code */}
                   <Img
-                    src={`${baseUrl}/api/qr?data=${ticket}`}
+                    src={`${baseUrl}/api/qr?data=${ticket.id}`}
                     alt="QR Code"
                     width="200"
                     height="200"

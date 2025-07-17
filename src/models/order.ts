@@ -1,5 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 import { Ticket } from "./ticket";
+import { Event } from "./event";
 
 export enum OrderStatus {
   PENDING = "Pending",
@@ -18,9 +19,7 @@ export interface Order {
   promoCodeId: string | null; // foreign key to PromoCode, nullable
   discountAmount: number;
   paymentMethod: string;
-
-  // Relations
-  tickets?: string[];
+  tickets: string[];
 }
 
 export interface OrderResponse {
@@ -30,7 +29,7 @@ export interface OrderResponse {
     email: string;
     phone: string;
   };
-  eventName: string;
+  event: Event;
   tickets: Ticket[];
   status: string;
   paymentMethod: string;

@@ -19,10 +19,8 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { useAuth } from "@/src/features/auth/auth-provider";
-import { getEvents } from "@/src/lib/firebase/firestore";
 import { useToast } from "@/src/components/ui/use-toast";
 import UsersPage from "./members/page";
-import Events from "./events/page";
 import useSWR from "swr";
 import { PanelLeft } from "lucide-react";
 import { useIsMobile } from "@/src/hooks/use-mobile";
@@ -35,7 +33,11 @@ export default function AdminPage() {
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
-  const { data, error, isLoading } = useSWR("events", () => getEvents());
+  interface Response {
+    events: Event[];
+  }
+
+  const { data, error, isLoading } = useSWR<Response>("/api/admin/events");
 
   return (
     <div className="container py-6">
@@ -62,7 +64,7 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "..." : data?.length ?? 0}
+              {isLoading ? "..." : (data?.events.length ?? 0)}
             </div>
             <p className="text-xs text-muted-foreground">+2 from last month</p>
           </CardContent>
@@ -124,7 +126,7 @@ export default function AdminPage() {
             </CardHeader>
 
             <CardContent>
-              <Events />
+              {/* <Events /> */}
               <div className="flex justify-center ">
                 <Button asChild>
                   <Link href="/admin/events">View All Events</Link>

@@ -1,8 +1,9 @@
+import { Event } from "@/src/models/event";
 import { create } from "zustand";
 
 interface CheckoutStore {
-  eventId: string;
-  setEventId: (id: string) => void;
+  event: Event | null;
+  setEvent: (id: Event) => void;
   eventDateId: string;
   setEventDateId: (id: string) => void;
   quantity: number;
@@ -10,8 +11,8 @@ interface CheckoutStore {
 }
 
 export const useCheckoutStore = create<CheckoutStore>((set) => ({
-  eventId: "",
-  setEventId: (id: string) => set({ eventId: id }),
+  event: null,
+  setEvent: (e: Event) => set({ event: e }),
   eventDateId: "",
   setEventDateId: (id: string) => set({ eventDateId: id }),
   quantity: 0,

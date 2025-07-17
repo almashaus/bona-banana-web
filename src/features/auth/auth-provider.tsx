@@ -25,9 +25,7 @@ import {
   addDocToCollection,
   getDocumentById,
 } from "@/src/lib/firebase/firestore";
-import { httpsCallable } from "firebase/functions";
 import type { AppUser } from "@/src/models/user";
-import axios from "axios";
 import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 
 type AuthContextType = {
@@ -35,7 +33,7 @@ type AuthContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  registerMember: (memebr: AppUser, password: string) => Promise<void>;
+
   logout: () => void;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -107,7 +105,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (appUser) {
         if (appUser.hasDashboardAccess) {
-          await axios.post("/api/login", { member: "true" });
+          await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ member: "true" }),
+          });
         }
       }
     } catch {
@@ -146,32 +148,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [mapFirebaseUserToAppUser]
   );
 
-  const registerMember = useCallback(
-    async (member: AppUser, password: string) => {
-      setLoading(true);
-      try {
-        const createMemberFn = httpsCallable(functions, "createNewMember");
+  // const registerMember = useCallback(
+  //   async (member: AppUser, password: string) => {
+  //     setLoading(true);
+  //     try {
+  //       const createMemberFn = httpsCallable(functions, "createNewMember");
 
-        const result = await createMemberFn({
-          email: member.email,
-          password: password,
-          member: member,
-        });
+  //       const result = await createMemberFn({
+  //         email: member.email,
+  //         password: password,
+  //         member: member,
+  //       });
 
-        const typedResult = result as { data: { success: boolean } };
+  //       const typedResult = result as { data: { success: boolean } };
 
-        if (!typedResult.data.success) {
-          throw new Error("Registration failed");
-        }
-      } catch (error) {
-        console.error(error);
-        throw new Error("Registration failed");
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  //       if (!typedResult.data.success) {
+  //         throw new Error("Registration failed");
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //       throw new Error("Registration failed");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   },
+  //   []
+  // );
 
   const logout = useCallback(() => {
     signOut(auth)
@@ -227,7 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         login,
         register,
-        registerMember,
+
         logout,
         signInWithGoogle,
         resetPassword,

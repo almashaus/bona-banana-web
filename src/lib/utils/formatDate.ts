@@ -2,7 +2,7 @@ import { DocumentData, Timestamp } from "firebase/firestore";
 import { Event, EventDate } from "@/src/models/event";
 
 export function formatDate(date: Date): string {
-  return date.toLocaleString("en-UK", {
+  return new Date(date).toLocaleString("en-UK", {
     weekday: "long",
     year: "numeric",
     month: "numeric",
@@ -11,7 +11,7 @@ export function formatDate(date: Date): string {
 }
 
 export function formatTime(date: Date): string {
-  return date.toLocaleString("en-UK", {
+  return new Date(date).toLocaleString("en-UK", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -19,7 +19,7 @@ export function formatTime(date: Date): string {
 }
 
 export function formatDateTime(date: Date): string {
-  return date.toLocaleString("en-UK", {
+  return new Date(date).toLocaleString("en-UK", {
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -30,7 +30,7 @@ export function formatDateTime(date: Date): string {
 }
 
 export function formatTime24H(date: Date): string {
-  return date.toLocaleString("en-GB", {
+  return new Date(date).toLocaleString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,

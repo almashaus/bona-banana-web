@@ -47,15 +47,17 @@ import {
   MemberStatus,
   MemberRole,
 } from "@/src/models/user";
-import { Timestamp } from "firebase/firestore";
 import { Calendar } from "@/src/components/ui/calendar";
 import { cn } from "@/src/lib/utils/utils";
 import { formatDate } from "@/src/lib/utils/formatDate";
+import { getAuth } from "firebase/auth";
 
-export default function NewUserPage() {
+export default function NewMemberPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, registerMember } = useAuth();
+  const { user } = useAuth();
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -129,7 +131,7 @@ export default function NewUserPage() {
     const dashboard: DashboardUser = {
       role: formData.role as MemberRole,
       status: formData.status as MemberStatus,
-      joinedDate: Timestamp.now(),
+      joinedDate: new Date(),
       eventsManaged: 0,
     };
 
@@ -146,16 +148,29 @@ export default function NewUserPage() {
     };
 
     try {
-      await registerMember(appUser, formData.password);
-
-      toast({
-        title: "User created successfully",
-        description: `${formData.name} has been added to the system.`,
-        variant: "success",
+      const idToken = await authUser.getIdToken();
+      const response = await fetch("/api/admin/members/new", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          email: appUser.email,
+          password: formData.password,
+          member: appUser,
+        }),
       });
+      if (response.ok) {
+        toast({
+          title: "User created successfully",
+          description: `${formData.name} has been added to the system.`,
+          variant: "success",
+        });
 
-      // Redirect to users list
-      router.push("/admin/members");
+        // Redirect to users list
+        router.push("/admin/members");
+      }
     } catch (error) {
       toast({
         title: "Error",

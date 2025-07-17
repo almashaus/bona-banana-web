@@ -13,12 +13,10 @@ import {
 } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import useSWR from "swr";
-import { getDocumentById, updateDocument } from "@/src/lib/firebase/firestore";
-import { MemberStatus, MemberRole } from "@/src/models/user";
+import { MemberStatus, MemberRole, AppUser } from "@/src/models/user";
 import {
   Select,
   SelectContent,
@@ -26,9 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { getAuth } from "firebase/auth";
 
 export default function UserProfilePage() {
-  const { user } = useAuth();
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
   const router = useRouter();
   const { toast } = useToast();
   const params = useParams<{ id: string }>();
@@ -43,8 +43,8 @@ export default function UserProfilePage() {
     status: "",
   });
 
-  const { data, error, isLoading } = useSWR(["member", id], () =>
-    getDocumentById("users", id as string)
+  const { data, error, isLoading } = useSWR<AppUser>(
+    `/api/admin/members/${id}`
   );
 
   useEffect(() => {
@@ -80,15 +80,32 @@ export default function UserProfilePage() {
         },
       };
 
-      await updateDocument("users", id as string, appUser);
+      const idToken = await authUser.getIdToken();
 
-      toast({
-        title: "✅ Member updated",
-        description: "Member details have been successfully updated.",
-        variant: "success",
+      const response = await fetch(`/api/admin/members/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ id: id, data: appUser }),
       });
 
-      router.push("/admin/members");
+      if (response.ok) {
+        toast({
+          title: "✅ Member updated",
+          description: "Member details have been successfully updated.",
+          variant: "success",
+        });
+
+        router.push("/admin/members");
+      } else {
+        toast({
+          title: "⚠️ Error updating member",
+          description: "Failed to update member details. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "⚠️ Error updating member",

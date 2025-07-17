@@ -42,15 +42,17 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { cn } from "@/src/lib/utils/utils";
-import { Event, EventDate, EventStatus } from "@/src/models/event";
+import { EventDate, EventStatus } from "@/src/models/event";
 import { Timestamp } from "firebase/firestore";
 import { formatDate } from "@/src/lib/utils/formatDate";
-import { addDocToCollection } from "@/src/lib/firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 export default function CreateEventPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
 
   // Initialize state variables with default values
   const [title, setTitle] = useState("");
@@ -69,17 +71,11 @@ export default function CreateEventPage() {
       date: new Date(),
       startTime: new Date(),
       endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
-      capacity: 50,
-      availableTickets: 50,
+      capacity: 20,
+      availableTickets: 20,
       eventId: "",
     },
   ]);
-
-  // Redirect if not admin
-  // if (!user?.hasDashboardAccess) {
-  //   router.push("/");
-  //   return null;
-  // }
 
   // Generate slug from title
   const generateSlug = (title: string) => {
@@ -103,8 +99,8 @@ export default function CreateEventPage() {
       date: new Date(),
       startTime: new Date(),
       endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
-      capacity: 50,
-      availableTickets: 50,
+      capacity: 20,
+      availableTickets: 20,
       eventId: "",
     };
     setEventDates([...eventDates, newDate]);
@@ -127,30 +123,20 @@ export default function CreateEventPage() {
     );
   };
 
-  // Add new event to Firestore
-  const addNewEvent = async (event: Event) => {
-    try {
-      const response = await addDocToCollection("events", event);
-      if (!response) {
-        throw new Error("Couldn't add a new event");
-      }
-    } catch (e) {
-      throw new Error("Couldn't add a new event");
-    }
-  };
-
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const idToken = await authUser.getIdToken();
+
     try {
-      await addNewEvent({
+      const event = {
         creatorId: user?.id || "1",
         title: title,
         slug: slug,
         description: description,
-        eventImage: "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage,
+        eventImage: "https://i.ibb.co/gM520PrB/IMG-0758.jpg", // TODO:  eventImage, https://i.ibb.co/pvrpp5w0/IMG-0757.jpg https://i.ibb.co/jPx2PPxn/IMG-9784.png
         adImage: adImage,
         price: price,
         status: status,
@@ -160,16 +146,31 @@ export default function CreateEventPage() {
         updatedAt: Timestamp.fromDate(new Date()),
         dates: eventDates,
         id: "",
+      };
+
+      const response = await fetch("/api/admin/events/new", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ event: event }),
       });
 
-      // Show success toast
-      toast({
-        title: "✅ Event created",
-        description: "Your event has been created successfully 🎉",
-      });
+      if (response.ok) {
+        toast({
+          title: "✅ Event created",
+          description: "Your event has been created successfully",
+        });
 
-      // Redirect to admin events page
-      router.push("/admin");
+        router.push("/admin/events");
+      } else {
+        toast({
+          title: "⚠️ Error",
+          description: "There was an error creating the event ❗️",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "⚠️ Error",
@@ -533,7 +534,7 @@ export default function CreateEventPage() {
                           Number.parseInt(e.target.value)
                         );
                       }}
-                      placeholder="50"
+                      placeholder="20"
                       className="w-24"
                       required
                     />

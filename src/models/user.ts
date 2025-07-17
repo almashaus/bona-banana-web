@@ -28,6 +28,6 @@ export interface AppUser {
 export interface DashboardUser {
   role: MemberRole;
   status: MemberStatus;
-  joinedDate?: Timestamp | undefined;
+  joinedDate?: Date;
   eventsManaged: number;
 }

@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import {
   Search,
   Eye,
-  X,
   Mail,
   Copy,
   Check,
@@ -18,6 +17,8 @@ import {
   Settings2,
   PanelLeft,
   Printer,
+  FileX,
+  CircleAlertIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -60,7 +61,7 @@ import {
 import { useToast } from "@/src/components/ui/use-toast";
 import useSWR, { mutate } from "swr";
 import Loading from "@/src/components/ui/loading";
-import { Order, OrderResponse, OrderStatus } from "@/src/models/order";
+import { OrderResponse, OrderStatus } from "@/src/models/order";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { getOrderStatusBadgeColor } from "@/src/lib/utils/styles";
 import { useIsMobile } from "@/src/hooks/use-mobile";
@@ -72,20 +73,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import {
-  getAllDocuments,
-  getDocumentById,
-  updateDocument,
-} from "@/src/lib/firebase/firestore";
-import { Event } from "@/src/models/event";
-import { Ticket } from "@/src/models/ticket";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { getAuth } from "firebase/auth";
 
 export default function ReservationsPage() {
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
   const { toast } = useToast();
   const [reservations, setReservations] = useState<OrderResponse[]>([]);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -97,18 +91,7 @@ export default function ReservationsPage() {
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
-  const { data: orders, error, isLoading } = useSWR("/api/orders", fetcher);
-
-  const {
-    data: ticketsData,
-    error: ticketsError,
-    isLoading: isTicketsLoading,
-  } = useSWR("tickets", () => getAllDocuments("tickets"), {
-    // TODO: remove getting all tickets + remove "onSuccess"
-    onSuccess: (fetchedData) => {
-      setTickets(fetchedData as Ticket[]);
-    },
-  });
+  const { data: orders, error, isLoading } = useSWR("/api/admin/orders");
 
   useEffect(() => {
     // Filter reservations
@@ -123,7 +106,7 @@ export default function ReservationsPage() {
           order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesEvent =
-          eventFilter === "all" || order.eventName === eventFilter;
+          eventFilter === "all" || order.event.title === eventFilter;
         const matchesStatus =
           statusFilter === "all" || order.status === statusFilter;
         const matchesPaymentMethod =
@@ -157,17 +140,30 @@ export default function ReservationsPage() {
 
   const handleCancelReservation = async (reservationId: string) => {
     try {
-      await updateDocument("orders", reservationId, {
-        status: OrderStatus.CANCELLED,
-      });
+      const idToken = await authUser.getIdToken();
 
-      // Revalidate SWR data
-      await mutate("/api/orders");
-
-      toast({
-        title: "Reservation Cancelled",
-        description: "The reservation has been cancelled successfully.",
+      const response = await fetch(`/api/admin/orders`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          id: reservationId,
+          data: {
+            status: OrderStatus.CANCELLED,
+          },
+        }),
       });
+      if (response.ok) {
+        // Revalidate SWR data
+        await mutate("/api/admin/orders");
+
+        toast({
+          title: "Reservation Cancelled",
+          description: "The reservation has been cancelled successfully.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -191,36 +187,34 @@ export default function ReservationsPage() {
     });
   };
 
-  const handleResendTicket = async (reservationId: string) => {
-    const order: Order = (await getDocumentById(
-      "orders",
-      reservationId
-    )) as Order;
-
-    const event: Event = (await getDocumentById(
-      "events",
-      order.eventId
-    )) as Event;
-
-    if (order && event) {
-      await fetch("/api/send-ticket", {
+  const handleResendTicket = async (
+    order: OrderResponse,
+    userEmail: string
+  ) => {
+    if (order) {
+      const response = await fetch("/api/send-ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: "hadeel-4102@outlook.com", //TODO : replace
+          email: userEmail,
           order: order,
-          event: event,
-          dateId: reservations.find(
-            (item) => order.tickets?.[0] === item.tickets[0].id
-          )?.tickets[0].eventDateId,
+          event: order.event,
         }),
       });
-    }
 
-    toast({
-      title: "Ticket Resent",
-      description: "The ticket has been resent to the customer's email.",
-    });
+      if (response.ok) {
+        toast({
+          title: "Ticket Resent",
+          description: "The ticket has been resent to the customer's email.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to send the email. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   return (
@@ -282,7 +276,7 @@ export default function ReservationsPage() {
                   <SelectItem value="all">All Events</SelectItem>
                   {[
                     ...new Set<string>(
-                      orders.map((order: OrderResponse) => order.eventName)
+                      orders.map((order: OrderResponse) => order.event.title)
                     ),
                   ].map((eventName) => (
                     <SelectItem key={eventName} value={eventName}>
@@ -326,7 +320,7 @@ export default function ReservationsPage() {
 
           {/* Reservations Table */}
           <div className="bg-white rounded-md border">
-            <Table>
+            <Table className="overflow-x-hidden">
               <TableHeader>
                 <TableRow>
                   <TableHead>Order Number</TableHead>
@@ -396,7 +390,7 @@ export default function ReservationsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-orangeColor">
-                      {order.eventName}
+                      {order.event.title}
                     </TableCell>
 
                     <TableCell>{order.tickets.length}</TableCell>
@@ -412,16 +406,18 @@ export default function ReservationsPage() {
                       <span className="icon-saudi_riyal" />
                       {order.total}
                     </TableCell>
-                    <TableCell>
-                      {formatDate(new Date(order.orderDate))}
-                    </TableCell>
+                    <TableCell>{formatDate(order.orderDate)}</TableCell>
                     <TableCell
                       className="text-right"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSelectedReservation(order)}
+                          >
                             <span className="sr-only">Open menu</span>
                             <Settings2 className="h-4 w-4 text-orangeColor" />
                           </Button>
@@ -436,7 +432,11 @@ export default function ReservationsPage() {
 
                           <DropdownMenuItem
                             onClick={() =>
-                              handleResendTicket(order.orderNumber)
+                              handleResendTicket(
+                                order,
+
+                                order.contact.email
+                              )
                             }
                           >
                             <Mail className="mr-2 h-4 w-4" />
@@ -461,7 +461,7 @@ export default function ReservationsPage() {
                                 }
                                 className="text-red-600"
                               >
-                                <X className="mr-2 h-4 w-4" />
+                                <FileX className="mr-2 h-4 w-4" />
                                 Cancel Order
                               </DropdownMenuItem>
                             )}
@@ -477,7 +477,10 @@ export default function ReservationsPage() {
           {/* No results message */}
           {reservations?.length === 0 && (
             <div className="text-center py-8 bg-white rounded-b-md border-x border-b">
-              <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <CircleAlertIcon
+                strokeWidth={1.25}
+                className="mx-auto h-12 w-12 text-muted-foreground mb-4"
+              />
               <h3 className="text-lg font-semibold mb-2">
                 No reservations found
               </h3>
@@ -582,7 +585,7 @@ export default function ReservationsPage() {
                         Event Name
                       </Label>
                       <p className="font-medium">
-                        {selectedReservation.eventName}
+                        {selectedReservation.event.title}
                       </p>
                     </div>
 
@@ -638,9 +641,7 @@ export default function ReservationsPage() {
                       <Label className="text-sm font-medium text-muted-foreground">
                         Order Date
                       </Label>
-                      <p>
-                        {formatDate(new Date(selectedReservation.orderDate))}
-                      </p>
+                      <p>{formatDate(selectedReservation.orderDate)}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -656,11 +657,8 @@ export default function ReservationsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="p-8 bg-muted rounded-lg">
-                    <div className="flex items-center justify-center gap-6">
-                      {selectedReservation.tickets.map((t) => {
-                        const ticket = tickets.find(
-                          (item) => item.id === t.id
-                        )!;
+                    <div className="flex items-center justify-center gap-6 flex-wrap">
+                      {selectedReservation.tickets.map((ticket) => {
                         return (
                           <div className="flex flex-col items-center gap-2">
                             <span className="text-sm text-muted-foreground">
@@ -687,7 +685,10 @@ export default function ReservationsPage() {
               <div className="flex flex-wrap gap-3 pt-4">
                 <Button
                   onClick={() =>
-                    handleResendTicket(selectedReservation.orderNumber)
+                    handleResendTicket(
+                      selectedReservation,
+                      selectedReservation.contact.email
+                    )
                   }
                 >
                   <Mail className="mr-2 h-4 w-4" />
@@ -715,7 +716,7 @@ export default function ReservationsPage() {
                         handleCancelReservation(selectedReservation.orderNumber)
                       }
                     >
-                      <X className="mr-2 h-4 w-4" />
+                      <FileX className="mr-2 h-4 w-4" />
                       Cancel Order
                     </Button>
                   )}

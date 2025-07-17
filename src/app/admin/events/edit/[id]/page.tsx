@@ -43,12 +43,11 @@ import {
 import { formatDate, formatTime24H } from "@/src/lib/utils/formatDate";
 import { cn } from "@/src/lib/utils/utils";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
-import { setDoc, doc, Timestamp } from "firebase/firestore";
-import { db } from "@/src/lib/firebase/firebaseConfig";
-import { getEventById } from "@/src/lib/firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import Loading from "@/src/components/ui/loading";
 import useSWR from "swr";
 import Link from "next/link";
+import { getAuth } from "firebase/auth";
 
 export default function EditEventPage() {
   const params = useParams<{ id: string }>();
@@ -56,6 +55,8 @@ export default function EditEventPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
   const [event, setEvent] = useState<Event | null>(null);
 
   // Initialize state variables with default values
@@ -75,32 +76,34 @@ export default function EditEventPage() {
       date: new Date(),
       startTime: new Date(),
       endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
-      capacity: 50,
-      availableTickets: 50,
+      capacity: 20,
+      availableTickets: 20,
       eventId: id as string,
     },
   ]);
 
-  const { data, error, isLoading } = useSWR(id ? ["event", id] : null, () =>
-    getEventById(id as string)
+  const { data, error, isLoading } = useSWR<Event>(
+    `/api/admin/events/edit/${id}`
   );
 
   useEffect(() => {
-    const eventData: Event = data as Event;
-    if (eventData && eventData.dates && eventData.dates.length > 0) {
-      setEvent(eventData);
+    if (data) {
+      const eventData: Event = data as Event;
+      if (eventData && eventData.dates && eventData.dates.length > 0) {
+        setEvent(eventData);
 
-      // Populate state variables with data from Firestore
-      setTitle(eventData.title || "");
-      setSlug(eventData.slug || "");
-      setDescription(eventData.description || "");
-      setLocation(eventData.location || "Riyadh");
-      setEventImage(eventData.eventImage || "");
-      setAdImage(eventData.adImage || "");
-      setPrice(eventData.price || 0);
-      setStatus(eventData.status || EventStatus.DRAFT);
-      setisDnd(eventData.isDnd || false);
-      setEventDates(eventData.dates || []);
+        // Populate state variables with data from Firestore
+        setTitle(eventData.title || "");
+        setSlug(eventData.slug || "");
+        setDescription(eventData.description || "");
+        setLocation(eventData.location || "Riyadh");
+        setEventImage(eventData.eventImage || "");
+        setAdImage(eventData.adImage || "");
+        setPrice(eventData.price || 0);
+        setStatus(eventData.status || EventStatus.DRAFT);
+        setisDnd(eventData.isDnd || false);
+        setEventDates(eventData.dates || []);
+      }
     }
   }, [data]);
 
@@ -126,8 +129,8 @@ export default function EditEventPage() {
       date: new Date(),
       startTime: new Date(),
       endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
-      capacity: 50,
-      availableTickets: 50,
+      capacity: 20,
+      availableTickets: 20,
       eventId: event?.id || "",
     };
     setEventDates([...eventDates, newDate]);
@@ -150,22 +153,13 @@ export default function EditEventPage() {
     );
   };
 
-  // Add new event to Firestore
-  const editEvent = async (event: Event) => {
-    try {
-      await setDoc(doc(db, "events", event.id), event);
-    } catch (e) {
-      throw new Error("Error edit event");
-    }
-  };
-
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Validate event dates
+      // ------ Validate event dates
       for (const eventDate of eventDates) {
         if (event?.status === EventStatus.PUBLISHED) {
           if (!eventDate.date || !eventDate.startTime || !eventDate.endTime) {
@@ -187,14 +181,16 @@ export default function EditEventPage() {
             return;
           }
         }
-      }
+      } // ------
 
-      await editEvent({
+      const idToken = await authUser.getIdToken();
+
+      const updateEvent: Event = {
         creatorId: user?.id || "1",
         title: title,
         slug: slug,
         description: description,
-        eventImage: "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage,
+        eventImage: "https://i.ibb.co/gM520PrB/IMG-0758.jpg", // TODO:  eventImage,
         adImage: adImage,
         price: price,
         status: status,
@@ -204,15 +200,32 @@ export default function EditEventPage() {
         updatedAt: Timestamp.fromDate(new Date()),
         dates: eventDates,
         id: event!.id,
+      };
+
+      const response = await fetch("/api/admin/events/edit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ event: updateEvent }),
       });
 
-      toast({
-        title: "✅ Event updated",
-        description: "Your event has been updated successfully 🎉",
-      });
+      if (response.ok) {
+        toast({
+          title: "✅ Event updated",
+          description: "Your event has been updated successfully 🎉",
+        });
 
-      // Redirect to admin events page
-      router.push("/admin");
+        // Redirect to admin events page
+        router.push("/admin/events");
+      } else {
+        toast({
+          title: "⚠️ Error",
+          description: "There was an error updating the event ❗️",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "⚠️ Error",
@@ -601,7 +614,7 @@ export default function EditEventPage() {
                             Number.parseInt(e.target.value)
                           )
                         }
-                        placeholder="50"
+                        placeholder="20"
                         className="w-24"
                         required
                       />

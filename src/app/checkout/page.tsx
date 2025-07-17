@@ -4,6 +4,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   CalendarDays,
   ClockIcon,
   CreditCard,
@@ -27,15 +28,9 @@ import { useAuth } from "@/src/features/auth/auth-provider";
 import { Event } from "@/src/models/event";
 import { Order, OrderStatus } from "@/src/models/order";
 import { Ticket, TicketStatus } from "@/src/models/ticket";
-import {
-  addDocToCollection,
-  getDocumentById,
-  getEventById,
-} from "@/src/lib/firebase/firestore";
 import { eventDateTimeString } from "@/src/lib/utils/formatDate";
 import Loading from "@/src/components/ui/loading";
 import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
-import useSWR from "swr";
 import { useLanguage } from "@/src/components/i18n/language-provider";
 import { Timestamp } from "firebase/firestore";
 
@@ -45,7 +40,7 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
 
-  const eventId = useCheckoutStore((state) => state.eventId);
+  const storedEvent = useCheckoutStore((state) => state.event);
   const dateId = useCheckoutStore((state) => state.eventDateId);
   const quantity = useCheckoutStore((state) => state.quantity);
 
@@ -54,20 +49,15 @@ export default function CheckoutPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
 
-  const { data, error, isLoading } = useSWR(
-    eventId ? ["event", eventId] : null,
-    () => getEventById(eventId as string)
-  );
-
   useEffect(() => {
-    const eventData: Event = data as Event;
+    const eventData: Event = storedEvent as Event;
     if (eventData && eventData.dates && eventData.dates.length > 0) {
       setEvent(eventData as Event);
 
       const sdate = eventData.dates.find((item) => item.id === dateId);
       setSelectedDate(eventDateTimeString(sdate ?? eventData.dates[0]));
     }
-  }, [data]);
+  }, [storedEvent]);
 
   // Calculate totals
   const total = event?.price! * quantity;
@@ -91,7 +81,8 @@ export default function CheckoutPage() {
 
     const orderId = generateIDNumber("ORDER");
 
-    const tickets: string[] = [];
+    const ticketsIds: string[] = [];
+    const tickets: Ticket[] = [];
 
     for (let i = 0; i < quantity; i++) {
       const ticketId = generateIDNumber("TICKET");
@@ -100,31 +91,37 @@ export default function CheckoutPage() {
         id: ticketId,
         orderId: orderId,
         userId: user.id,
-        eventId: eventId,
+        eventId: event?.id!,
         eventDateId: event?.dates.find((item) => item.id === dateId)?.id!,
         qrCode: "",
         status: TicketStatus.VALID,
         purchasePrice: event?.price || 0,
       };
-      tickets.push(ticketId);
-      await addDocToCollection("tickets", ticket, ticketId);
+      ticketsIds.push(ticketId);
+      tickets.push(ticket);
     }
 
     const order: Order = {
       id: orderId,
       userId: user.id,
-      eventId: eventId,
+      eventId: event?.id!,
       orderDate: Timestamp.fromDate(new Date()),
       status: OrderStatus.PAID, // TODO: status of the payment
       totalAmount: total,
       promoCodeId: null, // V-2.0
       discountAmount: 0, // V-2.0
       paymentMethod: "Visa", // TODO: the payment method
-
-      tickets: tickets,
+      tickets: ticketsIds,
     };
 
-    await addDocToCollection("orders", order, orderId);
+    await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        order: order,
+        tickets: tickets,
+      }),
+    });
 
     // Send order confirmation email
     if (user.email) {
@@ -140,18 +137,13 @@ export default function CheckoutPage() {
     email: string,
     orderNumber: string
   ) {
-    const order: Order = (await getDocumentById(
-      "orders",
-      orderNumber
-    )) as Order;
-
-    if (order && event) {
+    if (event) {
       await fetch("/api/send-ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: "hadeel-4102@outlook.com", //TODO : replace
-          order: order,
+          email: email,
+          orderNumber: orderNumber,
           event: event,
           dateId: dateId,
         }),
@@ -159,7 +151,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (!eventId || !dateId || error) {
+  if (!event?.id! || !dateId) {
     return (
       <div className="container pt-20 text-center">
         <h1 className="text-2xl font-bold mb-4">
@@ -170,12 +162,12 @@ export default function CheckoutPage() {
             "Please select an event and date before proceeding to checkout."}
         </p>
         <Button asChild>
-          <a href="/">{t("home.events")}</a>
+          <a href="/">{t("home.allEvents")}</a>
         </Button>
       </div>
     );
   }
-  if (isLoading || !event) {
+  if (!event) {
     return (
       <div className="flex justify-center items-center py-24">
         <Loading />
@@ -185,12 +177,11 @@ export default function CheckoutPage() {
 
   return (
     <div className="container py-10">
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-3xl font-bold">{t("checkout.checkout")}</h1>
-        <Button variant="outline" onClick={() => router.back()}>
-          <XIcon className="h-4 w-4 md:me-2" />
-          <span className="hidden md:inline">{t("page.cancel")}</span>
+      <div className="flex justify-start gap-4 mb-5">
+        <Button variant="outline" size="icon" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
+        <h1 className="text-3xl font-bold">{t("checkout.checkout")}</h1>
       </div>
       <div className="grid gap-10 lg:grid-cols-3">
         {/* Order Summary */}

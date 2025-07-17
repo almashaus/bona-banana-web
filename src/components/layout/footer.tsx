@@ -2,10 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import { MailIcon } from "lucide-react";
+import { useLanguage } from "../i18n/language-provider";
 
 export default function Footer() {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith("/admin");
+  const { t } = useLanguage();
 
   return (
     <div>
@@ -53,13 +55,13 @@ export default function Footer() {
           {/* Links */}
           <div className="flex flex-col items-center gap-4 mt-6">
             <a href="/about-us" className="text-sm hover:underline">
-              About Us
+              {t("footer.aboutUs")}
             </a>
             <a href="/contact-us" className="text-sm hover:underline">
-              Contact Us
+              {t("footer.contactUs")}
             </a>
             <a href="/privacy-policy" className="text-sm hover:underline">
-              Privacy Policy
+              {t("footer.privacyPolicy")}
             </a>
           </div>
 

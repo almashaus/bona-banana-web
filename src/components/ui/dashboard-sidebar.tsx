@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "./button";
 import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
 import { Item, sidebarData } from "@/src/models/sidebarItem";
+import { usePathname } from "next/navigation";
 
 export function DashboardSidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -62,8 +63,8 @@ export function DashboardSidebar() {
           isMobile
             ? "Close sidebar"
             : collapsed
-            ? "Expand sidebar"
-            : "Collapse sidebar"
+              ? "Expand sidebar"
+              : "Collapse sidebar"
         }
       >
         {!collapsed || isMobile ? (
@@ -131,12 +132,13 @@ export default function SidebarItem({
   collapsed?: boolean;
 }) {
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
+  const pathname = usePathname();
 
   return (
     <Link
       href={item.url}
       onClick={() => setMobileOpen(false)}
-      className={`flex items-center p-2 text-neutral-700 rounded-lg dark:text-white hover:text-white hover:bg-neutral-400 dark:hover:bg-gray-700 group transition-all duration-200 ${
+      className={`flex items-center p-2 text-neutral-700 rounded-lg dark:text-white ${pathname?.endsWith(item.url) && "text-white bg-neutral-400"} hover:text-white hover:bg-neutral-400 dark:hover:bg-gray-700 group transition-all duration-200 ${
         collapsed ? "justify-center" : ""
       }`}
     >

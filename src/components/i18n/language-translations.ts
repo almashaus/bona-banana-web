@@ -2,7 +2,7 @@ export const translations = {
   en: {
     "home.title": "Discover Events",
     "home.subtitle": "Discover the most popular events happening near you",
-    "home.events": "View All Events",
+    "home.allEvents": "View All Events",
     "event.details": "Event Details",
     "event.date": "Date",
     "event.time": "Time",
@@ -60,11 +60,14 @@ export const translations = {
     "language.english": "English",
     "language.arabic": "العربية",
     "toggle.language": "Toggle language",
+    "footer.aboutUs": "About Us",
+    "footer.contactUs": "Contact Us",
+    "footer.privacyPolicy": "Privacy Policy",
   },
   ar: {
     "home.title": "اكتشف الفعاليات",
     "home.subtitle": "ابحث واحجز تذاكر لأفضل الفعاليات بالقرب منك",
-    "home.events": "عرض جميع الفعاليات",
+    "home.allEvents": "عرض جميع الفعاليات",
     "event.details": "تفاصيل الفعالية",
     "event.date": "التاريخ",
     "event.time": "الوقت",
@@ -121,5 +124,8 @@ export const translations = {
     "language.english": "English",
     "language.arabic": "العربية",
     "toggle.language": "تغيير اللغة",
+    "footer.aboutUs": "نبذة عنا",
+    "footer.contactUs": "اتصل بنا",
+    "footer.privacyPolicy": "سياسة الخصوصية",
   },
 };

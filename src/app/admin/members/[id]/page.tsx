@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Edit, Shield, Key, Activity, FileText } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -38,10 +38,10 @@ import {
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import useSWR from "swr";
-import { getDocumentById } from "@/src/lib/firebase/firestore";
 import { MemberStatus, MemberRole, AppUser } from "@/src/models/user";
 import Link from "next/link";
 import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
+import { formatDate } from "@/src/lib/utils/formatDate";
 
 // Mock permissions data
 const mockPermissions = [
@@ -114,30 +114,27 @@ export default function UserProfilePage() {
   const { user, resetPassword } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [member, setMember] = useState<AppUser>({} as AppUser);
+  // const [member, setMember] = useState<AppUser>({} as AppUser);
   const [permissions, setPermissions] = useState(mockPermissions);
   const [internalNotes, setInternalNotes] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const params = useParams<{ id: string }>();
   const id: string = params?.id!;
 
-  const { data, error, isLoading } = useSWR(["member", id], () =>
-    getDocumentById("users", id as string)
-  );
-  useEffect(() => {
-    if (data) {
-      setMember(data as AppUser);
-    }
-  }, [data]);
+  const {
+    data: member,
+    error,
+    isLoading,
+  } = useSWR<AppUser>(`/api/admin/members/${id}`);
 
   const handleResetPassword = async () => {
     try {
-      if (data?.email) {
-        await resetPassword(data.email);
+      if (member?.email) {
+        await resetPassword(member.email);
 
         toast({
           title: "Password reset email sent",
-          description: `A password reset link has been sent to ${data?.email}`,
+          description: `A password reset link has been sent to ${member?.email}`,
         });
       } else {
         toast({
@@ -303,9 +300,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="joined">Joined Date</Label>
                   <Input
                     id="joined"
-                    value={member?.dashboard?.joinedDate
-                      ?.toDate()
-                      ?.toDateString()}
+                    value={formatDate(member?.dashboard?.joinedDate!)}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -338,11 +333,16 @@ export default function UserProfilePage() {
           </Card>
         </TabsContent>
 
-        {/* Permissions Tab */}
+        {/* TODO: Permissions Tab */}
         <TabsContent value="permissions">
           <Card>
             <CardHeader>
-              <CardTitle>Permissions Management</CardTitle>
+              <CardTitle>
+                Permissions Management{" "}
+                <span className="text-red-500 text-sm font-light">
+                  *In progress*
+                </span>
+              </CardTitle>
               <CardDescription>
                 Manage user permissions for different features
               </CardDescription>
@@ -412,11 +412,16 @@ export default function UserProfilePage() {
           </Card>
         </TabsContent>
 
-        {/* Activity Log Tab */}
+        {/* TODO: Activity Log Tab */}
         <TabsContent value="activity">
           <Card>
             <CardHeader>
-              <CardTitle>Activity Log</CardTitle>
+              <CardTitle>
+                Activity Log
+                <span className="text-red-500 text-sm font-light">
+                  *In progress*
+                </span>
+              </CardTitle>
               <CardDescription>
                 Recent user actions and activities
               </CardDescription>
@@ -444,11 +449,16 @@ export default function UserProfilePage() {
           </Card>
         </TabsContent>
 
-        {/* Internal Notes Tab */}
+        {/* TODO: Internal Notes Tab */}
         <TabsContent value="notes">
           <Card>
             <CardHeader>
-              <CardTitle>Internal Notes</CardTitle>
+              <CardTitle>
+                Internal Notes
+                <span className="text-red-500 text-sm font-light">
+                  *In progress*
+                </span>
+              </CardTitle>
               <CardDescription>
                 Private notes visible only to administrators
               </CardDescription>

@@ -1,5 +1,6 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { Timestamp } from "firebase-admin/firestore";
 
 admin.initializeApp();
 
@@ -103,12 +104,20 @@ export const createNewMember = functions.https.onCall(async (data, context) => {
       admin: true,
     };
 
+    const memberData = {
+      ...member,
+      dashboard: {
+        ...member.dashboard,
+        joinedDate: Timestamp.fromDate(new Date()),
+      },
+    };
+
     if (fbUser) {
       await auth.setCustomUserClaims(fbUser.uid, customClaims);
       await db
         .collection("users")
         .doc(fbUser.uid)
-        .set({ ...member, id: fbUser.uid });
+        .set({ ...memberData, id: fbUser.uid });
     }
 
     return {
@@ -124,13 +133,6 @@ export const createNewMember = functions.https.onCall(async (data, context) => {
   Callable function to verfiy ID token
 */
 export const verifyIdToken = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Request had no auth."
-    );
-  }
-
   const idToken = data.idToken;
   if (!idToken) {
     throw new functions.https.HttpsError(
