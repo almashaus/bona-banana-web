@@ -204,46 +204,48 @@ export default function membersPage() {
   const handleConvertUserToMember = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      setIsConverting(true);
-      const user = users?.find((u) => u.email === email);
+    if (email) {
+      try {
+        setIsConverting(true);
+        const user = users?.find((u) => u.email === email);
 
-      const idToken = await authUser.getIdToken();
+        const idToken = await authUser.getIdToken();
 
-      const response = await fetch("/api/admin/members/new", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          id: user?.id!,
-          data: { hasDashboardAccess: true },
-        }),
-      });
-
-      //wait for the user to be updated in Firestore
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      if (response.ok) {
-        setConvertDialogOpen(false);
-        // Revalidate SWR data
-        await mutate("/api/admin/members");
-        setEmail("");
-
-        toast({
-          title: "User Converted",
-          description: `${user?.name} has been converted successfully.`,
-          variant: "success",
+        const response = await fetch("/api/admin/members/new", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            id: user?.id!,
+            data: { hasDashboardAccess: true },
+          }),
         });
+
+        //wait for the user to be updated in Firestore
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        if (response.ok) {
+          setConvertDialogOpen(false);
+          // Revalidate SWR data
+          await mutate("/api/admin/members");
+          setEmail("");
+
+          toast({
+            title: "User Converted",
+            description: `${user?.name} has been converted successfully.`,
+            variant: "success",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Error converting user",
+          description: "Failed to convert user. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsConverting(false);
       }
-    } catch (error) {
-      toast({
-        title: "Error converting user",
-        description: "Failed to convert user. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsConverting(false);
     }
   };
 
@@ -310,7 +312,7 @@ export default function membersPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 my-4">
-            {users && users.length > 0 && !isLoading && (
+            {!isLoading && (
               <Select value={email} onValueChange={setEmail}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Emails" />
@@ -450,14 +452,22 @@ export default function membersPage() {
                 <TableCell>{member.email}</TableCell>
                 {/* role */}
                 <TableCell>
-                  <Badge className={getRoleBadgeColor(member.dashboard!.role)}>
+                  <Badge
+                    className={
+                      member.dashboard &&
+                      getRoleBadgeColor(member.dashboard!.role)
+                    }
+                  >
                     {member.dashboard?.role}
                   </Badge>
                 </TableCell>
                 {/* status */}
                 <TableCell>
                   <Badge
-                    className={getStatusBadgeColor(member.dashboard!.status)}
+                    className={
+                      member.dashboard &&
+                      getStatusBadgeColor(member.dashboard!.status)
+                    }
                   >
                     {member.dashboard?.status}
                   </Badge>

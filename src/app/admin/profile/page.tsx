@@ -273,7 +273,11 @@ export default function UserProfilePage() {
                   <Label htmlFor="joined">Joined Date</Label>
                   <Input
                     id="joined"
-                    value={formatDate(member?.dashboard?.joinedDate!)}
+                    value={
+                      member?.dashboard?.joinedDate
+                        ? formatDate(member?.dashboard?.joinedDate!)
+                        : ""
+                    }
                     className="focus-visible:ring-0"
                     readOnly
                   />

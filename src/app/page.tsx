@@ -68,7 +68,7 @@ export default function Home() {
                 <img
                   src="/no-data.png"
                   alt="no data"
-                  className="h-1/2 w-1/2 lg:h-1/4 lg:w-1/4"
+                  className="h-1/2 w-1/2 md:h-1/6 md:w-1/6"
                 />
                 <p className="text-muted-foreground text-center">
                   There is no event currently, Come back later!

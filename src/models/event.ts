@@ -1,4 +1,3 @@
-import { Timestamp } from "firebase/firestore";
 import { Order } from "./order";
 import { Ticket } from "./ticket";
 
@@ -30,8 +29,8 @@ export interface Event {
   status: EventStatus;
   location: string;
   isDnd: boolean;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: Date;
+  updatedAt: Date;
 
   // Relations
   dates: EventDate[];

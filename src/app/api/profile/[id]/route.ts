@@ -1,10 +1,9 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { getDocumentById } from "@/src/lib/firebase/firestore";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
-import { formatEventsDates } from "@/src/lib/utils/formatDate";
+import { Event } from "@/src/models/event";
 import { Ticket } from "@/src/models/ticket";
 import { AppUser } from "@/src/models/user";
-import { Timestamp } from "firebase/firestore";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -35,7 +34,7 @@ export async function GET(
           eventData = eventDoc.exists ? eventDoc.data() : null;
         }
 
-        const event = eventData && formatEventsDates(eventData, true);
+        const event = eventData as Event;
 
         return {
           event: event,
@@ -46,19 +45,8 @@ export async function GET(
     );
 
     if (user) {
-      let theUser: AppUser | any = user;
-      if (user.dashboard) {
-        theUser = {
-          ...user,
-          dashboard: {
-            ...user?.dashboard,
-            joinedDate: (user?.dashboard?.joinedDate as Timestamp).toDate(),
-          },
-        };
-      }
-
       return new Response(
-        JSON.stringify({ appUser: theUser, tickets: ticketsData }),
+        JSON.stringify({ appUser: user, tickets: ticketsData }),
         {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -71,7 +59,6 @@ export async function GET(
       });
     }
   } catch (error) {
-    console.log(`##### ${error}`);
     return new Response(JSON.stringify({ data: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -95,25 +82,13 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { id, data } = body;
 
-    let user = data;
-    if (data.hasDashboardAccess) {
-      user = {
-        ...data,
-        dashboard: {
-          ...data.dashboard,
-          joinedDate: new Date(data.dashboard.joinedDate),
-        },
-      };
-    }
-
-    await db.collection("users").doc(id).update(user);
+    await db.collection("users").doc(id).update(data);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
     return new Response(JSON.stringify({ error: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

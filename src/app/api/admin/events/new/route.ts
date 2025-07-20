@@ -1,10 +1,6 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
-import { functions } from "@/src/lib/firebase/firebaseConfig";
-import { addDocToCollection } from "@/src/lib/firebase/firestore";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
 import { Event } from "@/src/models/event";
-import { httpsCallable } from "@firebase/functions";
-import { Timestamp } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest, res: NextResponse) {
@@ -23,23 +19,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
     const body = await req.json();
     const { event } = body;
 
-    // Convert all eventDates fields to Firestore Timestamp
-    const eventDatesWithTimestamps = (event as Event).dates.map((d) => ({
-      ...d,
-      date: Timestamp.fromDate(new Date(d.date)),
-      startTime: Timestamp.fromDate(new Date(d.startTime)),
-      endTime: Timestamp.fromDate(new Date(d.endTime)),
-    }));
-
-    const theEvent = {
-      ...event,
-      createdAt: Timestamp.fromDate(new Date()),
-      updatedAt: Timestamp.fromDate(new Date()),
-      dates: eventDatesWithTimestamps,
-    };
-
     const docRef = db.collection("events").doc();
-    const dataWithId = { ...theEvent, id: docRef.id };
+    const dataWithId = { ...event, id: docRef.id };
 
     await docRef.set(dataWithId);
 

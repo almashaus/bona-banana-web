@@ -43,7 +43,6 @@ import {
 } from "@/src/components/ui/popover";
 import { cn } from "@/src/lib/utils/utils";
 import { EventDate, EventStatus } from "@/src/models/event";
-import { Timestamp } from "firebase/firestore";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { getAuth } from "firebase/auth";
 
@@ -116,6 +115,9 @@ export default function CreateEventPage() {
     setEventDates(
       eventDates.map((date) => {
         if (date.id === id) {
+          if (field === "capacity") {
+            return { ...date, [field]: value, availableTickets: value };
+          }
           return { ...date, [field]: value };
         }
         return date;
@@ -131,7 +133,7 @@ export default function CreateEventPage() {
     const idToken = await authUser.getIdToken();
 
     try {
-      const event = {
+      let event = {
         creatorId: user?.id || "1",
         title: title,
         slug: slug,
@@ -142,8 +144,8 @@ export default function CreateEventPage() {
         status: status,
         location: location,
         isDnd: isDnd,
-        createdAt: Timestamp.fromDate(new Date()),
-        updatedAt: Timestamp.fromDate(new Date()),
+        createdAt: new Date(),
+        updatedAt: new Date(),
         dates: eventDates,
         id: "",
       };
@@ -528,11 +530,11 @@ export default function CreateEventPage() {
                           "capacity",
                           Number.parseInt(e.target.value)
                         );
-                        updateEventDate(
-                          eventDate.id,
-                          "availableTickets",
-                          Number.parseInt(e.target.value)
-                        );
+                        // updateEventDate(
+                        //   eventDate.id,
+                        //   "availableTickets",
+                        //   Number.parseInt(e.target.value)
+                        // );
                       }}
                       placeholder="20"
                       className="w-24"

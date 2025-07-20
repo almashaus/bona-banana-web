@@ -70,7 +70,7 @@ export default function NewMemberPage() {
     role: "",
     status: "Active",
     profileImage: "",
-    birthDate: "",
+    birthDate: null,
   });
 
   const [showPassword, setShowPassword] = useState(false);

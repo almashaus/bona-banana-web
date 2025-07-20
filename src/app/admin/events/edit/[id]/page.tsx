@@ -43,7 +43,6 @@ import {
 import { formatDate, formatTime24H } from "@/src/lib/utils/formatDate";
 import { cn } from "@/src/lib/utils/utils";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
-import { Timestamp } from "firebase/firestore";
 import Loading from "@/src/components/ui/loading";
 import useSWR from "swr";
 import Link from "next/link";
@@ -197,13 +196,13 @@ export default function EditEventPage() {
         location: location,
         isDnd: isDnd,
         createdAt: event!.createdAt,
-        updatedAt: Timestamp.fromDate(new Date()),
+        updatedAt: new Date(),
         dates: eventDates,
         id: event!.id,
       };
 
       const response = await fetch("/api/admin/events/edit", {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,

@@ -82,7 +82,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (data) {
-      console.log(data.appUser.gender);
       setUserData(data.appUser);
     }
   }, [data]);
@@ -100,7 +99,7 @@ export default function ProfilePage() {
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: any) => {
     setUserData((prev) => {
       if (!prev) return prev;
       return {
@@ -260,13 +259,11 @@ export default function ProfilePage() {
                         <PopoverContent className="w-auto p-0">
                           <Calendar
                             mode="single"
+                            captionLayout="dropdown"
                             selected={new Date(userData?.birthDate || "")}
                             onSelect={(day) => {
                               if (day) {
-                                handleInputChange(
-                                  "birthDate",
-                                  day.toDateString()
-                                );
+                                handleInputChange("birthDate", day);
                               }
                             }}
                           />

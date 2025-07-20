@@ -35,6 +35,7 @@ import {
   DialogDescription,
 } from "@/src/components/ui/dialog";
 import { getAuth } from "firebase/auth";
+import { formatDate } from "@/src/lib/utils/formatDate";
 
 export default function customersPage() {
   const { user } = useAuth();
@@ -154,7 +155,11 @@ export default function customersPage() {
                 {/* role */}
                 <TableCell>{customer.user.phone}</TableCell>
                 {/* status */}
-                <TableCell>{customer.user.birthDate}</TableCell>
+                <TableCell>
+                  {customer.user.birthDate
+                    ? formatDate(customer.user.birthDate)
+                    : ""}
+                </TableCell>
                 {/* events managed */}
                 <TableCell>{customer.user.gender}</TableCell>
                 {/* actions */}

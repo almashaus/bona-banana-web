@@ -15,7 +15,6 @@ export const fetcher = async (
   if (!res.ok) {
     const err = new Error("Error") as any;
     err.status = res.status;
-    console.log(res);
     throw err;
   }
   return res.json();

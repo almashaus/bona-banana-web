@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     name: fbUser.displayName || fbUser.email?.split("@")[0] || "",
     phone: fbUser.phoneNumber || "",
     profileImage: fbUser.photoURL || "",
-    birthDate: "",
+    birthDate: null,
     gender: "",
     hasDashboardAccess: false,
   });

@@ -16,7 +16,6 @@ export async function GET() {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
     return new Response(JSON.stringify({ data: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -47,8 +46,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
-    return new Response(JSON.stringify({ error: "Error deleting event" }), {
+    return new Response(JSON.stringify({ error: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
@@ -59,6 +57,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const eventId = searchParams.get("eventId");
+
     if (!eventId) {
       return new Response(JSON.stringify({ error: "Missing eventId" }), {
         status: 400,
@@ -73,8 +72,7 @@ export async function DELETE(request: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
-    return new Response(JSON.stringify({ error: "Error deleting event" }), {
+    return new Response(JSON.stringify({ error: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

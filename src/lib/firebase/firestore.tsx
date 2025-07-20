@@ -9,13 +9,10 @@ import {
   orderBy,
   where,
   updateDoc,
-  serverTimestamp,
   setDoc,
 } from "firebase/firestore";
 import { db } from "@/src/lib/firebase/firebaseConfig";
-import { formatEventsDates } from "@/src/lib/utils/formatDate";
 import { Event, EventStatus } from "@/src/models/event";
-import { User } from "firebase/auth";
 import { AppUser } from "@/src/models/user";
 
 export async function getEvents() {
@@ -26,11 +23,7 @@ export async function getEvents() {
     );
     const querySnapshot = await getDocs(eventsQuery);
 
-    const events = querySnapshot.docs.map((doc) => {
-      const data = formatEventsDates(doc.data(), true);
-
-      return data as Event;
-    });
+    const events = querySnapshot.docs.map((doc) => doc.data() as Event);
     return events;
   } catch (error) {
     throw new Error(`${error}`);
@@ -46,11 +39,7 @@ export async function getEventsByStatus(status: EventStatus) {
     );
     const querySnapshot = await getDocs(eventsQuery);
 
-    const events = querySnapshot.docs.map((doc) => {
-      const data = formatEventsDates(doc.data(), true);
-
-      return data as Event;
-    });
+    const events = querySnapshot.docs.map((doc) => doc.data() as Event);
     return events;
   } catch (error) {
     console.error(error);
@@ -81,8 +70,7 @@ export const getEventById = async (docId: string) => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const eventData = formatEventsDates(docSnap.data(), true);
-      return eventData as Event;
+      return docSnap.data() as Event;
     } else {
       throw new Error("No such data!");
     }
@@ -185,21 +173,6 @@ export async function deleteField(
     throw new Error("Failed to delete subcollection. Please try again later.");
   }
 }
-
-export const syncUserWithFirestore = async (user: User) => {
-  try {
-    if (!user) return;
-
-    const userRef = doc(db, "users", user.uid);
-    getDoc(userRef).then(async (userData) => {
-      if (userData.data()?.hasDashboardAccess) {
-        await updateDoc(userRef, { lastLogin: serverTimestamp() });
-      }
-    });
-  } catch (error) {
-    return;
-  }
-};
 
 export async function getUsersWithDashboardAccess(): Promise<AppUser[]> {
   try {

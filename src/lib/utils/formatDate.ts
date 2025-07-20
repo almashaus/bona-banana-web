@@ -1,5 +1,4 @@
-import { DocumentData, Timestamp } from "firebase/firestore";
-import { Event, EventDate } from "@/src/models/event";
+import { EventDate } from "@/src/models/event";
 
 export function formatDate(date: Date): string {
   return new Date(date).toLocaleString("en-UK", {
@@ -35,24 +34,6 @@ export function formatTime24H(date: Date): string {
     minute: "2-digit",
     hour12: false,
   });
-}
-
-export function formatEventsDates(data: DocumentData, isLoop: Boolean): Event {
-  for (let i = 0; i < (isLoop ? data.dates.length : 1); i++) {
-    const theDate = data.dates[i];
-
-    if (theDate && theDate.date) {
-      const timestamp: Timestamp = theDate.date;
-      theDate.date = timestamp.toDate();
-
-      const timestampStart: Timestamp = theDate.startTime;
-      theDate.startTime = timestampStart.toDate();
-
-      const timestampEnd: Timestamp = theDate.endTime;
-      theDate.endTime = timestampEnd.toDate();
-    }
-  }
-  return data as Event;
 }
 
 export const eventDateTimeString = (date: EventDate): string => {

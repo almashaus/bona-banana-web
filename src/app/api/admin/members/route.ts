@@ -41,21 +41,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { id, data } = body;
 
-    const user = {
-      ...data,
-      dashboard: {
-        ...data.dashboard,
-        joinedDate: new Date(),
-      },
-    };
-    await db.collection("users").doc(id).update(user);
+    await db.collection("users").doc(id).update(data);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
     return new Response(JSON.stringify({ error: "Error deleting event" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -86,7 +78,6 @@ export async function DELETE(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
     return new Response(JSON.stringify({ error: "Error deleting event" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

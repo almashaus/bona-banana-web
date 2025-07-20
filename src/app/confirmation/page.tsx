@@ -191,7 +191,8 @@ export default function ConfirmationPage() {
                   {event.price}
                 </span>
               </div>
-              <div className="flex justify-between">
+              {/* TODO: VAT*/}
+              {/* <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   {t("checkout.subtotal")}
                 </span>
@@ -209,13 +210,13 @@ export default function ConfirmationPage() {
                   {fees}
                 </span>
               </div>
-              <Separator className="my-2" />
+              <Separator className="my-2" /> */}
               <div className="flex justify-between font-bold">
                 <span>
                   {t("event.total")}{" "}
-                  <span className="text-xs font-light text-muted-foreground">
+                  {/* <span className="text-xs font-light text-muted-foreground">
                     *{t("checkout.VAT")}
-                  </span>
+                  </span> */}
                 </span>
                 <span>
                   <span className="icon-saudi_riyal" />

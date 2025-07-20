@@ -1,4 +1,3 @@
-import { Timestamp } from "firebase/firestore";
 import { Ticket } from "./ticket";
 
 export enum MemberRole {
@@ -20,7 +19,7 @@ export interface AppUser {
   name: string;
   phone: string;
   profileImage: string;
-  birthDate: string;
+  birthDate?: Date | null;
   gender: string;
   hasDashboardAccess: boolean;
   dashboard?: DashboardUser;

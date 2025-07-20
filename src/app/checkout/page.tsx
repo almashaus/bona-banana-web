@@ -32,7 +32,6 @@ import { eventDateTimeString } from "@/src/lib/utils/formatDate";
 import Loading from "@/src/components/ui/loading";
 import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
 import { useLanguage } from "@/src/components/i18n/language-provider";
-import { Timestamp } from "firebase/firestore";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -105,7 +104,7 @@ export default function CheckoutPage() {
       id: orderId,
       userId: user.id,
       eventId: event?.id!,
-      orderDate: Timestamp.fromDate(new Date()),
+      orderDate: new Date(),
       status: OrderStatus.PAID, // TODO: status of the payment
       totalAmount: total,
       promoCodeId: null, // V-2.0
@@ -224,7 +223,8 @@ export default function CheckoutPage() {
             <Separator className="my-4" />
 
             <div className="space-y-2">
-              <div className="flex justify-between">
+              {/* TODO: VAT*/}
+              {/* <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   {t("checkout.subtotal")}
                 </span>
@@ -242,13 +242,13 @@ export default function CheckoutPage() {
                   {fees}
                 </span>
               </div>
-              <Separator className="my-2" />
+              <Separator className="my-2" /> */}
               <div className="flex justify-between font-bold">
                 <span>
                   {t("event.total")}{" "}
-                  <span className="text-xs font-light text-muted-foreground">
+                  {/* <span className="text-xs font-light text-muted-foreground">
                     *{t("checkout.VAT")}
-                  </span>
+                  </span> */}
                 </span>
                 <span>
                   <span className="icon-saudi_riyal" />

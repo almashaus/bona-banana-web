@@ -1,6 +1,5 @@
 import { auth, db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
-import { Timestamp } from "firebase/firestore";
 import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -36,20 +35,12 @@ export async function POST(req: NextRequest) {
       admin: true,
     };
 
-    const memberData = {
-      ...member,
-      dashboard: {
-        ...member.dashboard,
-        joinedDate: new Date(),
-      },
-    };
-
     if (fbUser) {
       await auth.setCustomUserClaims(fbUser.uid, customClaims);
       await db
         .collection("users")
         .doc(fbUser.uid)
-        .set({ ...memberData, id: fbUser.uid });
+        .set({ ...member, id: fbUser.uid });
     }
 
     return new Response(JSON.stringify({ success: true }), {
@@ -57,7 +48,6 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
     return new Response(JSON.stringify({ error: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -88,7 +78,6 @@ export async function PUT(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
     return new Response(JSON.stringify({ error: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

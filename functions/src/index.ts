@@ -1,6 +1,5 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
-import { Timestamp } from "firebase-admin/firestore";
 
 admin.initializeApp();
 
@@ -44,7 +43,7 @@ export const onMemberAdded = functions.firestore
           dashboard: {
             role: "Support",
             status: "Active",
-            joinedDate: admin.firestore.FieldValue.serverTimestamp(),
+            joinedDate: new Date().toISOString(),
             eventsManaged: 0,
           },
         };
@@ -68,65 +67,65 @@ export const onMemberAdded = functions.firestore
   [ 3 ]
   Callable function to create a new user
 */
-export const createNewMember = functions.https.onCall(async (data, context) => {
-  try {
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Request had no auth."
-      );
-    }
+// export const createNewMember = functions.https.onCall(async (data, context) => {
+//   try {
+//     if (!context.auth) {
+//       throw new functions.https.HttpsError(
+//         "unauthenticated",
+//         "Request had no auth."
+//       );
+//     }
 
-    const { email, password, member } = data;
+//     const { email, password, member } = data;
 
-    if (!email || !password) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Email and password are required."
-      );
-    }
+//     if (!email || !password) {
+//       throw new functions.https.HttpsError(
+//         "invalid-argument",
+//         "Email and password are required."
+//       );
+//     }
 
-    // Add validation for member object
-    if (!member || typeof member !== "object") {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Member data is required."
-      );
-    }
+//     // Add validation for member object
+//     if (!member || typeof member !== "object") {
+//       throw new functions.https.HttpsError(
+//         "invalid-argument",
+//         "Member data is required."
+//       );
+//     }
 
-    const fbUser = await auth.createUser({
-      email,
-      password,
-    });
+//     const fbUser = await auth.createUser({
+//       email,
+//       password,
+//     });
 
-    // Set custom claims for the user
-    const customClaims = {
-      admin: true,
-    };
+//     // Set custom claims for the user
+//     const customClaims = {
+//       admin: true,
+//     };
 
-    const memberData = {
-      ...member,
-      dashboard: {
-        ...member.dashboard,
-        joinedDate: Timestamp.fromDate(new Date()),
-      },
-    };
+//     const memberData = {
+//       ...member,
+//       dashboard: {
+//         ...member.dashboard,
+//         joinedDate: new Date().toISOString(),
+//       },
+//     };
 
-    if (fbUser) {
-      await auth.setCustomUserClaims(fbUser.uid, customClaims);
-      await db
-        .collection("users")
-        .doc(fbUser.uid)
-        .set({ ...memberData, id: fbUser.uid });
-    }
+//     if (fbUser) {
+//       await auth.setCustomUserClaims(fbUser.uid, customClaims);
+//       await db
+//         .collection("users")
+//         .doc(fbUser.uid)
+//         .set({ ...memberData, id: fbUser.uid });
+//     }
 
-    return {
-      success: true,
-    };
-  } catch (error: any) {
-    throw new functions.https.HttpsError("internal", "");
-  }
-});
+//     return {
+//       success: true,
+//     };
+//   } catch (error: any) {
+//     throw new functions.https.HttpsError("internal", "");
+//   }
+// });
 
 /*
   [ 4 ]

@@ -1,8 +1,8 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { OrderResponse } from "@/src/models/order";
-import { formatEventsDates } from "@/src/lib/utils/formatDate";
 import { NextRequest } from "next/server";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
+import { Event } from "@/src/models/event";
 
 export async function GET() {
   try {
@@ -45,9 +45,7 @@ export async function GET() {
           eventData = eventDoc.exists ? eventDoc.data() : null;
         }
 
-        const event = eventData
-          ? formatEventsDates(eventData, true)
-          : { title: "Unknown" };
+        const event = eventData ? (eventData as Event) : { title: "Unknown" };
 
         return {
           orderNumber: orderData.id || orderId,
@@ -61,9 +59,7 @@ export async function GET() {
           status: orderData.status,
           paymentMethod: orderData.paymentMethod,
           total: orderData.totalAmount,
-          orderDate: orderData.orderDate?.toDate
-            ? orderData.orderDate.toDate()
-            : orderData.orderDate || null,
+          orderDate: orderData.orderDate,
         } as OrderResponse;
       })
     );
@@ -102,7 +98,6 @@ export async function PUT(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
     return new Response(JSON.stringify({ error: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

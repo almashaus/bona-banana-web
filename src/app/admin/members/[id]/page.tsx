@@ -86,13 +86,13 @@ const mockPermissions = [
 const mockActivityLog = [
   {
     id: "1",
-    action: "Created event 'Summer Music Festival'",
+    action: "Created event 'New Event'",
     timestamp: "2024-01-15 14:30",
     type: "event_created",
   },
   {
     id: "2",
-    action: "Edited user permissions for Jane Smith",
+    action: "Edited user permissions",
     timestamp: "2024-01-15 10:15",
     type: "user_edited",
   },
@@ -299,7 +299,11 @@ export default function UserProfilePage() {
                   <Label htmlFor="joined">Joined Date</Label>
                   <Input
                     id="joined"
-                    value={formatDate(member?.dashboard?.joinedDate!)}
+                    value={
+                      member?.dashboard?.joinedDate
+                        ? formatDate(member?.dashboard?.joinedDate!)
+                        : ""
+                    }
                     className="focus-visible:ring-0"
                     readOnly
                   />
