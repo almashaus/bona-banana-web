@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase/firestore";
+import { Ticket } from "./ticket";
 
 export enum MemberRole {
   ADMIN = "Admin",
@@ -17,7 +18,7 @@ export interface AppUser {
   id: string;
   email: string;
   name: string;
-  phoneNumber: string;
+  phone: string;
   profileImage: string;
   birthDate: string;
   gender: string;
@@ -30,4 +31,9 @@ export interface DashboardUser {
   status: MemberStatus;
   joinedDate?: Date;
   eventsManaged: number;
+}
+
+export interface CustomerResponse {
+  user: AppUser;
+  tickets: Ticket[];
 }

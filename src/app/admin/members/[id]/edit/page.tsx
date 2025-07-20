@@ -52,7 +52,7 @@ export default function UserProfilePage() {
       setFormData({
         name: data.name || "",
         email: data.email || "",
-        phone: data.phoneNumber || "",
+        phone: data.phone || "",
         role: data.dashboard?.role || MemberRole.SUPPORT,
         status: data.dashboard?.status || MemberStatus.ACTIVE,
       });
@@ -72,7 +72,7 @@ export default function UserProfilePage() {
     try {
       const appUser = {
         name: formData.name,
-        phoneNumber: formData.phone,
+        phone: formData.phone,
         dashboard: {
           ...data?.dashboard,
           role: formData.role as MemberRole,

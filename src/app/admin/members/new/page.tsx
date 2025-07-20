@@ -139,7 +139,7 @@ export default function NewMemberPage() {
       id: "",
       email: formData.email,
       name: formData.name,
-      phoneNumber: formData.phone,
+      phone: formData.phone,
       profileImage: formData.profileImage,
       birthDate: formData.birthDate,
       gender: formData.gender,

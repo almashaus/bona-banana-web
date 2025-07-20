@@ -136,7 +136,7 @@ export default function SidebarItem({
 
   return (
     <Link
-      href={item.url}
+      href={item.url !== "..." ? item.url : ""}
       onClick={() => setMobileOpen(false)}
       className={`flex items-center p-2 text-neutral-700 rounded-lg dark:text-white ${pathname?.endsWith(item.url) && "text-white bg-neutral-400"} hover:text-white hover:bg-neutral-400 dark:hover:bg-gray-700 group transition-all duration-200 ${
         collapsed ? "justify-center" : ""

@@ -54,7 +54,7 @@ export async function GET() {
           customerName: userData?.name || "Unknown",
           contact: {
             email: userData?.email || "-",
-            phone: userData?.phoneNumber || "-",
+            phone: userData?.phone || "-",
           },
           event: event,
           tickets: ticketsData,

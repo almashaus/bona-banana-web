@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     id: fbUser.uid,
     email: fbUser.email || "",
     name: fbUser.displayName || fbUser.email?.split("@")[0] || "",
-    phoneNumber: fbUser.phoneNumber || "",
+    phone: fbUser.phoneNumber || "",
     profileImage: fbUser.photoURL || "",
     birthDate: "",
     gender: "",

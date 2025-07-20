@@ -236,7 +236,7 @@ export default function ConfirmationPage() {
             {quantity > 1 ? t("confirm.tickets") : t("confirm.ticket")}
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/profile/tickets">{t("confirm.myTickets")}</Link>
+            <Link href="/profile?tab=tickets">{t("confirm.myTickets")}</Link>
           </Button>
         </div>
       </div>

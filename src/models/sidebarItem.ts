@@ -38,7 +38,7 @@ export const sidebarData: Item[] = [
   },
   {
     title: "Customers",
-    url: "/admin/users",
+    url: "/admin/customers",
     icon: UsersRound,
   },
   {
@@ -46,29 +46,24 @@ export const sidebarData: Item[] = [
     url: "/admin/members",
     icon: UserRoundCog,
   },
-  // {
-  //   title: "Permission Management",
-  //   url: "/admin/permissions",
-  //   icon: ShieldCheck,
-  // },
   {
     title: "Coupons",
-    url: "/admin/coupons",
+    url: "...",
     icon: Percent,
   },
   {
     title: "Analytics",
-    url: "/admin/profile",
+    url: "...",
     icon: ChartColumn,
   },
   {
     title: "Reports",
-    url: "/admin/reports",
+    url: "...",
     icon: FileText,
   },
   {
     title: "Settings",
-    url: "/admin/settings",
+    url: "...",
     icon: Settings,
   },
   {

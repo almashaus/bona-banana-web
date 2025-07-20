@@ -48,7 +48,7 @@ export function UserNav({ user }: { user: AppUser }) {
           <DropdownMenuItem onClick={() => router.push("/profile")}>
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push("/profile/tickets")}>
+          <DropdownMenuItem onClick={() => router.push("/profile?tab=tickets")}>
             My Tickets
           </DropdownMenuItem>
           {user.hasDashboardAccess && (

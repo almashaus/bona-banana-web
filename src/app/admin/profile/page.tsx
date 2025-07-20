@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Edit, Shield, Key, Activity, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Edit,
+  Shield,
+  Key,
+  Activity,
+  FileText,
+  Check,
+  X,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Card,
@@ -86,13 +95,13 @@ const mockPermissions = [
 const mockActivityLog = [
   {
     id: "1",
-    action: "Created event 'Summer Music Festival'",
+    action: "Created event 'New Event'",
     timestamp: "2024-01-15 14:30",
     type: "event_created",
   },
   {
     id: "2",
-    action: "Edited user permissions for Jane Smith",
+    action: "Edited user permissions",
     timestamp: "2024-01-15 10:15",
     type: "user_edited",
   },
@@ -116,15 +125,12 @@ export default function UserProfilePage() {
   const { toast } = useToast();
   const [permissions, setPermissions] = useState(mockPermissions);
   const [internalNotes, setInternalNotes] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const params = useParams<{ id: string }>();
-  const id: string = params?.id!;
 
   const {
     data: member,
     error,
     isLoading,
-  } = useSWR<AppUser>(`/api/admin/members/${id}`);
+  } = useSWR<AppUser>(`/api/admin/members/${user?.id}`);
 
   const handleResetPassword = async () => {
     try {
@@ -151,45 +157,13 @@ export default function UserProfilePage() {
     }
   };
 
-  const handlePermissionChange = (
-    featureIndex: number,
-    permission: string,
-    value: boolean
-  ) => {
-    const updatedPermissions = [...permissions];
-    updatedPermissions[featureIndex] = {
-      ...updatedPermissions[featureIndex],
-      [permission]: value,
-    };
-    setPermissions(updatedPermissions);
-  };
-
-  const handleSavePermissions = () => {
-    toast({
-      title: "Permissions updated",
-      description: "User permissions have been updated successfully.",
-    });
-  };
-
-  const handleSaveNotes = () => {
-    toast({
-      title: "Notes saved",
-      description: "Internal notes have been saved successfully.",
-    });
-  };
-
   return (
-    <div className="container py-10">
+    <div className="container py-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold">Member Profile</h1>
-          <p className="text-muted-foreground">
-            View and manage member details
-          </p>
+          <p className="text-muted-foreground">View and manage details</p>
         </div>
       </div>
 
@@ -305,29 +279,6 @@ export default function UserProfilePage() {
                   />
                 </div>
               </div>
-
-              <div className="pt-4 border-t">
-                <h2 className="text-lg font-medium mb-6">Settings</h2>
-                <div className="flex flex-col lg:flex-row gap-6">
-                  <Button asChild>
-                    <Link href={`/admin/members/${id}/edit`}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Member
-                    </Link>
-                  </Button>
-
-                  <Button
-                    onClick={handleResetPassword}
-                    className="flex items-center gap-2"
-                  >
-                    <Key className="h-4 w-4" />
-                    Reset Password
-                  </Button>
-                </div>
-                {/* <p className="text-sm text-muted-foreground mt-2">
-                  This will send a password reset email to the user
-                </p> */}
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -365,47 +316,37 @@ export default function UserProfilePage() {
                           {permission.feature}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Switch
-                            checked={permission.view}
-                            onCheckedChange={(value) =>
-                              handlePermissionChange(index, "view", value)
-                            }
-                          />
+                          {permission.view ? (
+                            <Check className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <X className="h-5 w-5 text-gray-500" />
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Switch
-                            checked={permission.create}
-                            onCheckedChange={(value) =>
-                              handlePermissionChange(index, "create", value)
-                            }
-                          />
+                          {permission.create ? (
+                            <Check className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <X className="h-5 w-5 text-gray-500" />
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Switch
-                            checked={permission.edit}
-                            onCheckedChange={(value) =>
-                              handlePermissionChange(index, "edit", value)
-                            }
-                          />
+                          {permission.edit ? (
+                            <Check className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <X className="h-5 w-5 text-gray-500" />
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Switch
-                            checked={permission.delete}
-                            onCheckedChange={(value) =>
-                              handlePermissionChange(index, "delete", value)
-                            }
-                          />
+                          {permission.delete ? (
+                            <Check className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <X className="h-5 w-5 text-gray-500" />
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </div>
-              <div className="flex justify-end mt-6">
-                <Button onClick={handleSavePermissions}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Save Permissions
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -469,12 +410,6 @@ export default function UserProfilePage() {
                 onChange={(e) => setInternalNotes(e.target.value)}
                 rows={10}
               />
-              <div className="flex justify-end">
-                <Button onClick={handleSaveNotes}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Save Notes
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

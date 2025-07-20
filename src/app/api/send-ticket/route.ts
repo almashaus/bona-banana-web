@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
       doc.data()
     ) as Ticket[];
 
-    const data = await resend.emails.send({
-      from: "Bona Banana <info@bona-banana.com>",
-      to: "ihadeel.1024@gmail.com", // TODO: email
-      subject: "Order Confirmation",
-      react: OrderConfirmationEmail(order, tickets, event),
-    });
+    // const data = await resend.emails.send({
+    //   from: "Bona Banana <info@bona-banana.com>",
+    //   to: "ihadeel.1024@gmail.com", // TODO: email
+    //   subject: "Order Confirmation",
+    //   react: OrderConfirmationEmail(order, tickets, event),
+    // });
 
     return new Response(JSON.stringify({ data: "Email sent" }), {
       status: 200,
