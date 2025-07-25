@@ -119,8 +119,6 @@ export default function ConfirmationPage() {
   const subtotal = total - total * 0.15;
   const fees = (total - subtotal).toFixed(2);
 
-  const qrCodeUrl = generateQRCode(orderNumber); //TODO: API QR generator
-
   return (
     <div className="container py-10">
       <div className="max-w-2xl mx-auto">
@@ -158,17 +156,20 @@ export default function ConfirmationPage() {
 
             <div className="flex justify-center mb-4">
               <div className="text-center">
-                {order?.tickets?.map((ticketId) => (
+                {data?.tickets?.map((ticket) => (
                   <div
-                    key={ticketId}
+                    key={ticket.id}
                     className="flex flex-col items-center gap-1 mb-4"
                   >
                     <span className="text-sm text-muted-foreground">
-                      {ticketId}
+                      {ticket.id}
                     </span>
                     <div className="bg-white p-2 rounded-lg inline-block mb-2">
                       <img
-                        src={qrCodeUrl || "/no-image.svg"}
+                        src={
+                          generateQRCode(ticket.token || ticket.id) ||
+                          "/no-image.svg"
+                        }
                         alt="QR Code"
                         className="w-40 h-40"
                       />

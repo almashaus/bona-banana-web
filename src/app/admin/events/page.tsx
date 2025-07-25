@@ -50,6 +50,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Ticket, TicketStatus } from "@/src/models/ticket";
 import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
 import { getAuth } from "firebase/auth";
+import { generateQRCode } from "@/src/lib/utils/utils";
 
 export default function Events() {
   const { toast } = useToast();
@@ -386,7 +387,10 @@ export default function Events() {
                           <TableCell>
                             <div className="bg-white p-2 rounded-lg inline-block mb-2">
                               <img
-                                src="/images/qr-code.png"
+                                src={
+                                  generateQRCode(ticket.token || ticket.id) ||
+                                  "/no-image.svg"
+                                }
                                 alt="QR Code"
                                 className="w-20 h-20"
                               />

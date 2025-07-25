@@ -13,12 +13,10 @@ export function generateIDNumber(type: string): string {
   return `${type}-${lastFive}${randomFour}`;
 }
 
-export function generateQRCode(text: string): string {
-  // In a real app, this would generate a QR code
-  // For now, we'll just return a placeholder
-  return `/images/qr-code.png?height=200&width=200&text=${encodeURIComponent(
-    text
-  )}`;
+export function generateQRCode(id: string): string {
+  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/ticket?token=${id}`;
+
+  return `${process.env.NEXT_PUBLIC_QR_SERVER}/?data=${encodeURIComponent(url)}&size=200x200`;
 }
 
 export function generateEventId(length = 10) {

@@ -13,4 +13,5 @@ export interface Ticket {
   qrCode: string;
   status: TicketStatus;
   purchasePrice: number;
+  token: string;
 }

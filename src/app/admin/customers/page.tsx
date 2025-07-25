@@ -36,6 +36,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { getAuth } from "firebase/auth";
 import { formatDate } from "@/src/lib/utils/formatDate";
+import { generateQRCode } from "@/src/lib/utils/utils";
 
 export default function customersPage() {
   const { user } = useAuth();
@@ -242,7 +243,10 @@ export default function customersPage() {
                         <TableCell>
                           <div className="bg-white p-2 rounded-lg inline-block mb-2">
                             <img
-                              src="/images/qr-code.png"
+                              src={
+                                generateQRCode(ticket.token || ticket.id) ||
+                                "/no-image.svg"
+                              }
                               alt="QR Code"
                               className="w-20 h-20"
                             />

@@ -38,7 +38,7 @@ import {
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
-import { cn } from "@/src/lib/utils/utils";
+import { cn, generateQRCode } from "@/src/lib/utils/utils";
 import { Calendar } from "@/src/components/ui/calendar";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { getAuth } from "firebase/auth";
@@ -336,7 +336,12 @@ export default function ProfilePage() {
                               <TableCell>
                                 <div className="bg-white p-2 rounded-lg inline-block mb-2">
                                   <img
-                                    src="/images/qr-code.png"
+                                    src={
+                                      generateQRCode(
+                                        ticketData.ticket.token ||
+                                          ticketData.ticket.id
+                                      ) || "/no-image.svg"
+                                    }
                                     alt="QR Code"
                                     className="w-20 h-20"
                                   />

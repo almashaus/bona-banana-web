@@ -74,6 +74,7 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { getAuth } from "firebase/auth";
+import { generateQRCode } from "@/src/lib/utils/utils";
 
 export default function ReservationsPage() {
   const auth = getAuth();
@@ -666,7 +667,10 @@ export default function ReservationsPage() {
                             </span>
                             <div className="w-32 h-32 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
                               <Image
-                                src={"/images/qr-code.png"}
+                                src={
+                                  generateQRCode(ticket.token || ticket.id) ||
+                                  "/no-image.svg"
+                                }
                                 alt="qr code"
                                 width={100}
                                 height={100}
