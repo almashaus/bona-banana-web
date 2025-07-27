@@ -9,6 +9,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
+import { useLanguage } from "@/src/components/i18n/language-provider";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -19,14 +20,15 @@ export default function RegisterPage() {
   const { register, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords do not match",
-        description: "Please make sure your passwords match",
+        title: t("auth.passwordsDoNotMatch"),
+        description: t("auth.passwordsDoNotMatchDesc"),
         variant: "destructive",
       });
       return;
@@ -37,15 +39,15 @@ export default function RegisterPage() {
     try {
       await register(name, email, password);
       toast({
-        title: "✅ Registration successful",
-        description: "Your account has been created successfully",
+        title: "✅ " + t("auth.registrationSuccess"),
+        description: t("auth.registrationSuccessDesc"),
         variant: "success",
       });
       router.push("/");
     } catch (error) {
       toast({
-        title: "Registration failed",
-        description: "There was an error creating your account",
+        title: t("auth.registrationFailed"),
+        description: t("auth.registrationFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -58,15 +60,15 @@ export default function RegisterPage() {
     try {
       await signInWithGoogle();
       toast({
-        title: "✅ Login successful",
-        description: "You have been logged in with Google",
+        title: "✅ " + t("auth.loginSuccess"),
+        description: t("auth.loginGoogleSuccessDesc"),
         variant: "success",
       });
       router.push("/");
     } catch (error) {
       toast({
-        title: "Google sign-in failed",
-        description: "Please try again",
+        title: t("auth.googleSignInFailed"),
+        description: t("auth.googleSignInFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -79,20 +81,20 @@ export default function RegisterPage() {
       <div className="mx-auto my-10 flex w-full flex-col justify-center space-y-6 sm:w-[350px] rounded-lg border p-6 shadow-sm bg-white">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Create an account
+            {t("auth.createAccount")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your information to create an account
+            {t("auth.enterInfoToCreateAccount")}
           </p>
         </div>
         <div className="grid gap-6">
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("auth.name")}</Label>
                 <Input
                   id="name"
-                  placeholder="Ahmad Ali"
+                  placeholder={t("auth.namePlaceholder")}
                   type="text"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -102,10 +104,10 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
                   id="email"
-                  placeholder="name@example.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   type="email"
                   autoCapitalize="none"
                   autoComplete="email"
@@ -116,7 +118,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("auth.password")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -126,7 +128,9 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Label htmlFor="confirm-password">
+                  {t("auth.confirmPassword")}
+                </Label>
                 <Input
                   id="confirm-password"
                   type="password"
@@ -136,7 +140,9 @@ export default function RegisterPage() {
                 />
               </div>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create Account"}
+                {isLoading
+                  ? t("auth.creatingAccount")
+                  : t("auth.createAccount")}
               </Button>
             </div>
           </form>
@@ -146,7 +152,7 @@ export default function RegisterPage() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
+                {t("auth.orContinueWith")}
               </span>
             </div>
           </div>
@@ -158,17 +164,17 @@ export default function RegisterPage() {
               disabled={isLoading}
             >
               <img src="/icons/google.svg" alt="Google Logo" className="h-5" />
-              Google
+              {t("auth.google")}
             </Button>
           </div>
         </div>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          <span>Already have an account? </span>
+          <span>{t("auth.alreadyHaveAccount") + " "}</span>
           <Link
             href="/login"
             className="underline underline-offset-4 text-orangeColor hover:text-black"
           >
-            Sign in
+            {t("auth.signIn")}
           </Link>
         </p>
       </div>

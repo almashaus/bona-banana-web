@@ -9,8 +9,9 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
+import { useLanguage } from "@/src/components/i18n/language-provider";
 
-export default function LoginPage() {
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams?.get("redirect") || "/";
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,15 +29,15 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast({
-        title: "✅ Login successful",
-        description: "You have been logged in successfully",
+        title: "✅ " + t("auth.loginSuccess"),
+        description: t("auth.loginSuccessDesc"),
         variant: "success",
       });
       router.push(redirectUrl);
     } catch (error) {
       toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again",
+        title: t("auth.loginFailed"),
+        description: t("auth.loginFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -48,15 +50,15 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
       toast({
-        title: "✅ Login successful",
-        description: "You have been logged in with Google",
+        title: "✅ " + t("auth.loginSuccess"),
+        description: t("auth.loginGoogleSuccessDesc"),
         variant: "success",
       });
       router.push(redirectUrl);
     } catch (error) {
       toast({
-        title: "Google sign-in failed",
-        description: "Please try again",
+        title: t("auth.googleSignInFailed"),
+        description: t("auth.googleSignInFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -65,96 +67,98 @@ export default function LoginPage() {
   };
 
   return (
-    <Suspense>
-      <div className="container flex lg:h-screen w-screen flex-col items-center justify-center">
-        <div className="mx-auto my-10 flex w-full flex-col justify-center space-y-6 sm:w-[350px] rounded-lg border p-6 shadow-sm bg-white">
-          <div className="flex flex-col space-y-2 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Welcome back
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Enter your email and password to sign in
-            </p>
-          </div>
-          <div className="grid gap-6">
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    placeholder="name@example.com"
-                    type="email"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    autoCorrect="off"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <div className="text-right">
-                    <Link
-                      href="/reset-password"
-                      className="text-xs font-light text-redColor underline-offset-4 hover:underline"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-                </div>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign In"}
-                </Button>
-              </div>
-            </form>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-              >
-                <img
-                  src="/icons/google.svg"
-                  alt="Google Logo"
-                  className="h-5"
-                />
-                Google
-              </Button>
-            </div>
-          </div>
-          <p className="px-8 text-center text-sm text-muted-foreground">
-            <span>Don&apos;t have an account? </span>
-            <Link
-              href="/signup"
-              className="underline underline-offset-4 text-orangeColor hover:text-black"
-            >
-              Sign up
-            </Link>
+    <div className="container flex lg:h-screen w-screen flex-col items-center justify-center">
+      <div className="mx-auto my-10 flex w-full flex-col justify-center space-y-6 sm:w-[350px] rounded-lg border p-6 shadow-sm bg-white">
+        <div className="flex flex-col space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("auth.welcomeBack")}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {t("auth.enterEmailPassword")}
           </p>
         </div>
+        <div className="grid gap-6">
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">{t("auth.email")}</Label>
+                <Input
+                  id="email"
+                  placeholder={t("auth.emailPlaceholder")}
+                  type="email"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect="off"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t("auth.password")}</Label>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <div className="text-right">
+                  <Link
+                    href="/reset-password"
+                    className="text-xs font-light text-redColor underline-offset-4 hover:underline"
+                  >
+                    {t("auth.forgotPassword")}
+                  </Link>
+                </div>
+              </div>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? t("auth.signingIn") : t("auth.signIn")}
+              </Button>
+            </div>
+          </form>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                {t("auth.orContinueWith")}
+              </span>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              <img src="/icons/google.svg" alt="Google Logo" className="h-5" />
+              {t("auth.google")}
+            </Button>
+          </div>
+        </div>
+        <p className="px-8 text-center text-sm text-muted-foreground">
+          <span>{t("auth.noAccount") + " "}</span>
+          <Link
+            href="/signup"
+            className="underline underline-offset-4 text-orangeColor hover:text-black"
+          >
+            {t("auth.signUp")}
+          </Link>
+        </p>
       </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <Login />
     </Suspense>
   );
 }

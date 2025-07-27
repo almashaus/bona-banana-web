@@ -14,11 +14,10 @@ import { Ticket, TicketStatus } from "@/src/models/ticket";
 import { AppUser } from "@/src/models/user";
 import { Calendar } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-
 import { Suspense, useEffect, useState } from "react";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
 
-export default function ValidateTicketPage() {
+function TicketView() {
   const [date, setDate] = useState<EventDate | null>(null);
   const [isValid, setIsValid] = useState<Boolean>();
   const searchParams = useSearchParams();
@@ -56,47 +55,53 @@ export default function ValidateTicketPage() {
         <div className="flex justify-center items-center py-12">Error !</div>
       )}
       {data && (
-        <Suspense>
-          <div className="grid gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Event Details */}
+        <div className="grid gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Event Details */}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-end gap-2">
-                    <Calendar className="h-5 w-5 text-redColor" />
-                    Event Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
-                      Event Name
-                    </Label>
-                    <p className="font-medium">{data.event.title}</p>
-                  </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-end gap-2">
+                  <Calendar className="h-5 w-5 text-redColor" />
+                  Event Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">
+                    Event Name
+                  </Label>
+                  <p className="font-medium">{data.event.title}</p>
+                </div>
 
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
-                      Date
-                    </Label>
-                    <p>{formatDate(date?.date!)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">
-                      Time
-                    </Label>
-                    <p>
-                      {formatTime(date?.startTime!)} -{" "}
-                      {formatTime(date?.endTime!)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">
+                    Date
+                  </Label>
+                  <p>{formatDate(date?.date!)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">
+                    Time
+                  </Label>
+                  <p>
+                    {formatTime(date?.startTime!)} -{" "}
+                    {formatTime(date?.endTime!)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </Suspense>
+        </div>
       )}
     </div>
+  );
+}
+
+export default function TicketPage() {
+  return (
+    <Suspense>
+      <TicketView />
+    </Suspense>
   );
 }

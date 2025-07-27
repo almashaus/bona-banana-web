@@ -4,12 +4,13 @@ import type React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Ticket } from "lucide-react";
+import { Mail } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
+import { useLanguage } from "@/src/components/i18n/language-provider";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -18,6 +19,7 @@ export default function ResetPasswordPage() {
   const { toast } = useToast();
   const { resetPassword } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,14 +30,14 @@ export default function ResetPasswordPage() {
 
       setIsEmailSent(true);
       toast({
-        title: "Reset email sent",
-        description: "Check your email for password reset instructions",
+        title: t("auth.resetEmailSent"),
+        description: t("auth.checkEmailForReset"),
         variant: "success",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to send reset email. Please try again.",
+        title: t("auth.error"),
+        description: t("auth.resetEmailFailed"),
         variant: "destructive",
       });
     } finally {
@@ -54,19 +56,19 @@ export default function ResetPasswordPage() {
               </div>
             </div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Check your email
+              {t("auth.checkYourEmail")}
             </h1>
             <p className="text-sm text-muted-foreground">
-              We've sent a password reset link to <strong>{email}</strong>
+              {t("auth.sentPasswordResetLink")} <strong>{email}</strong>
             </p>
           </div>
           <div className="grid gap-4">
             <p className="text-sm text-muted-foreground text-center">
-              Didn't receive the email? Check your spam folder or try again.
+              {t("auth.didntReceiveEmail")}
             </p>
 
             <Button asChild>
-              <Link href="/login">Back to login</Link>
+              <Link href="/login">{t("auth.backToLogin")}</Link>
             </Button>
           </div>
         </div>
@@ -79,21 +81,20 @@ export default function ResetPasswordPage() {
       <div className="mx-auto my-10 flex w-full flex-col justify-center space-y-6 sm:w-[350px] rounded-lg border p-6 shadow-sm bg-white">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Reset your password
+            {t("auth.resetYourPassword")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your email address and we'll send you a link to reset your
-            password
+            {t("auth.enterEmailToReset")}
           </p>
         </div>
         <div className="grid gap-6">
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
                   id="email"
-                  placeholder="name@example.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   type="email"
                   autoCapitalize="none"
                   autoComplete="email"
@@ -104,7 +105,7 @@ export default function ResetPasswordPage() {
                 />
               </div>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Sending..." : "Send reset link"}
+                {isLoading ? t("auth.sending") : t("auth.sendResetLink")}
               </Button>
             </div>
           </form>
@@ -114,7 +115,7 @@ export default function ResetPasswordPage() {
             href="/login"
             className="underline underline-offset-4 hover:text-greenColor"
           >
-            ← Back to login
+            ← {t("auth.backToLogin")}
           </Link>
         </p>
       </div>

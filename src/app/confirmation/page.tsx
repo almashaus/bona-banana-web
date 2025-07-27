@@ -18,7 +18,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Ticket } from "@/src/models/ticket";
 
-export default function ConfirmationPage() {
+function Confirmation() {
   const [event, setEvent] = useState<Event | null>(null);
   const [date, setDate] = useState<Date | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
@@ -120,83 +120,80 @@ export default function ConfirmationPage() {
   const fees = (total - subtotal).toFixed(2);
 
   return (
-    <Suspense>
-      <div className="container py-10">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600 mb-4">
-              <CheckCircle className="h-10 w-10" />
-            </div>
-            <h1 className="text-3xl font-bold">{t("confirm.confirm")}</h1>
-            <p className="text-muted-foreground mt-2">
-              {t("confirm.purchase")}
-            </p>
+    <div className="container py-10">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600 mb-4">
+            <CheckCircle className="h-10 w-10" />
           </div>
+          <h1 className="text-3xl font-bold">{t("confirm.confirm")}</h1>
+          <p className="text-muted-foreground mt-2">{t("confirm.purchase")}</p>
+        </div>
 
-          <Card className="mb-6" ref={cardRef}>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="text-xl font-semibold">{event.title}</div>
-                  <div className="flex items-center text-sm text-muted-foreground mt-1">
-                    <CalendarDays className="mr-1 h-4 w-4" />
-                    {formatDate(date)}
-                  </div>
-                  <div className="flex items-center text-sm text-muted-foreground mt-1">
-                    <MapPin className="mr-1 h-4 w-4" />
-                    {event.location}
-                  </div>
+        <Card className="mb-6" ref={cardRef}>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="text-xl font-semibold">{event.title}</div>
+                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                  <CalendarDays className="mr-1 h-4 w-4" />
+                  {formatDate(date)}
                 </div>
-                <div className="text-right items-end">
-                  <div className="text-sm text-muted-foreground">
-                    {t("confirm.orderNumber")}
-                  </div>
-                  <div className="font-medium">{orderNumber}</div>
+                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                  <MapPin className="mr-1 h-4 w-4" />
+                  {event.location}
                 </div>
               </div>
+              <div className="text-right items-end">
+                <div className="text-sm text-muted-foreground">
+                  {t("confirm.orderNumber")}
+                </div>
+                <div className="font-medium">{orderNumber}</div>
+              </div>
+            </div>
 
-              <Separator className="my-4" />
+            <Separator className="my-4" />
 
-              <div className="flex justify-center mb-4">
-                <div className="text-center">
-                  {data?.tickets?.map((ticket) => (
-                    <div
-                      key={ticket.id}
-                      className="flex flex-col items-center gap-1 mb-4"
-                    >
-                      <span className="text-sm text-muted-foreground">
-                        {ticket.id}
-                      </span>
-                      <div className="bg-white p-2 rounded-lg inline-block mb-2">
-                        <img
-                          src={
-                            generateQRCode(ticket.token || ticket.id) ||
-                            "/no-image.svg"
-                          }
-                          alt="QR Code"
-                          className="w-40 h-40"
-                        />
-                      </div>
+            <div className="flex justify-center mb-4">
+              <div className="text-center">
+                {data?.tickets?.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    className="flex flex-col items-center gap-1 mb-4"
+                  >
+                    <span className="text-sm text-muted-foreground">
+                      {ticket.id}
+                    </span>
+                    <div className="bg-white p-2 rounded-lg inline-block mb-2">
+                      <img
+                        src={
+                          generateQRCode(ticket.token || ticket.id) ||
+                          "/no-image.svg"
+                        }
+                        alt="QR Code"
+                        className="w-40 h-40"
+                      />
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              <Separator className="my-4" />
+            <Separator className="my-4" />
 
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    {t("event.tickets").charAt(0).toUpperCase() +
-                      t("event.tickets").slice(1)}
-                  </span>
-                  <span>
-                    {quantity} × <span className="icon-saudi_riyal" />
-                    {event.price}
-                  </span>
-                </div>
-                {/* TODO: VAT*/}
-                {/* <div className="flex justify-between">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("event.tickets").charAt(0).toUpperCase() +
+                    t("event.tickets").slice(1)}
+                </span>
+                <span>
+                  {quantity} × <span className="icon-saudi_riyal" />
+                  {event.price}
+                </span>
+              </div>
+              {/* TODO: VAT*/}
+              {/* <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   {t("checkout.subtotal")}
                 </span>
@@ -215,37 +212,44 @@ export default function ConfirmationPage() {
                 </span>
               </div>
               <Separator className="my-2" /> */}
-                <div className="flex justify-between font-bold">
-                  <span>
-                    {t("event.total")}{" "}
-                    {/* <span className="text-xs font-light text-muted-foreground">
+              <div className="flex justify-between font-bold">
+                <span>
+                  {t("event.total")}{" "}
+                  {/* <span className="text-xs font-light text-muted-foreground">
                     *{t("checkout.VAT")}
                   </span> */}
-                  </span>
-                  <span>
-                    <span className="icon-saudi_riyal" />
-                    {total}
-                  </span>
-                </div>
+                </span>
+                <span>
+                  <span className="icon-saudi_riyal" />
+                  {total}
+                </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              className="flex items-center gap-2"
-              onClick={handleDownloadPDF}
-            >
-              <Download className="h-4 w-4" />
-              {t("confirm.download")}{" "}
-              {quantity > 1 ? t("confirm.tickets") : t("confirm.ticket")}
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/profile?tab=tickets">{t("confirm.myTickets")}</Link>
-            </Button>
-          </div>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            className="flex items-center gap-2"
+            onClick={handleDownloadPDF}
+          >
+            <Download className="h-4 w-4" />
+            {t("confirm.download")}{" "}
+            {quantity > 1 ? t("confirm.tickets") : t("confirm.ticket")}
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/profile?tab=tickets">{t("confirm.myTickets")}</Link>
+          </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense>
+      <Confirmation />
     </Suspense>
   );
 }
