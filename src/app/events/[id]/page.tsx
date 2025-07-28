@@ -118,17 +118,17 @@ export default function EventPage() {
   }
 
   return (
-    <div className="container py-10">
-      <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
+    <div className="px-5 py-10 md:container">
+      <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-2 md:gap-6 lg:grid lg:grid-cols-3 lg:gap-6">
         {/* Event Details */}
-        <div className="lg:col-span-2">
+        <div className="md:col-span-1 lg:col-span-2 lg:me-6">
           <div className="flex justify-start gap-4">
             <Button variant="outline" size="icon" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="text-3xl font-bold">{event.title}</h1>
           </div>
-          <div className="aspect-video w-full lg:w-3/4 relative my-4 rounded-xl overflow-hidden">
+          <div className="aspect-video w-full relative my-4 rounded-xl overflow-hidden">
             <Image
               src={
                 isSafeImageUrl(event.eventImage)
@@ -146,7 +146,7 @@ export default function EventPage() {
             <h2 className="text-xl font-bold">{t("event.details")}</h2>
             <p className="text-muted-foreground">{event.description}</p>
 
-            <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border border-neutral-200 bg-card text-card-foreground shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg border border-neutral-200 bg-card text-card-foreground shadow-sm">
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-redColor" />
                 <div>
@@ -193,7 +193,7 @@ export default function EventPage() {
                   </p>
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-redColor" />
                 <div>
                   <p className="text-sm font-medium">{t("event.location")}</p>
@@ -207,7 +207,7 @@ export default function EventPage() {
         </div>
 
         {/* Ticket Info */}
-        <div className="flex flex-col space-y-6">
+        <div className="flex flex-col md:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle>{t("event.ticketInformation")}</CardTitle>

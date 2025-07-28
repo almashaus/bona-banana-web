@@ -128,7 +128,7 @@ export default function CheckoutPage() {
     }
 
     // Navigate to confirmation page
-    router.push(`/confirmation?orderNumber=${orderId}`);
+    router.replace(`/confirmation?orderNumber=${orderId}`);
   };
 
   // Send order confirmation email

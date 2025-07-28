@@ -22,7 +22,7 @@ export default function Footer() {
             {/* Social Media */}
             <div className="flex items-center gap-4">
               <a
-                href="https://whatsapp.com"
+                href="https://wa.me/966506668581"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:opacity-75"
@@ -30,7 +30,7 @@ export default function Footer() {
                 <img src="/icons/whatsapp.svg" alt="Whatsapp" className="h-6" />
               </a>
               <a
-                href="https://twitter.com"
+                href="mailto:info@bona-banana.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:opacity-75"
@@ -38,7 +38,7 @@ export default function Footer() {
                 <MailIcon className="h-6" />
               </a>
               <a
-                href="https://instagram.com"
+                href="https://instagram.com/gamewithbb"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:opacity-75"
@@ -54,7 +54,10 @@ export default function Footer() {
 
           {/* Links */}
           <div className="flex flex-col items-center gap-4 mt-6">
-            <a href="/about-us" className="text-sm hover:underline">
+            <a
+              href="https://bona-banana.com"
+              className="text-sm hover:underline"
+            >
               {t("footer.aboutUs")}
             </a>
             <a href="/contact-us" className="text-sm hover:underline">

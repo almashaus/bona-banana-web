@@ -48,9 +48,9 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="default">
             {user?.hasDashboardAccess && (
-              <Link href="/admin">
+              <Button onClick={() => (window.location.href = "/admin")}>
                 <MonitorCog className="text-redColor" />
-              </Link>
+              </Button>
             )}
           </Button>
           {/* <ModeToggle /> */}

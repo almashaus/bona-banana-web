@@ -110,6 +110,10 @@ export const translations = {
       "Enter your email address and we'll send you a link to reset your password",
     "auth.sending": "Sending...",
     "auth.sendResetLink": "Send reset link",
+    "contact.contactUs": "Contact Us",
+    "contact.description": "We would love to hear from you",
+    "contact.sendMessage": "Send us a message",
+    "contact.getTouch": "Get in touch",
   },
   ar: {
     "home.title": "اكتشف الفعاليات",
@@ -221,5 +225,9 @@ export const translations = {
       "أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور",
     "auth.sending": "جاري الإرسال...",
     "auth.sendResetLink": "إرسال رابط إعادة التعيين",
+    "contact.contactUs": "اتصل بنا",
+    "contact.description": "نود أن نسمع منك",
+    "contact.sendMessage": "أرسل لنا رسالة",
+    "contact.getTouch": "ابق على تواصل",
   },
 };
