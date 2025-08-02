@@ -17,6 +17,7 @@ import Loading from "@/src/components/ui/loading";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Ticket } from "@/src/models/ticket";
+import Image from "next/image";
 
 function Confirmation() {
   const [event, setEvent] = useState<Event | null>(null);
@@ -164,14 +165,15 @@ function Confirmation() {
                     <span className="text-sm text-muted-foreground">
                       {ticket.id}
                     </span>
-                    <div className="bg-white p-2 rounded-lg inline-block mb-2">
-                      <img
+                    <div className="flex justify-center bg-white p-2 rounded-lg  mb-2 w-40 h-40 md:w-full md:h-full">
+                      <Image
                         src={
                           generateQRCode(ticket.token || ticket.id) ||
                           "/no-image.svg"
                         }
-                        alt="QR Code"
-                        className="w-40 h-40"
+                        alt={"QR code"}
+                        width={150}
+                        height={150}
                       />
                     </div>
                   </div>

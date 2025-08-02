@@ -15,7 +15,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { MemberStatus, MemberRole, AppUser } from "@/src/models/user";
 import {
   Select,
@@ -92,6 +92,10 @@ export default function UserProfilePage() {
       });
 
       if (response.ok) {
+        await mutate("/api/admin/members");
+        await mutate("/api/admin/customers");
+        await mutate(`/api/profile/${id}`);
+
         toast({
           title: "✅ Member updated",
           description: "Member details have been successfully updated.",

@@ -23,7 +23,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization") || "";
 

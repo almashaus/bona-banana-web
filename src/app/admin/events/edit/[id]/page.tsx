@@ -44,7 +44,7 @@ import { formatDate, formatTime24H } from "@/src/lib/utils/formatDate";
 import { cn } from "@/src/lib/utils/utils";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
 import Loading from "@/src/components/ui/loading";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import Link from "next/link";
 import { getAuth } from "firebase/auth";
 
@@ -189,7 +189,8 @@ export default function EditEventPage() {
         title: title,
         slug: slug,
         description: description,
-        eventImage: "https://i.ibb.co/gM520PrB/IMG-0758.jpg", // TODO:  eventImage,
+        eventImage:
+          event?.eventImage || "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage,
         adImage: adImage,
         price: price,
         status: status,
@@ -211,9 +212,13 @@ export default function EditEventPage() {
       });
 
       if (response.ok) {
+        await mutate("/api/admin/events");
+        await mutate("/api/published-events");
+        await mutate("/api/admin/orders");
+
         toast({
           title: "✅ Event updated",
-          description: "Your event has been updated successfully 🎉",
+          description: "Your event has been updated successfully",
         });
 
         // Redirect to admin events page

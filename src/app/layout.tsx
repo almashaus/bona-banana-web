@@ -1,6 +1,7 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "../styles/globals.css";
 import Header from "@/src/components/layout/header";
 import Footer from "@/src/components/layout/footer";
@@ -30,6 +31,7 @@ export default function RootLayout({
           <MySWRProvider>
             <LanguageProvider>
               <Analytics />
+              <SpeedInsights />
               <div className="flex flex-col min-h-screen min-w-full">
                 <Header />
                 <main className="flex-grow pt-16">{children}</main>

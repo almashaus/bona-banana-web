@@ -92,7 +92,11 @@ export default function ReservationsPage() {
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
-  const { data: orders, error, isLoading } = useSWR("/api/admin/orders");
+  const {
+    data: orders,
+    error,
+    isLoading,
+  } = useSWR<OrderResponse[]>("/api/admin/orders");
 
   useEffect(() => {
     // Filter reservations
@@ -144,7 +148,7 @@ export default function ReservationsPage() {
       const idToken = await authUser.getIdToken();
 
       const response = await fetch(`/api/admin/orders`, {
-        method: "PUT",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,

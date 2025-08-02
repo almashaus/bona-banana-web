@@ -51,6 +51,7 @@ import { Ticket, TicketStatus } from "@/src/models/ticket";
 import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
 import { getAuth } from "firebase/auth";
 import { generateQRCode } from "@/src/lib/utils/utils";
+import Image from "next/image";
 
 export default function Events() {
   const { toast } = useToast();
@@ -103,6 +104,9 @@ export default function Events() {
 
       if (response.ok) {
         await mutate("/api/admin/events");
+        await mutate("/api/published-events");
+        await mutate("/api/admin/orders");
+
         toast({
           title: "✅ Event deleted",
           description: "Your event has been deleted successfully",
@@ -132,7 +136,7 @@ export default function Events() {
       const idToken = await authUser.getIdToken();
 
       const response = await fetch("/api/admin/events", {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
@@ -145,6 +149,8 @@ export default function Events() {
 
       if (response.ok) {
         await mutate("/api/admin/events");
+        await mutate("/api/admin/customers");
+        await mutate("/api/profile");
       }
     } catch (error) {
       toast({
@@ -385,14 +391,15 @@ export default function Events() {
                             {ticket.id}
                           </TableCell>
                           <TableCell>
-                            <div className="bg-white p-2 rounded-lg inline-block mb-2">
-                              <img
+                            <div className="flex justify-center bg-white p-2 rounded-lg  mb-2 w-20 h-20 md:w-full md:h-full">
+                              <Image
                                 src={
                                   generateQRCode(ticket.token || ticket.id) ||
                                   "/no-image.svg"
                                 }
-                                alt="QR Code"
-                                className="w-20 h-20"
+                                alt={"QR code"}
+                                width={80}
+                                height={80}
                               />
                             </div>
                           </TableCell>

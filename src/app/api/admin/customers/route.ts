@@ -1,6 +1,7 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { Ticket } from "@/src/models/ticket";
 import { AppUser, CustomerResponse } from "@/src/models/user";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -22,12 +23,12 @@ export async function GET() {
       })
     );
 
-    return new Response(JSON.stringify({ customers: customers }), {
+    return new NextResponse(JSON.stringify({ customers: customers }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ data: "Error" }), {
+    return new NextResponse(JSON.stringify({ data: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

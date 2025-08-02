@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
     await Promise.all(
       tickets.map((ticket) => {
         const token = crypto.randomBytes(16).toString("hex");
-        const url = `http://localhost:3000/ticket?token=${token}`;
 
         db.collection("tickets")
           .doc(ticket.id)

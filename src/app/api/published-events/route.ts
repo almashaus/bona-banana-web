@@ -1,13 +1,22 @@
-import { getEventsByStatus } from "@/src/lib/firebase/firestore";
+import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { Event, EventStatus } from "@/src/models/event";
 
 export async function GET() {
   try {
-    const events: Event[] = await getEventsByStatus(EventStatus.PUBLISHED);
+    const eventsSnapshot = await db
+      .collection("events")
+      .where("status", "==", EventStatus.PUBLISHED)
+      .orderBy("updatedAt", "desc")
+      .get();
+
+    const events = eventsSnapshot.docs.map((doc) => doc.data() as Event);
 
     return new Response(JSON.stringify(events), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      },
     });
   } catch (error) {
     return new Response(JSON.stringify({ data: "Error" }), {

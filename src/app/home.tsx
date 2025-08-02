@@ -13,25 +13,13 @@ import { useLanguage } from "@/src/components/i18n/language-provider";
 
 export default function Home() {
   const { t } = useLanguage();
-  const { data, error, isLoading } = useSWR<Event[]>("/api/published-events");
+  const { data, error, isLoading } = useSWR<Event[]>("/api/published-events", {
+    fetcher: (url) =>
+      fetch(url, { cache: "no-store" }).then((res) => res.json()),
+  });
 
   return (
     <div className="flex flex-col min-h-screen ">
-      {/* Hero Section */}
-      {/* <section className="w-full py-12 md:py-24 lg:py-32">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col justify-center items-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tighter text-center sm:text-5xl xl:text-6xl/none">
-              Discover Events That Match Your Passion
-            </h1>
-            <p className="max-w-[800px] text-center text-muted-foreground md:text-xl">
-              Find and book tickets for concerts, sports, theater, festivals,
-              and more.
-            </p>
-          </div>
-        </div>
-      </section> */}
-
       {/* Featured Events Section */}
       <section className="w-full py-12 md:py-24 lg:py-24">
         <div className="container px-8 md:px-6">

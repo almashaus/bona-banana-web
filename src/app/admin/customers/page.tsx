@@ -37,6 +37,7 @@ import {
 import { getAuth } from "firebase/auth";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { generateQRCode } from "@/src/lib/utils/utils";
+import Image from "next/image";
 
 export default function customersPage() {
   const { user } = useAuth();
@@ -241,14 +242,15 @@ export default function customersPage() {
                           {ticket.id}
                         </TableCell>
                         <TableCell>
-                          <div className="bg-white p-2 rounded-lg inline-block mb-2">
-                            <img
+                          <div className="flex justify-center bg-white p-2 rounded-lg  mb-2 w-20 h-20 md:w-full md:h-full">
+                            <Image
                               src={
                                 generateQRCode(ticket.token || ticket.id) ||
                                 "/no-image.svg"
                               }
-                              alt="QR Code"
-                              className="w-20 h-20"
+                              alt={"QR code"}
+                              width={80}
+                              height={80}
                             />
                           </div>
                         </TableCell>

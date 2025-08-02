@@ -1,18 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Edit,
-  Shield,
-  Key,
-  Activity,
-  FileText,
-  Check,
-  X,
-} from "lucide-react";
-import { Button } from "@/src/components/ui/button";
+import { useRouter } from "next/navigation";
+import { Activity, Check, X } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -35,7 +25,6 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Switch } from "@/src/components/ui/switch";
 import {
   Table,
   TableBody,

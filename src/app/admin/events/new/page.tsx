@@ -45,6 +45,7 @@ import { cn } from "@/src/lib/utils/utils";
 import { EventDate, EventStatus } from "@/src/models/event";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { getAuth } from "firebase/auth";
+import { mutate } from "swr";
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -138,7 +139,7 @@ export default function CreateEventPage() {
         title: title,
         slug: slug,
         description: description,
-        eventImage: "https://i.ibb.co/gM520PrB/IMG-0758.jpg", // TODO:  eventImage, https://i.ibb.co/pvrpp5w0/IMG-0757.jpg https://i.ibb.co/jPx2PPxn/IMG-9784.png
+        eventImage: "https://i.ibb.co/jPx2PPxn/IMG-9784.png", // TODO:  eventImage, https://i.ibb.co/pvrpp5w0/IMG-0757.jpg https://i.ibb.co/jPx2PPxn/IMG-9784.png https://i.ibb.co/gM520PrB/IMG-0758.jpg
         adImage: adImage,
         price: price,
         status: status,
@@ -160,6 +161,10 @@ export default function CreateEventPage() {
       });
 
       if (response.ok) {
+        await mutate("/api/admin/events");
+        await mutate("/api/published-events");
+        await mutate("/api/admin/orders");
+
         toast({
           title: "✅ Event created",
           description: "Your event has been created successfully",

@@ -32,6 +32,7 @@ import { eventDateTimeString } from "@/src/lib/utils/formatDate";
 import Loading from "@/src/components/ui/loading";
 import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
 import { useLanguage } from "@/src/components/i18n/language-provider";
+import { mutate } from "swr";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -113,7 +114,7 @@ export default function CheckoutPage() {
       tickets: ticketsIds,
     };
 
-    await fetch("/api/checkout", {
+    const response = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -122,13 +123,20 @@ export default function CheckoutPage() {
       }),
     });
 
-    // Send order confirmation email
-    if (user.email) {
-      await sendOrderConfirmationEmail(user.email, orderId);
-    }
+    if (response.ok) {
+      await mutate("/api/admin/events");
+      await mutate("/api/admin/orders");
+      await mutate("/api/admin/customers");
+      await mutate("/api/published-events");
 
-    // Navigate to confirmation page
-    router.replace(`/confirmation?orderNumber=${orderId}`);
+      // Send order confirmation email
+      if (user.email) {
+        await sendOrderConfirmationEmail(user.email, orderId);
+      }
+
+      // Navigate to confirmation page
+      router.replace(`/confirmation?orderNumber=${orderId}`);
+    }
   };
 
   // Send order confirmation email
