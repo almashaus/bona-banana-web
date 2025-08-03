@@ -55,15 +55,22 @@ export default function customersPage() {
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
-  interface Response {
-    customers: CustomerResponse[];
-  }
+  const fetcher = (url: string) =>
+    fetch(url, { cache: "no-store" }).then((res) => res.json());
 
-  const { data, error, isLoading } = useSWR<Response>("/api/admin/customers");
+  const { data, error, isLoading } = useSWR<CustomerResponse[]>(
+    "/api/admin/customers",
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateIfStale: true,
+      refreshInterval: 30000,
+    }
+  );
 
   useEffect(() => {
     if (data) {
-      const filteredData = data.customers.filter((customer) => {
+      const filteredData = data.filter((customer) => {
         const matchesSearch =
           customer.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           customer.user.email.toLowerCase().includes(searchTerm.toLowerCase());

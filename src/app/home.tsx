@@ -22,6 +22,7 @@ export default function Home() {
     {
       revalidateOnFocus: true,
       revalidateIfStale: true,
+      refreshInterval: 30000,
     }
   );
 
