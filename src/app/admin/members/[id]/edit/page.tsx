@@ -25,10 +25,12 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { getAuth } from "firebase/auth";
+import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 
 export default function UserProfilePage() {
   const auth = getAuth();
   const authUser = auth.currentUser!;
+  const setUser = useAuthStore((state) => state.setUser);
   const router = useRouter();
   const { toast } = useToast();
   const params = useParams<{ id: string }>();
@@ -56,6 +58,7 @@ export default function UserProfilePage() {
         role: data.dashboard?.role || MemberRole.SUPPORT,
         status: data.dashboard?.status || MemberStatus.ACTIVE,
       });
+      setUser(data);
     }
   }, [data]);
 

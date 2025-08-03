@@ -37,6 +37,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import { Event, EventDate } from "@/src/models/event";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
@@ -267,20 +278,45 @@ export default function Events() {
                     <Edit2 className="h-3 w-3" /> Edit
                   </Link>
                 </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={isDeleting}
-                  onClick={() => deleteEvent(event.id)}
-                >
-                  {isDeleting ? (
-                    <LoadingDots />
-                  ) : (
-                    <>
+
+                <AlertDialog>
+                  <AlertDialogTrigger>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={isDeleting}
+                    >
                       <Trash className="h-3 w-3" /> Delete
-                    </>
-                  )}
-                </Button>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you absolutely sure?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently
+                        delete the event data.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => deleteEvent(event.id)}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? (
+                          <LoadingDots />
+                        ) : (
+                          <>
+                            <Trash className="h-3 w-3 me-1" /> Delete
+                          </>
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
             <Collapsible

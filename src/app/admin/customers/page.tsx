@@ -22,7 +22,7 @@ import {
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { CustomerResponse } from "@/src/models/user";
 import Loading from "@/src/components/ui/loading";
 import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
@@ -74,7 +74,8 @@ export default function customersPage() {
     }
   }, [data, searchTerm]);
 
-  const handleViewDetails = (customer: CustomerResponse) => {
+  const handleViewDetails = async (customer: CustomerResponse) => {
+    await mutate("/api/admin/customers");
     setSelectedCustomer(customer);
     setIsDialogOpen(true);
   };

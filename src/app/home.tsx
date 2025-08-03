@@ -13,10 +13,17 @@ import { useLanguage } from "@/src/components/i18n/language-provider";
 
 export default function Home() {
   const { t } = useLanguage();
-  const { data, error, isLoading } = useSWR<Event[]>("/api/published-events", {
-    fetcher: (url) =>
-      fetch(url, { cache: "no-store" }).then((res) => res.json()),
-  });
+  const fetcher = (url: string) =>
+    fetch(url, { cache: "no-store" }).then((res) => res.json());
+
+  const { data, error, isLoading } = useSWR<Event[]>(
+    "/api/published-events",
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateIfStale: true,
+    }
+  );
 
   return (
     <div className="flex flex-col min-h-screen ">
