@@ -58,3 +58,8 @@ export interface PromoCode {
   // Relations
   orders?: Order[];
 }
+
+export interface DashboardEvent extends Event {
+  eventDate: EventDate;
+  tickets: Ticket[];
+}

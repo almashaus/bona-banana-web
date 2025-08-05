@@ -47,6 +47,28 @@ export async function getEventsByStatus(status: EventStatus) {
   }
 }
 
+export async function getEventsInMonth() {
+  try {
+    const target = new Date();
+    const formatted = target.toISOString().split("T")[0];
+
+    const q = query(
+      collection(db, "events"),
+      where("eventDates", "array-contains", formatted)
+    );
+
+    const snapshot = await getDocs(q);
+    const matchingEvents = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return matchingEvents;
+  } catch (error) {
+    throw new Error("Error fetching data!");
+  }
+}
+
 export const getAllDocuments = async (
   collectionName: string
 ): Promise<DocumentData[]> => {

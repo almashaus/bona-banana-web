@@ -227,6 +227,27 @@ export const onTicketCreated = functions.firestore
     }
   });
 
+const formatDate = (d: Date): string => d.toISOString().split("T")[0];
+/*
+  [ 7 ]
+  Triggered when a new event is added or updated; add eventsDates
+*/
+export const updateEventDates = functions.firestore
+  .document("events/{eventId}")
+  .onWrite(async (change, context) => {
+    const eventData = change.after.exists ? change.after.data() : null;
+    if (!eventData) return null; // Document deleted
+
+    const dates = eventData.dates || [];
+
+    const eventDates = dates.map((d: any) => {
+      const date = d.date?.toDate?.() ?? new Date(d.date);
+      return formatDate(date);
+    });
+
+    return change.after.ref.update({ eventDates });
+  });
+
 /*
 Deploy the functions command:
 `firebase deploy --only functions`

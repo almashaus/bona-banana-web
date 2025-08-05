@@ -6,7 +6,7 @@ import { useToast } from "@/src/components/ui/use-toast";
 import Link from "next/link";
 import {
   Check,
-  CheckSquare,
+  CheckCircle,
   ChevronDown,
   ChevronUp,
   CircleAlertIcon,
@@ -64,11 +64,10 @@ import { getAuth } from "firebase/auth";
 import { generateQRCode } from "@/src/lib/utils/utils";
 import Image from "next/image";
 
-export default function Events() {
+export default function EventsPage() {
   const { toast } = useToast();
   const auth = getAuth();
   const authUser = auth.currentUser!;
-  const router = useRouter();
   const pathname = usePathname();
   const eventUrl = pathname?.includes("/events");
   const isMobile = useIsMobile();
@@ -159,6 +158,7 @@ export default function Events() {
       });
 
       if (response.ok) {
+        await mutate("/api/admin/dashboard");
         await mutate("/api/admin/events");
         await mutate("/api/admin/customers");
         await mutate("/api/profile");
@@ -375,11 +375,10 @@ export default function Events() {
                           </TableCell>
                           <TableCell>
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              size="sm"
                               onClick={() => handleViewDetails(data)}
                             >
-                              <TicketIcon className="h-4 w-4 text-orangeColor" />
+                              <TicketIcon className="h-3 w-3" /> Tickets
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -455,7 +454,7 @@ export default function Events() {
                                   handleValidToUsedTicket(ticket.id)
                                 }
                               >
-                                <CheckSquare className="h-4 w-4 text-green-600" />
+                                <CheckCircle className="h-4 w-4 text-green-600" />
                               </Button>
                             ) : (
                               <Button variant="ghost" size="icon" disabled>

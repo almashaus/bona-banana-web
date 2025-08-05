@@ -1,7 +1,7 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { Ticket } from "@/src/models/ticket";
 import { AppUser, CustomerResponse } from "@/src/models/user";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,15 +34,15 @@ export async function GET(req: NextRequest) {
       return { user: userData, tickets: ticketsMap[userId] || [] };
     });
 
-    return new NextResponse(JSON.stringify({ customers }), {
+    return new Response(JSON.stringify({ customers: customers }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "max-age=0, must-revalidate",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     });
   } catch (error) {
-    return new NextResponse(JSON.stringify({ data: "Error" }), {
+    return new Response(JSON.stringify({ data: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
