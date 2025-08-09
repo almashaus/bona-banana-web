@@ -1,5 +1,4 @@
-import { db } from "@/src/lib/firebase/firebaseConfig";
-import { db as admindb } from "@/src/lib/firebase/firebaseAdminConfig";
+import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
 import { DashboardEvent, Event } from "@/src/models/event";
 import { Ticket } from "@/src/models/ticket";
@@ -22,7 +21,7 @@ export async function GET() {
     const rangeSet = getDateRangeStrings(today, 30);
 
     // Fetch all events
-    const eventsSnapshot = await getDocs(collection(db, "events"));
+    const eventsSnapshot = await db.collection("events").get();
     const eventsNumber = eventsSnapshot.docs.length;
 
     // Process events and their tickets
@@ -33,12 +32,10 @@ export async function GET() {
       event.dates.map(async (date) => {
         const formattedDate = new Date(date.date).toISOString().split("T")[0];
         if (rangeSet.has(formattedDate)) {
-          const ticketsSnapshot = await getDocs(
-            query(
-              collection(db, "tickets"),
-              where("eventDateId", "==", date.id)
-            )
-          );
+          const ticketsSnapshot = await db
+            .collection("tickets")
+            .where("eventDateId", "==", date.id)
+            .get();
 
           const tickets: Ticket[] = ticketsSnapshot.docs.map(
             (doc) => doc.data() as Ticket
@@ -68,11 +65,11 @@ export async function GET() {
         status: 200,
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       }
     );
   } catch (error) {
-    console.error("Error fetching dashboard events:", error);
     return new Response(JSON.stringify({ data: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -96,7 +93,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { id, data } = body;
 
-    await admindb.collection("tickets").doc(id).update(data);
+    await db.collection("tickets").doc(id).update(data);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

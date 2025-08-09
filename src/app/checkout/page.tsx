@@ -10,7 +10,6 @@ import {
   CreditCard,
   MapPin,
   TicketIcon,
-  XIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -126,7 +125,7 @@ export default function CheckoutPage() {
     if (response.ok) {
       await mutate("/api/admin/events");
       await mutate("/api/admin/orders");
-      await mutate("/api/admin/customers");
+      await mutate("/api/admin/customers", undefined, { revalidate: true });
       await mutate("/api/published-events");
 
       // Send order confirmation email

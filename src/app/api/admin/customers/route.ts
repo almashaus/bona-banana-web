@@ -5,13 +5,12 @@ import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    // Query users with pagination
-    let usersQuery = db.collection("users");
-
-    const usersSnapshot = await usersQuery.get();
+    // Get all users
+    const usersSnapshot = await db.collection("users").get();
 
     // Fetch tickets in a single batch query
     const userIds = usersSnapshot.docs.map((doc) => doc.id);
+
     const ticketsSnapshot = await db
       .collection("tickets")
       .where("userId", "in", userIds)

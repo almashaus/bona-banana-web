@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Search, PanelLeft, CircleAlertIcon } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -19,8 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-import { useAuth } from "@/src/features/auth/auth-provider";
-import { useToast } from "@/src/components/ui/use-toast";
 import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
 import useSWR, { mutate } from "swr";
 import { CustomerResponse } from "@/src/models/user";
@@ -34,17 +31,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/src/components/ui/dialog";
-import { getAuth } from "firebase/auth";
 import { formatDate } from "@/src/lib/utils/formatDate";
-import { generateQRCode } from "@/src/lib/utils/utils";
-import Image from "next/image";
 
 export default function customersPage() {
-  const { user } = useAuth();
-  const auth = getAuth();
-  const authUser = auth.currentUser!;
-  const router = useRouter();
-  const { toast } = useToast();
   const [customers, setCustomers] = useState<CustomerResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -239,7 +228,6 @@ export default function customersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>QR Code</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -251,19 +239,7 @@ export default function customersPage() {
                         <TableCell className="font-medium">
                           {ticket.id}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center bg-white p-2 rounded-lg  mb-2 w-20 h-20 md:w-full md:h-full">
-                            <Image
-                              src={
-                                generateQRCode(ticket.token || ticket.id) ||
-                                "/no-image.svg"
-                              }
-                              alt={"QR code"}
-                              width={80}
-                              height={80}
-                            />
-                          </div>
-                        </TableCell>
+
                         <TableCell>
                           <Badge
                             className={`${getTicketStatusBadgeColor(ticket.status)}`}

@@ -63,12 +63,23 @@ export default function AdminPage() {
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
 
+  const fetcher = (url: string) =>
+    fetch(url, { cache: "no-store" }).then((res) => res.json());
+
   interface Response {
     events: DashboardEvent[];
     number: number;
   }
 
-  const { data, error, isLoading } = useSWR<Response>("/api/admin/dashboard");
+  const { data, error, isLoading } = useSWR<Response>(
+    "/api/admin/dashboard",
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateIfStale: true,
+      refreshInterval: 30000,
+    }
+  );
 
   return (
     <div className="container py-6">
@@ -276,14 +287,13 @@ function DashboardEventsList() {
                   <TableRow>
                     <TableHead className="w-[10px]"></TableHead>
                     <TableHead>Title</TableHead>
-                    <TableHead>Date</TableHead>
                     <TableHead>City</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]">
+                    <TableHead className="w-[80px]">
                       Purchased Tickets
                     </TableHead>
-                    <TableHead className="w-[50px]">View Tickets</TableHead>
-                    <TableHead className="w-[50px]">QR Code</TableHead>
+                    <TableHead className="w-[80px]">View Tickets</TableHead>
+                    <TableHead className="w-[80px]">QR Code</TableHead>
                   </TableRow>
                 </TableHeader>
 
@@ -301,11 +311,14 @@ function DashboardEventsList() {
                       </TableCell>
 
                       <TableCell className="font-medium">
-                        {event.title}
+                        <div className="flex flex-col">
+                          <p>{event.title}</p>
+                          <p className="text-orangeColor">
+                            {formatDate(event.eventDate.date)}
+                          </p>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-orangeColor">
-                        {formatDate(event.eventDate.date)}
-                      </TableCell>
+
                       <TableCell>{event.location}</TableCell>
                       <TableCell>
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -316,7 +329,7 @@ function DashboardEventsList() {
                       <TableCell
                         className={`${event.tickets.length === event.eventDate.capacity && "text-redColor"}`}
                       >
-                        {event.tickets.length}
+                        {event.tickets.length}/{event.eventDate.capacity}
                       </TableCell>
                       <TableCell>
                         <Button

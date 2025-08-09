@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useToast } from "@/src/components/ui/use-toast";
 import Link from "next/link";
 import {
-  Check,
-  CheckCircle,
   ChevronDown,
   ChevronUp,
   CircleAlertIcon,
@@ -58,11 +56,10 @@ import useSWR, { mutate } from "swr";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
 import { Badge } from "@/src/components/ui/badge";
-import { Ticket, TicketStatus } from "@/src/models/ticket";
+import { Ticket } from "@/src/models/ticket";
 import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
 import { getAuth } from "firebase/auth";
-import { generateQRCode } from "@/src/lib/utils/utils";
-import Image from "next/image";
+import { AppUser } from "@/src/models/user";
 
 export default function EventsPage() {
   const { toast } = useToast();
@@ -72,10 +69,7 @@ export default function EventsPage() {
   const eventUrl = pathname?.includes("/events");
   const isMobile = useIsMobile();
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
-
-  const [events, setEvents] = useState<Event[]>([]);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [isValidtion, setIsValidtion] = useState(false);
+  const [responseData, setResponseData] = useState<Response[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [openCollapsibleIds, setOpenCollapsibleIds] = useState<Set<string>>(
     () => new Set()
@@ -86,16 +80,18 @@ export default function EventsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   interface Response {
-    events: Event[];
-    tickets: Ticket[];
+    event: Event;
+    tickets: {
+      ticket: Ticket;
+      user: AppUser;
+    }[];
   }
 
-  const { data, error, isLoading } = useSWR<Response>("/api/admin/events");
+  const { data, error, isLoading } = useSWR<Response[]>("/api/admin/events");
 
   useEffect(() => {
     if (data) {
-      setEvents(data.events);
-      setTickets(data.tickets);
+      setResponseData(data);
     }
   }, [data]);
 
@@ -138,40 +134,6 @@ export default function EventsPage() {
   const handleViewDetails = (eventDate: EventDate) => {
     setSelectedEventDate(eventDate);
     setIsDialogOpen(true);
-  };
-
-  const handleValidToUsedTicket = async (ticketId: string) => {
-    try {
-      setIsValidtion(true);
-      const idToken = await authUser.getIdToken();
-
-      const response = await fetch("/api/admin/events", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          id: ticketId,
-          data: { status: TicketStatus.USED },
-        }),
-      });
-
-      if (response.ok) {
-        await mutate("/api/admin/dashboard");
-        await mutate("/api/admin/events");
-        await mutate("/api/admin/customers");
-        await mutate("/api/profile");
-      }
-    } catch (error) {
-      toast({
-        title: "⚠️ Error",
-        description: "Failed to validate the ticket. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsValidtion(false);
-    }
   };
 
   return (
@@ -226,7 +188,7 @@ export default function EventsPage() {
           </div>
         )}
 
-        {events?.length === 0 && !isLoading && (
+        {responseData?.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <CircleAlertIcon
               strokeWidth={1.25}
@@ -239,157 +201,173 @@ export default function EventsPage() {
           </div>
         )}
 
-        {events?.map((event: Event, index, array) => (
-          <div
-            key={event.id}
-            className={`${index !== array.length - 1 && "border-b pb-6"} p-5 mb-3 `}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-2 md:gap-4">
-                <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-md">
-                  <img
-                    src={event.eventImage || "/no-image.svg"}
-                    alt={event.title}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-lg">{event.title}</h3>
-                  </div>
+        {responseData && responseData.length > 0 && (
+          <div>
+            {responseData.map((response: Response, index, array) => {
+              return (
+                <div
+                  key={response.event.id}
+                  className={`${index !== array.length - 1 && "border-b pb-6"} p-5 mb-3 `}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-2 md:gap-4">
+                      <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-md">
+                        <img
+                          src={response.event.eventImage || "/no-image.svg"}
+                          alt={response.event.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-lg">
+                            {response.event.title}
+                          </h3>
+                        </div>
 
-                  <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
-                    <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
-                    {event.location}
-                  </div>
-                  <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
-                    <span className="icon-saudi_riyal text-orangeColor" />
-                    {event.price}
-                  </div>
-                  <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
-                    {getStatusIcon(event.status)}
-                    {event.status}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/admin/events/edit/${event.id}`}>
-                    <Edit2 className="h-3 w-3" /> Edit
-                  </Link>
-                </Button>
+                        <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
+                          <MapPin className="mr-1 h-3 w-3 md:h-4 md:w-4 text-orangeColor" />
+                          {response.event.location}
+                        </div>
+                        <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
+                          <span className="icon-saudi_riyal text-orangeColor" />
+                          {response.event.price}
+                        </div>
+                        <div className="flex items-end mb-1 text-xs md:text-sm text-muted-foreground">
+                          {getStatusIcon(response.event.status)}
+                          {response.event.status}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/admin/events/edit/${response.event.id}`}>
+                          <Edit2 className="h-3 w-3" /> Edit
+                        </Link>
+                      </Button>
 
-                <AlertDialog>
-                  <AlertDialogTrigger>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={isDeleting}
-                    >
-                      <Trash className="h-3 w-3" /> Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you absolutely sure?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete the event data.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={() => deleteEvent(event.id)}
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? (
-                          <LoadingDots />
-                        ) : (
-                          <>
-                            <Trash className="h-3 w-3 me-1" /> Delete
-                          </>
-                        )}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-            <Collapsible
-              open={openCollapsibleIds.has(event.id)}
-              onOpenChange={(open) => {
-                setOpenCollapsibleIds((prev) => {
-                  const newSet = new Set(prev);
-                  if (open) {
-                    newSet.add(event.id);
-                  } else {
-                    newSet.delete(event.id);
-                  }
-                  return newSet;
-                });
-              }}
-            >
-              <CollapsibleTrigger className="flex items-end mt-2 font-medium gap-1">
-                {openCollapsibleIds.has(event.id) ? (
-                  <ChevronUp />
-                ) : (
-                  <ChevronDown />
-                )}
-                <span> Dates & Tickets</span>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="mt-2 rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Start Time</TableHead>
-                        <TableHead>End Time</TableHead>
-                        <TableHead>Available Tickets</TableHead>
-                        <TableHead>Purchased Tickets</TableHead>
-                        <TableHead>View Tickets</TableHead>
-                      </TableRow>
-                    </TableHeader>
-
-                    <TableBody>
-                      {event.dates?.map((data) => (
-                        <TableRow key={data.id}>
-                          <TableCell className="font-medium">
-                            {formatDate(data.date)}
-                          </TableCell>
-                          <TableCell>{formatTime(data.startTime)}</TableCell>
-                          <TableCell>{formatTime(data.endTime)}</TableCell>
-                          <TableCell>
-                            <Badge
-                              className={`${data.availableTickets < 5 ? "bg-orange-100 text-orange-600" : "bg-green-100 text-green-700"} pb-1`}
+                      <AlertDialog>
+                        <AlertDialogTrigger>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={isDeleting}
+                          >
+                            <Trash className="h-3 w-3" /> Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Are you absolutely sure?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will
+                              permanently delete the event data.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => deleteEvent(response.event.id)}
+                              disabled={isDeleting}
                             >
-                              {data.availableTickets}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {data.capacity - data.availableTickets}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              size="sm"
-                              onClick={() => handleViewDetails(data)}
-                            >
-                              <TicketIcon className="h-3 w-3" /> Tickets
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                              {isDeleting ? (
+                                <LoadingDots />
+                              ) : (
+                                <>
+                                  <Trash className="h-3 w-3 me-1" /> Delete
+                                </>
+                              )}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                  <Collapsible
+                    open={openCollapsibleIds.has(response.event.id)}
+                    onOpenChange={(open) => {
+                      setOpenCollapsibleIds((prev) => {
+                        const newSet = new Set(prev);
+                        if (open) {
+                          newSet.add(response.event.id);
+                        } else {
+                          newSet.delete(response.event.id);
+                        }
+                        return newSet;
+                      });
+                    }}
+                  >
+                    <CollapsibleTrigger className="flex items-end mt-2 font-medium gap-1">
+                      {openCollapsibleIds.has(response.event.id) ? (
+                        <ChevronUp />
+                      ) : (
+                        <ChevronDown />
+                      )}
+                      <span> Dates & Tickets</span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="mt-2 rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Start Time</TableHead>
+                              <TableHead>End Time</TableHead>
+                              <TableHead>Available Tickets</TableHead>
+                              <TableHead>Purchased Tickets</TableHead>
+                              <TableHead>View Tickets</TableHead>
+                            </TableRow>
+                          </TableHeader>
+
+                          <TableBody>
+                            {response.event.dates?.map((date) => (
+                              <TableRow key={date.id}>
+                                <TableCell className="font-medium">
+                                  {formatDate(date.date)}
+                                </TableCell>
+                                <TableCell>
+                                  {formatTime(date.startTime)}
+                                </TableCell>
+                                <TableCell>
+                                  {formatTime(date.endTime)}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    className={`${
+                                      date.availableTickets < 5
+                                        ? "bg-orange-100 text-orange-600"
+                                        : "bg-green-100 text-green-700"
+                                    } pb-1`}
+                                  >
+                                    {date.availableTickets}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {date.capacity - date.availableTickets}
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleViewDetails(date)}
+                                  >
+                                    <TicketIcon className="h-3 w-3" /> Tickets
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
+              );
+            })}
           </div>
-        ))}
+        )}
       </div>
 
       {/* ----------- Tickets Dialog ----------- */}
@@ -402,72 +380,61 @@ export default function EventsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="bg-white mt-2 rounded-md border">
-            {!tickets.find(
-              (ticket) => ticket.eventDateId === selectedEventDate?.id
-            ) ? (
-              <p className="text-center p-6">No tickets</p>
-            ) : (
+            {data && data.length > 0 && (
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>User Name</TableHead>
+                    <TableHead>Contact</TableHead>
                     <TableHead>ID</TableHead>
-                    <TableHead>QR Code</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Attend</TableHead>
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                  {tickets.map((ticket) => {
-                    if (ticket.eventDateId === selectedEventDate?.id)
+                  {(() => {
+                    const ticketsForSelectedDate = data.flatMap((item) =>
+                      item.tickets.filter(
+                        (ticketObj) =>
+                          ticketObj.ticket.eventDateId === selectedEventDate?.id
+                      )
+                    );
+                    if (ticketsForSelectedDate.length === 0) {
                       return (
-                        <TableRow key={ticket.id}>
-                          <TableCell className="font-medium">
-                            {ticket.id}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex justify-center bg-white p-2 rounded-lg  mb-2 w-20 h-20 md:w-full md:h-full">
-                              <Image
-                                src={
-                                  generateQRCode(ticket.token || ticket.id) ||
-                                  "/no-image.svg"
-                                }
-                                alt={"QR code"}
-                                width={80}
-                                height={80}
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              className={`${getTicketStatusBadgeColor(ticket.status)}`}
-                            >
-                              {isValidtion ? "....." : ticket.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {ticket.status === TicketStatus.VALID ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleValidToUsedTicket(ticket.id)
-                                }
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              </Button>
-                            ) : (
-                              <Button variant="ghost" size="icon" disabled>
-                                <Check className="h-4 w-4 text-gray-600" />
-                              </Button>
-                            )}
+                        <TableRow>
+                          <TableCell colSpan={6}>
+                            <p className="text-center p-6">No tickets</p>
                           </TableCell>
                         </TableRow>
                       );
-                  })}
+                    }
+                    return ticketsForSelectedDate.map((ticketObj) => (
+                      <TableRow key={ticketObj.ticket.id}>
+                        <TableCell>{ticketObj.user.name}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          <div className="flex flex-col">
+                            <p>{ticketObj.user.phone}</p>
+                            <p>{ticketObj.user.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{ticketObj.ticket.id}</TableCell>
+
+                        <TableCell>
+                          <Badge
+                            className={`${getTicketStatusBadgeColor(
+                              ticketObj.ticket.status
+                            )}`}
+                          >
+                            {ticketObj.ticket.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ));
+                  })()}
                 </TableBody>
               </Table>
             )}
+            {/* )} */}
           </div>
         </DialogContent>
       </Dialog>

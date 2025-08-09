@@ -15,13 +15,15 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 z-50 w-full bg-white/95 backdrop-blur ${pathname === "/admin" ? "supports-[backdrop-filter]:bg-greenColor/30" : "supports-[backdrop-filter]:bg-white/60 border-b"}`}
+      className={`fixed top-0 z-50 w-full bg-white/95 backdrop-blur ${pathname.startsWith("/admin") ? "supports-[backdrop-filter]:bg-greenColor/90" : "supports-[backdrop-filter]:bg-white/60 border-b"}`}
     >
       <div className="ps-4 pe-8 flex h-16 items-center justify-between">
         <div className="flex justify-start items-center">
           <Link href="/" className="flex items-center space-x-2">
             <img src="/logo.svg" alt="Bona Banana Logo" className="h-10" />
-            <span className="hidden text-black font-bold sm:inline-block">
+            <span
+              className={`hidden ${pathname.startsWith("/admin") ? "text-white" : "text-black"} font-bold sm:inline-block`}
+            >
               Bona Banana
             </span>
           </Link>

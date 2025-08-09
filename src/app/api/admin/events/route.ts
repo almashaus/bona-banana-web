@@ -1,17 +1,56 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
-import { getAllDocuments, getEvents } from "@/src/lib/firebase/firestore";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
 import { Event } from "@/src/models/event";
 import { Ticket } from "@/src/models/ticket";
+import { AppUser } from "@/src/models/user";
 import { NextRequest } from "next/server";
 
 export async function GET() {
   try {
-    const events: Event[] = await getEvents();
+    const evetsSnapshot = await db
+      .collection("events")
+      .orderBy("updatedAt", "desc")
+      .get();
 
-    const tickets: Ticket[] = (await getAllDocuments("tickets")) as Ticket[];
+    const eventsTickets = await Promise.all(
+      evetsSnapshot.docs.map(async (docData) => {
+        const eventData = docData.data() as Event;
+        const eventId = docData.id;
 
-    return new Response(JSON.stringify({ events: events, tickets: tickets }), {
+        // Get tickets for this order
+        const ticketsSnapshot = await db
+          .collection("tickets")
+          .where("eventId", "==", eventId)
+          .get();
+
+        const ticketsData = await Promise.all(
+          ticketsSnapshot.docs.map(async (ticketDoc) => {
+            const ticketData = ticketDoc.data() as Ticket;
+
+            const userDoc = await db
+              .collection("users")
+              .doc(ticketData!.userId!)
+              .get();
+
+            const userData = userDoc.data() as AppUser;
+
+            return {
+              ticket: ticketData,
+              user: userData,
+            };
+          })
+        );
+
+        return {
+          event: eventData,
+          tickets: ticketsData,
+        };
+      })
+    );
+
+    console.log(eventsTickets);
+
+    return new Response(JSON.stringify(eventsTickets), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
