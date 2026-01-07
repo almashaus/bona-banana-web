@@ -21,7 +21,7 @@ const AnimatedImages = () => {
 
   return (
     <ContainerScroll className="md:container h-[250vh] px-6 lg:px-24 xl:px-48 mb-8">
-      <BentoGrid className="sticky left-0 top-0 z-0 h-screen w-full p-1 pt-16">
+      <BentoGrid className="sticky left-0 top-0 z-0 h-screen w-full p-1 pt-20">
         {IMAGES.map((imageUrl, index) => (
           <BentoCell
             key={index}
@@ -31,16 +31,18 @@ const AnimatedImages = () => {
               className="size-full object-cover object-center"
               src={imageUrl}
               alt=""
+              loading="lazy"
+              decoding="async"
             />
           </BentoCell>
         ))}
-        <ContainerScale className="absolute top-1/4 md:top-1/2 left-1/2 z-0 text-center mt-12 md:mt-4 w-full md:w-fit">
-          <h1 className="w-full text-5xl font-bold tracking-tighter">
+        <ContainerScale className="absolute top-1/4 md:top-1/2 left-1/2 z-0 text-center mt-12 md:mt-4 mb-8 w-full md:w-fit space-y-3">
+          <h1 className="w-full text-4xl md:text-5xl font-bold tracking-tighter">
             {locale === "ar" && t("gallary")}
             <span className="text-yellowColor mx-3">Bona Banana</span>
             {locale === "en" && t("gallary")}
           </h1>
-          <p className="my-6 text-lg md:text-xl text-stone-500">
+          <p className="text-md md:text-xl text-muted-foreground">
             {t("gallarySubtitle")}
           </p>
         </ContainerScale>

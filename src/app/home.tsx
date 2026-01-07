@@ -18,7 +18,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen w-screen">
-      <div className="w-full pt-10 space-y-8">
+      <div className="w-full pt-10">
         <div>
           <Hero />
         </div>
@@ -29,15 +29,15 @@ export default function Home() {
             alt="background image"
             width={0}
             height={0}
-            className="w-48 sm:w-60 md:w-72 lg:w-80 h-auto mt-8 object-contain"
+            className="w-48 sm:w-60 md:w-72 lg:w-80 h-auto mt-16 md:mt-24 object-contain"
           />
 
           <div className="bg-lightBeigeColor w-full p-8">
-            <div className="flex flex-col items-center justify-center text-center space-y-3">
-              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">
+            <div className="flex flex-col items-center justify-center text-center space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
                 ✨ {t("title")} ✨
               </h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              <p className="max-w-[900px] text-muted-foreground text-md md:text-xl">
                 {t("subtitle")}
               </p>
             </div>

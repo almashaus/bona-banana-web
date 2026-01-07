@@ -302,7 +302,7 @@ export default function membersPage() {
 
       {/* Convert User to Member Dialog */}
       <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
-        <DialogContent>
+        <DialogContent dir="ltr">
           <DialogHeader>
             <DialogTitle>Convert User to Member</DialogTitle>
             <DialogDescription>

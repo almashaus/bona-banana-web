@@ -342,7 +342,7 @@ export default function UserProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {member?.dashboard?.activityLog.map((activity) => (
+                {member?.dashboard?.activityLog?.map((activity) => (
                   <div
                     key={activity.id}
                     className="flex items-start gap-4 p-4 border rounded-lg"

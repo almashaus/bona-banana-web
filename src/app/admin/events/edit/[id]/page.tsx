@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   CalendarIcon,
@@ -13,6 +13,8 @@ import {
   UploadIcon,
   Clock4Icon,
   EyeIcon,
+  X,
+  PenLine,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -41,7 +43,15 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { formatDate, formatTime24H } from "@/src/lib/utils/formatDate";
-import { cityMap, cn, compressImage } from "@/src/lib/utils/utils";
+import {
+  cityMap,
+  cn,
+  compressImage,
+  isAfterDate,
+  isAfterToday,
+  isBeforeDate,
+  isBeforeToday,
+} from "@/src/lib/utils/utils";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
 import Loading from "@/src/components/ui/loading";
 import useSWR, { mutate } from "swr";
@@ -51,6 +61,7 @@ import { Progress } from "@/src/components/ui/progress";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "@/src/lib/firebase/firebaseConfig";
 import Image from "next/image";
+import { EventDatesSelect } from "../../(components)/eventDatesSelect";
 
 export default function EditEventPage() {
   const params = useParams<{ id: string }>();
@@ -64,8 +75,10 @@ export default function EditEventPage() {
 
   // Initialize state variables with default values
   const [title, setTitle] = useState("");
+  const [titleAr, setTitleAr] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionAr, setDescriptionAr] = useState("");
   const [city, setCity] = useState("");
   const [venue, setVenue] = useState("");
   const [locationUrl, setLocationUrl] = useState("");
@@ -73,19 +86,9 @@ export default function EditEventPage() {
   const [adImage, setAdImage] = useState("");
   const [price, setPrice] = useState("");
   const [status, setStatus] = useState<EventStatus>(EventStatus.DRAFT);
-  const [isDnd, setisDnd] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [eventDates, setEventDates] = useState<EventDate[]>([
-    {
-      id: `date${Date.now()}`,
-      date: new Date(),
-      startTime: new Date(),
-      endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
-      capacity: 20,
-      availableTickets: 20,
-      eventId: id as string,
-    },
-  ]);
+  const [eventDates, setEventDates] = useState<EventDate[]>([]);
+  const statusRef = useRef<HTMLDivElement | null>(null);
 
   interface Response {
     city: {
@@ -112,8 +115,10 @@ export default function EditEventPage() {
 
         // Populate state variables with data from Firestore
         setTitle(eventData.title || "");
+        setTitleAr(eventData.titleAr || "");
         setSlug(eventData.slug || "");
         setDescription(eventData.description || "");
+        setDescriptionAr(eventData.descriptionAr || "");
         setCity(eventData.city.en);
         setVenue(eventData.venue || "");
         setLocationUrl(eventData.locationUrl || "");
@@ -121,7 +126,6 @@ export default function EditEventPage() {
         setAdImage(eventData.adImage || "");
         setPrice(eventData.price.toString() || "");
         setStatus(eventData.status || EventStatus.DRAFT);
-        setisDnd(eventData.isDnd || false);
         setEventDates(eventData.dates || []);
       }
     }
@@ -147,8 +151,8 @@ export default function EditEventPage() {
     const newDate: EventDate = {
       id: `date${Date.now()}`,
       date: new Date(),
-      startTime: new Date(),
-      endTime: new Date(new Date().setHours(new Date().getHours() + 3)),
+      startTime: new Date(new Date().setHours(18, 0, 0, 0)),
+      endTime: new Date(new Date().setHours(23, 0, 0, 0)),
       capacity: 20,
       availableTickets: 20,
       eventId: event?.id || "",
@@ -173,6 +177,10 @@ export default function EditEventPage() {
     );
   };
 
+  const setRepeatedDates = (eventDates: EventDate[]) => {
+    setEventDates([...eventDates]);
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,25 +189,37 @@ export default function EditEventPage() {
     try {
       // ------ Validate event dates
       for (const eventDate of eventDates) {
-        if (event?.status === EventStatus.PUBLISHED) {
-          if (!eventDate.date || !eventDate.startTime || !eventDate.endTime) {
-            toast({
-              title: "Error",
-              description: "Please fill in all date fields.",
-              variant: "destructive",
-            });
-            setIsSubmitting(false);
-            return;
-          }
-          if (eventDate.startTime >= eventDate.endTime) {
-            toast({
-              title: "Error",
-              description: "Start time must be before end time.",
-              variant: "destructive",
-            });
-            setIsSubmitting(false);
-            return;
-          }
+        if (!eventDate.date || !eventDate.startTime || !eventDate.endTime) {
+          toast({
+            title: "Error",
+            description: "Please fill in all date fields.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        if (isAfterDate(eventDate.startTime, eventDate.endTime)) {
+          toast({
+            title: "Error",
+            description: "Start time must be before end time.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        if (status === EventStatus.COMPLETED && isAfterToday(eventDate.date)) {
+          statusRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+
+          toast({
+            title: "Warning",
+            description: "Update the event status to (Published) or (Draft)",
+            variant: "warning",
+          });
+          setIsSubmitting(false);
+          return;
         }
       } // ------
 
@@ -211,8 +231,10 @@ export default function EditEventPage() {
         creatorId: user?.id || "1",
         updatedBy: user?.id,
         title: title,
+        titleAr: titleAr,
         slug: slug,
         description: description,
+        descriptionAr: descriptionAr,
         eventImage: eventImage,
         adImage: adImage,
         price: parseFloat(price),
@@ -220,7 +242,6 @@ export default function EditEventPage() {
         city: theCity,
         venue: venue,
         locationUrl: locationUrl,
-        isDnd: isDnd,
         createdAt: event!.createdAt,
         updatedAt: new Date(),
         dates: eventDates,
@@ -298,105 +319,150 @@ export default function EditEventPage() {
       {event && (
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6 mb-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Event Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title">Event Title</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={handleTitleChange}
-                    placeholder="Enter event title"
-                    required
-                  />
-                </div>
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Event Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid lg:grid-cols-2 gap-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="title">
+                        Event Title{" "}
+                        <span className="text-orangeColor text-sm">
+                          ( English )
+                        </span>
+                      </Label>
+                      <Input
+                        id="title"
+                        value={title}
+                        onChange={handleTitleChange}
+                        placeholder="Enter event title"
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="title">
+                        Event Title{" "}
+                        <span className="text-orangeColor text-sm">
+                          ( عربي )
+                        </span>
+                      </Label>
+                      <Input
+                        id="titleAr"
+                        value={titleAr}
+                        onChange={(e) => setTitleAr(e.target.value)}
+                        placeholder="أدخل عنوان الفعالية"
+                        required
+                      />
+                    </div>
+                  </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe your event"
-                    rows={5}
-                    required
-                  />
-                </div>
+                  <div className="grid lg:grid-cols-2 gap-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="description">
+                        Description{" "}
+                        <span className="text-orangeColor text-sm">
+                          ( English )
+                        </span>
+                      </Label>
+                      <Textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Describe your event"
+                        rows={8}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="description">
+                        Description{" "}
+                        <span className="text-orangeColor text-sm">
+                          ( عربي )
+                        </span>
+                      </Label>
+                      <Textarea
+                        id="descriptionAr"
+                        value={descriptionAr}
+                        onChange={(e) => setDescriptionAr(e.target.value)}
+                        placeholder="أوصف الفعالية"
+                        rows={8}
+                        required
+                      />
+                    </div>
+                  </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="price">Price</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      id="price"
-                      value={price}
-                      onChange={(e) => {
-                        const value = e.target.value;
+                  <div className="grid gap-2">
+                    <Label htmlFor="price">Price</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        id="price"
+                        value={price}
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-                        if (value === "") {
-                          setPrice("");
-                          return;
-                        }
+                          if (value === "") {
+                            setPrice("");
+                            return;
+                          }
 
-                        const numberValue = Number(value);
-                        if (!isNaN(numberValue)) {
-                          setPrice(value);
-                        }
+                          const numberValue = Number(value);
+                          if (!isNaN(numberValue)) {
+                            setPrice(value);
+                          }
+                        }}
+                        placeholder="25"
+                        className="w-24"
+                        required
+                      />
+                      <span className="text-muted-foreground">SR</span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2 lg:w-1/2">
+                    <Label htmlFor="city">City</Label>
+                    <Select
+                      value={city}
+                      onValueChange={(value) => {
+                        setCity(value);
                       }}
-                      placeholder="25"
-                      className="w-24"
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={city} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities?.city?.map((c) => (
+                          <SelectItem key={c.en} value={c.en}>
+                            {c.en}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-2 lg:w-1/2">
+                    <Label htmlFor="venue">Venue Name</Label>
+                    <Input
+                      id="venue"
+                      value={venue}
+                      onChange={(e) => setVenue(e.target.value)}
                       required
                     />
-                    <span className="text-muted-foreground">SR</span>
                   </div>
-                </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="city">City</Label>
-                  <Select
-                    value={city}
-                    onValueChange={(value) => {
-                      setCity(value);
-                    }}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={city} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities?.city?.map((c) => (
-                        <SelectItem key={c.en} value={c.en}>
-                          {c.en}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="grid gap-2 lg:w-1/2">
+                    <Label htmlFor="locationUrl">Location URL</Label>
+                    <Input
+                      id="locationUrl"
+                      value={locationUrl}
+                      onChange={(e) => setLocationUrl(e.target.value)}
+                      placeholder="https://maps.app.goo.gl"
+                    />
+                  </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="venue">Venue Name</Label>
-                  <Input
-                    id="venue"
-                    value={venue}
-                    onChange={(e) => setVenue(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="locationUrl">Location URL</Label>
-                  <Input
-                    id="locationUrl"
-                    value={locationUrl}
-                    onChange={(e) => setLocationUrl(e.target.value)}
-                    placeholder="https://maps.app.goo.gl"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="grid gap-2">
+                  <div ref={statusRef} className="grid gap-2 lg:w-1/2">
                     <Label htmlFor="status">Status</Label>
                     <Select
                       value={status}
@@ -433,190 +499,46 @@ export default function EditEventPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Event Images</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4">
-                  <Label htmlFor="event-image">Event Image</Label>
-                  <EventImageInput
-                    eventImage={eventImage}
-                    setEventImage={setEventImage}
-                    id={id}
-                  />
-                </div>
-                <br />
-                <div className="grid gap-4">
-                  <Label htmlFor="ad-image">Advertisement Image</Label>
-                  <AdImageInput
-                    adImage={adImage}
-                    setAdImage={setAdImage}
-                    id={id}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Event Dates</CardTitle>
-                <CardDescription>
-                  Add one or more dates for your event
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {eventDates.map((eventDate, index) => (
-                  <div
-                    key={eventDate.id}
-                    className="space-y-4 pb-4 border-b last:border-0"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium">Date {index + 1}</h3>
-                      {eventDates.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-500"
-                          onClick={() => removeEventDate(eventDate.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1 text-red-500" />
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mx-5">
-                      <div className="">
-                        <Label>Date</Label>
-                        <div className="flex flex-col space-y-2">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "justify-start text-left font-normal bg-white",
-                                  !eventDate.date && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {eventDate.date ? (
-                                  <span>{formatDate(eventDate.date)}</span>
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={eventDate.date}
-                                onSelect={(day) => {
-                                  if (day) {
-                                    const date = new Date(eventDate.date);
-                                    const newDate = new Date(day);
-                                    newDate.setHours(date.getHours());
-                                    newDate.setMinutes(date.getMinutes());
-                                    updateEventDate(
-                                      eventDate.id,
-                                      "date",
-                                      newDate
-                                    );
-                                  }
-                                }}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-2">
-                        <Label>Start Time</Label>
-                        <div className="flex space-x-2">
-                          <Input
-                            type="time"
-                            value={formatTime24H(eventDate.startTime)}
-                            onChange={(e) => {
-                              const [hours, minutes] =
-                                e.target.value.split(":");
-                              const newDate = new Date(eventDate.date);
-                              newDate.setHours(Number.parseInt(hours));
-                              newDate.setMinutes(Number.parseInt(minutes));
-                              updateEventDate(
-                                eventDate.id,
-                                "startTime",
-                                newDate
-                              );
-                            }}
-                          />
-                        </div>
-                        <Label>End Time</Label>
-                        <div className="flex flex-col space-y-2">
-                          <div className="flex space-x-2">
-                            <Input
-                              type="time"
-                              value={formatTime24H(eventDate.endTime)}
-                              onChange={(e) => {
-                                const [hours, minutes] =
-                                  e.target.value.split(":");
-                                const newDate = new Date(eventDate.date);
-                                newDate.setHours(Number.parseInt(hours));
-                                newDate.setMinutes(Number.parseInt(minutes));
-                                updateEventDate(
-                                  eventDate.id,
-                                  "endTime",
-                                  newDate
-                                );
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2 mx-5">
-                      <Label htmlFor={`capacity-${eventDate.id}`}>
-                        Capacity
-                      </Label>
-                      <Input
-                        id={`capacity-${eventDate.id}`}
-                        type="number"
-                        min="1"
-                        value={eventDate.capacity}
-                        onChange={(e) =>
-                          updateEventDate(
-                            eventDate.id,
-                            "capacity",
-                            Number.parseInt(e.target.value)
-                          )
-                        }
-                        placeholder="20"
-                        className="w-24"
-                        required
-                      />
-                    </div>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Event Images</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col md:flex-row justify-around space-y-6 md:space-y-0">
+                  <div className="grid gap-4">
+                    <Label htmlFor="event-image">Event Image</Label>
+                    <EventImageInput
+                      eventImage={eventImage}
+                      setEventImage={setEventImage}
+                      id={id}
+                    />
                   </div>
-                ))}
+                  <br />
+                  <div className="grid gap-4">
+                    <Label htmlFor="ad-image">Advertisement Image</Label>
+                    <AdImageInput
+                      adImage={adImage}
+                      setAdImage={setAdImage}
+                      id={id}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                <Button
-                  type="button"
-                  // variant="outline"
-                  className="w-full text-black/80 bg-muted-foreground/30 hover:bg-muted-foreground/20"
-                  onClick={addEventDate}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Another Date
-                </Button>
-              </CardContent>
-            </Card>
+            <EventDatesSelect
+              eventDates={eventDates}
+              addEventDate={addEventDate}
+              updateEventDate={updateEventDate}
+              removeEventDate={removeEventDate}
+              setRepeatedDates={setRepeatedDates}
+            />
           </div>
 
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-4 mt-6">
             <Button
               variant="outline"
               type="button"
@@ -646,6 +568,8 @@ function EventImageInput({
 }) {
   const [progress, setProgress] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isURL, setIsURL] = useState(false);
+  const [tempValue, setTempValue] = useState("");
 
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let file = e.target.files?.[0];
@@ -695,14 +619,14 @@ function EventImageInput({
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row items-center gap-2">
+      <div className="flex flex-col items-center gap-2">
         <div>
-          <div className="border rounded-md p-1 w-48 h-40 flex flex-col items-center justify-center bg-muted relative">
+          <div className="border rounded-md p-1 w-64 h-64 2xl:w-72 2xl:h-72 flex flex-col items-center justify-center bg-muted relative">
             {eventImage ? (
               <Image
                 src={eventImage || "/no-image.svg"}
                 alt="Event"
-                className="w-full h-full object-cover rounded-md"
+                className="w-full h-full object-contain rounded-md"
                 fill
                 priority
                 onError={(e) => {
@@ -729,7 +653,7 @@ function EventImageInput({
                   document.getElementById("event-image-upload")?.click()
                 }
               >
-                <UploadIcon className="w-4 h-4" />
+                <UploadIcon className="w-4 h-4 text-redColor" />
               </Button>
             </div>
           </div>
@@ -739,21 +663,42 @@ function EventImageInput({
             </Progress>
           )}
         </div>
-        <span className="text-orangeColor">Or</span>
-        <div className="grid gap-2 w-full">
-          <Label>URL</Label>
-          <Input
-            id="event-image"
-            value={
-              eventImage.startsWith("https://firebasestorage") ||
-              eventImage.startsWith("blob")
-                ? ""
-                : eventImage
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setIsURL(!isURL);
+            if (isURL) {
+              setTempValue("");
             }
-            onChange={(e) => setEventImage(e.target.value)}
-            placeholder="Enter image URL"
-          />
-        </div>
+          }}
+          className="text-orangeColor"
+        >
+          {isURL ? (
+            <X className="w-4 h-4 me-1" />
+          ) : (
+            <>
+              <PenLine className="w-4 h-4 me-1" /> Write Image URL
+            </>
+          )}
+        </Button>
+        {isURL && (
+          <div className="flex items-center w-full gap-2">
+            <Input
+              id="event-image"
+              value={tempValue}
+              onChange={(e) => setTempValue(e.target.value)}
+              placeholder="Enter image URL"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEventImage(tempValue)}
+            >
+              Upload
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -770,6 +715,8 @@ function AdImageInput({
 }) {
   const [progress, setProgress] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isURL, setIsURL] = useState(false);
+  const [tempValue, setTempValue] = useState("");
 
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let file = e.target.files?.[0];
@@ -820,14 +767,14 @@ function AdImageInput({
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row items-center gap-2">
+      <div className="flex flex-col items-center gap-2">
         <div>
-          <div className="border rounded-md p-1 w-48 h-40 flex flex-col items-center justify-center bg-muted relative">
+          <div className="border rounded-md p-1 w-64 h-64 2xl:w-72 2xl:h-72 flex flex-col items-center justify-center bg-muted relative">
             {adImage ? (
               <Image
                 src={adImage || "/no-image.svg"}
                 alt="Advertisement"
-                className="w-full h-full object-cover rounded-md"
+                className="w-full h-full object-contain rounded-md"
                 fill
                 priority
                 onError={(e) => {
@@ -854,7 +801,7 @@ function AdImageInput({
                   document.getElementById("ad-image-upload")?.click()
                 }
               >
-                <UploadIcon className="w-4 h-4" />
+                <UploadIcon className="w-4 h-4 text-redColor" />
               </Button>
             </div>
           </div>
@@ -864,21 +811,42 @@ function AdImageInput({
             </Progress>
           )}
         </div>
-        <span className="text-orangeColor">Or</span>
-        <div className="grid gap-2 w-full">
-          <Label>URL</Label>
-          <Input
-            id="ad-image"
-            value={
-              adImage.startsWith("https://firebasestorage") ||
-              adImage.startsWith("blob")
-                ? ""
-                : adImage
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setIsURL(!isURL);
+            if (isURL) {
+              setTempValue("");
             }
-            onChange={(e) => setAdImage(e.target.value)}
-            placeholder="Enter image URL"
-          />
-        </div>
+          }}
+          className="text-orangeColor"
+        >
+          {isURL ? (
+            <X className="w-4 h-4 me-1" />
+          ) : (
+            <>
+              <PenLine className="w-4 h-4 me-1" /> Write Image URL
+            </>
+          )}
+        </Button>
+        {isURL && (
+          <div className="flex items-center w-full gap-2">
+            <Input
+              id="event-image"
+              value={tempValue}
+              onChange={(e) => setTempValue(e.target.value)}
+              placeholder="Enter image URL"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setAdImage(tempValue)}
+            >
+              Upload
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

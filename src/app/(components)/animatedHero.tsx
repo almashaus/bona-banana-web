@@ -24,8 +24,8 @@ function Hero() {
     <div className="w-full">
       <div className="container">
         <div className="flex flex-col gap-8 py-20 lg:pt-30 items-center justify-center">
-          <div className="flex gap-4 flex-col justify-center items-center">
-            <h1 className="text-4xl sm:text-6xl md:text-7xl w-full tracking-tighter text-center font-regular">
+          <div className="flex flex-col justify-center items-center md:gap-2">
+            <h1 className="text-[42px] sm:text-6xl md:text-7xl w-full tracking-tighter text-center font-regular">
               <span className="relative flex w-full justify-center overflow-hidden text-center pb-4 pt-1">
                 &nbsp;
                 {titles.map((title, index) => (
@@ -52,7 +52,7 @@ function Hero() {
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-lg md:max-w-2xl text-center">
+            <p className="text-lg md:text-xl leading-relaxed text-muted-foreground max-w-lg md:max-w-2xl text-center">
               {t("heroSubtitle")}
             </p>
           </div>

@@ -76,3 +76,51 @@ export async function cityMap(cityEn: string) {
   }
   return { en: cityEn, ar: cityEn };
 }
+
+export function isBeforeToday(date: Date): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of today
+
+  const compareDate = new Date(date);
+  compareDate.setHours(0, 0, 0, 0); // Set to start of the given date
+
+  return compareDate < today;
+}
+
+export function isAfterToday(date: Date): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of today
+
+  const compareDate = new Date(date);
+  compareDate.setHours(0, 0, 0, 0); // Set to start of the given date
+
+  return compareDate > today;
+}
+
+export function findFirstTodayOrAfter(dates: Date[]): Date | null {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (const date of dates) {
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+
+    if (compareDate >= today) {
+      return date;
+    }
+  }
+
+  return dates[0];
+}
+
+export function isAfterDate(a: Date, b: Date): boolean {
+  return new Date(a) > new Date(b);
+}
+
+export function isBeforeDate(a: Date, b: Date): boolean {
+  return new Date(a) < new Date(b);
+}
+
+export function isSameDate(a: Date, b: Date): boolean {
+  return new Date(a) === new Date(b);
+}

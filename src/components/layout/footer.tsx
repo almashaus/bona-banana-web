@@ -86,11 +86,14 @@ export default function Footer() {
 
           {/* Payments methods */}
 
-          <div className="flex flex-row justify-center items-center space-x-3 ">
+          <div
+            dir="ltr"
+            className="flex flex-row justify-center items-center space-x-3 "
+          >
             <Image
               src="/icons/payments/visa.svg"
               alt="Visa"
-              className="w-10 h-auto rounded-md me-3"
+              className="w-10 h-auto rounded-md"
               width={0}
               height={0}
             />

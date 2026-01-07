@@ -100,24 +100,40 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const eventId = searchParams.get("eventId");
+    const authHeader = request.headers.get("Authorization") || "";
 
-    if (!eventId) {
-      return new Response(JSON.stringify({ error: "Missing eventId" }), {
-        status: 400,
+    const decodedToken = await verifyIdToken(authHeader);
+
+    if (!decodedToken || !decodedToken.admin) {
+      return new Response(JSON.stringify({ data: "Unauthorized" }), {
+        status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    await db.collection("events").doc(eventId).delete();
+    const body = await request.json();
+    const { event } = body;
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    const docRef = await db
+      .collection("archiveEvents")
+      .doc(event.id)
+      .set(event);
+
+    await db.collection("events").doc(event.id).delete();
+
+    if (docRef) {
+      return new Response(JSON.stringify({ data: "Success" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } else {
+      return new Response(JSON.stringify({ data: "Error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Error" }), {
+    return new Response(JSON.stringify({ data: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

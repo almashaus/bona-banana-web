@@ -8,13 +8,9 @@ import {
   ChevronDown,
   ChevronUp,
   CircleAlertIcon,
-  CircleDot,
-  DicesIcon,
   Edit2,
   MapPin,
-  PanelLeft,
   Plus,
-  StarIcon,
   TicketIcon,
   Trash,
 } from "lucide-react";
@@ -106,13 +102,18 @@ export default function EventsPage() {
     try {
       setIsDeleting(true);
 
+      const event: Event = responseData.find(
+        (data) => data.event.id === eventId
+      )?.event!;
+
       const idToken = await authUser.getIdToken();
-      const response = await fetch(`/api/admin/events?eventId=${eventId}`, {
+      const response = await fetch(`/api/admin/events`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
         },
+        body: JSON.stringify({ event: event }),
       });
 
       if (response.ok) {
@@ -270,7 +271,7 @@ export default function EventsPage() {
                         )}
 
                         <AlertDialog>
-                          <AlertDialogTrigger>
+                          <AlertDialogTrigger asChild>
                             {canDeleteEvent && (
                               <Button
                                 variant="destructive"
@@ -282,7 +283,7 @@ export default function EventsPage() {
                               </Button>
                             )}
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent dir="ltr">
                             <AlertDialogHeader>
                               <AlertDialogTitle>
                                 Are you absolutely sure?
@@ -396,7 +397,10 @@ export default function EventsPage() {
 
       {/* ----------- Tickets Dialog ----------- */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-stone-100 max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          dir="ltr"
+          className="bg-stone-100 max-w-4xl max-h-[90vh] overflow-y-auto"
+        >
           <DialogHeader>
             <DialogTitle className="text-2xl">Tickets List</DialogTitle>
             <DialogDescription>

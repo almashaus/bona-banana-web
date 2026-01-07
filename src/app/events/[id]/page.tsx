@@ -31,18 +31,18 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Separator } from "@/src/components/ui/separator";
-import {
-  eventDateTimeString,
-  formatDate,
-  formatTime,
-} from "@/src/lib/utils/formatDate";
-import { Event, EventStatus } from "@/src/models/event";
+import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
+import { Event, EventDate, EventStatus } from "@/src/models/event";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
 import Loading from "@/src/components/ui/loading";
 import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
 import useSWR from "swr";
-import { isSafeImageUrl } from "@/src/lib/utils/utils";
+import {
+  findFirstTodayOrAfter,
+  isBeforeToday,
+  isSafeImageUrl,
+} from "@/src/lib/utils/utils";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { price } from "@/src/lib/utils/locales";
 import { useLocale, useTranslations } from "next-intl";
@@ -55,7 +55,7 @@ export default function EventPage() {
   const tPage = useTranslations("Page");
   const tHome = useTranslations("Home");
   const locale = useLocale();
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<EventDate>();
   const [quantity, setQuantity] = useState<number>(1);
   const [event, setEvent] = useState<Event | null>(null);
 
@@ -65,11 +65,17 @@ export default function EventPage() {
 
   const { data, error, isLoading } = useSWR<Event>(`/api/events/${id}`);
 
+  const dir = locale === "en" ? "ltr" : "rtl";
+
   useEffect(() => {
     const eventData: Event = data as Event;
     if (eventData && eventData.dates && eventData.dates.length > 0) {
       setEvent(eventData);
-      setSelectedDate(eventDateTimeString(eventData.dates[0], locale));
+
+      const currentDate = findFirstTodayOrAfter(
+        eventData.dates.map((d) => d.date)
+      );
+      setSelectedDate(eventData.dates.find((d) => d.date === currentDate));
     }
   }, [data]);
 
@@ -77,7 +83,7 @@ export default function EventPage() {
     // Set event details in the checkout store
     useCheckoutStore.setState((state) => ({
       event: event,
-      eventDateId: selectedDate.split("-")[0],
+      eventDateId: selectedDate?.id,
       quantity: quantity,
     }));
 
@@ -170,7 +176,9 @@ export default function EventPage() {
                 <ArrowRight className="h-4 w-4" />
               )}
             </Button>
-            <h1 className="text-3xl font-bold">{event.title}</h1>
+            <h1 className="text-3xl font-bold">
+              {locale === "en" ? event.title : event.titleAr}
+            </h1>
           </div>
           <div className="aspect-video w-full relative my-4 rounded-xl overflow-hidden">
             <Image
@@ -192,7 +200,7 @@ export default function EventPage() {
           <div className="space-y-4">
             <h2 className="text-xl font-bold">{tEvent("details")}</h2>
             <p className="text-muted-foreground whitespace-pre-line">
-              {event.description}
+              {locale === "en" ? event.description : event.descriptionAr}
             </p>
             {event.adImage && (
               <div>
@@ -218,7 +226,7 @@ export default function EventPage() {
                   <p className="text-sm font-medium">{tEvent("date")}</p>
                   <p className="text-sm text-muted-foreground">
                     {selectedDate
-                      ? `${selectedDate.split("-")[1]}`
+                      ? `${formatDate(selectedDate.date, locale)}`
                       : event.dates && event.dates.length > 0
                         ? event.dates.length > 1
                           ? `${formatDate(event.dates[0].date, locale)} - ${formatDate(
@@ -236,9 +244,7 @@ export default function EventPage() {
                   <p className="text-sm font-medium">{tEvent("time")}</p>
                   <p className="text-sm text-muted-foreground">
                     {selectedDate
-                      ? `${selectedDate.split("-")[2]} - ${
-                          selectedDate.split("-")[3]
-                        }`
+                      ? `${formatTime(selectedDate.startTime, locale)} - ${formatTime(selectedDate.endTime, locale)}`
                       : event.dates && event.dates.length > 0
                         ? `${formatTime(event.dates[0].startTime, locale)} - ${formatTime(
                             event.dates[0].endTime,
@@ -254,7 +260,7 @@ export default function EventPage() {
                   <p className="text-sm font-medium">{tEvent("capacity")}</p>
                   <p className="text-sm text-muted-foreground">
                     {selectedDate
-                      ? selectedDate.split("-")[4]
+                      ? selectedDate.capacity
                       : event.dates[0].capacity}{" "}
                     {tEvent("attendees") || "attendees"}
                   </p>
@@ -307,21 +313,22 @@ export default function EventPage() {
                   {tEvent("date")}
                 </label>
                 <Select
-                  value={selectedDate}
+                  value={selectedDate?.id}
                   onValueChange={(value) => {
-                    setSelectedDate(value);
+                    setSelectedDate(event.dates.find((d) => d.id === value));
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger dir={dir}>
                     <SelectValue
                       placeholder={tEvent("selectDate") || "Select date"}
                     />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent dir={dir}>
                     {event.dates?.map((date) => (
                       <SelectItem
                         key={date.id}
-                        value={eventDateTimeString(date, locale)}
+                        value={date.id}
+                        className={`${isBeforeToday(date.date) && "text-neutral-400"}`}
                       >
                         {formatDate(date.date, locale)} |{" "}
                         {formatTime(date.startTime, locale)} -{" "}
@@ -331,8 +338,13 @@ export default function EventPage() {
                   </SelectContent>
                 </Select>
               </div>
-              {event.dates.find((d) => d.id === selectedDate.split("-")[0])
-                ?.availableTickets! > 0 ? (
+              {selectedDate?.availableTickets! === 0 ||
+              isBeforeToday(selectedDate?.date!) ? (
+                <div className="flex justify-center items-center py-3 rounded-md bg-neutral-300 text-neutral-600">
+                  <InfoIcon className="w-5 h-5 me-2" />
+                  {tEvent("noTicketsAvailable")}
+                </div>
+              ) : (
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -344,20 +356,18 @@ export default function EventPage() {
                         setQuantity(Number.parseInt(value))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger dir={dir}>
                         <SelectValue
                           placeholder={
                             tEvent("selectQuantity") || "Select quantity"
                           }
                         />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent dir={dir}>
                         {Array.from(
                           {
                             length: Math.min(
-                              event.dates.find(
-                                (d) => d.id === selectedDate.split("-")[0]
-                              )?.availableTickets ?? 0,
+                              selectedDate?.availableTickets ?? 0,
                               5
                             ),
                           },
@@ -400,11 +410,6 @@ export default function EventPage() {
                         : tEvent("buyTicket")}
                     </Button>
                   </div>
-                </div>
-              ) : (
-                <div className="flex justify-center items-center py-3 rounded-md bg-neutral-300 text-neutral-600">
-                  <InfoIcon className="w-5 h-5 me-2" />
-                  {tEvent("noTicketsAvailable")}
                 </div>
               )}
             </CardContent>

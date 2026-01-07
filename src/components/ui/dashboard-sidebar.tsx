@@ -96,10 +96,7 @@ export function DashboardSidebar() {
     if (item.title === "Reports" && !canViewReports) {
       return false;
     }
-    if (
-      item.title === "Settings" ||
-      (item.title === "Coupons" && !canViewSettings)
-    ) {
+    if (item.title === "Settings" && !canViewSettings) {
       return false;
     }
     return true;

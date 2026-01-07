@@ -23,8 +23,10 @@ export interface Event {
   creatorId: string; // foreign key to User
   updatedBy?: string;
   title: string;
+  titleAr?: string;
   slug: string;
   description: string;
+  descriptionAr?: string;
   eventImage: string;
   adImage: string;
   price: number;
@@ -32,7 +34,6 @@ export interface Event {
   city: City;
   venue: string;
   locationUrl: string;
-  isDnd: boolean;
   createdAt: Date;
   updatedAt: Date;
 

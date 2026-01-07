@@ -200,7 +200,10 @@ export default function customersPage() {
 
       {/* ----------- Tickets Dialog ----------- */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-stone-100 max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          dir="ltr"
+          className="bg-stone-100 max-w-4xl max-h-[90vh] overflow-y-auto"
+        >
           <DialogHeader>
             <DialogTitle className="text-2xl">Tickets List</DialogTitle>
             <DialogDescription>

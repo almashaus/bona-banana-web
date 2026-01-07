@@ -178,19 +178,42 @@ export default function ReservationsPage() {
     }
   };
 
-  const handleConfirmPayment = (reservationId: string) => {
-    setReservations(
-      reservations.map((res) =>
-        res.orderNumber === reservationId
-          ? { ...res, status: "Confirmed" }
-          : res
-      )
-    );
-    toast({
-      title: "Payment Confirmed",
-      description: "The reservation has been confirmed successfully.",
-      variant: "success",
-    });
+  const handleConfirmPayment = async (reservationId: string) => {
+    try {
+      const idToken = await authUser.getIdToken();
+
+      const response = await fetch(`/api/admin/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          id: reservationId,
+          data: {
+            status: OrderStatus.PAID,
+          },
+        }),
+      });
+      if (response.ok) {
+        // Revalidate SWR data
+        await mutate("/api/admin/orders");
+
+        setIsDetailsModalOpen(false);
+
+        toast({
+          title: "Payment Confirmed",
+          description: "The reservation has been confirmed successfully.",
+          variant: "success",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cancel the reservation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleResendTicket = async (
@@ -512,7 +535,10 @@ export default function ReservationsPage() {
 
       {/* ----------- Order Details Dialog ----------- */}
       <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-        <DialogContent className="bg-stone-100 max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          dir="ltr"
+          className="bg-stone-100 max-w-4xl max-h-[90vh] overflow-y-auto"
+        >
           <DialogHeader>
             <DialogTitle className="text-2xl">Order Details</DialogTitle>
             <DialogDescription>
@@ -707,6 +733,7 @@ export default function ReservationsPage() {
                 </Button>
                 {selectedReservation.status === "Pending" && (
                   <Button
+                    variant={"outline"}
                     onClick={() =>
                       handleConfirmPayment(selectedReservation.orderNumber)
                     }
