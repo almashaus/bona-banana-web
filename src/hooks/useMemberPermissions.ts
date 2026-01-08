@@ -1,29 +1,48 @@
 import useSWR from "swr";
+import { useEffect, useMemo } from "react";
 import { AppUser } from "@/src/models/user";
-import { canMemberAccess } from "@/src/lib/utils/checkPermission";
-import { MemberRole, PermissionAction } from "../types/permissions";
+import {
+  RolePermissions,
+  MemberRole,
+  Feature,
+  PermissionAction,
+} from "@/src/types/permissions";
+import { usePermissionStore } from "@/src/lib/stores/usePermissionStore";
+import { canAccessFromPermissions } from "@/src/lib/utils/checkPermission";
 
-type PermissionKey = [MemberRole, string, PermissionAction];
-
-const fetchPermission = async (
-  role: MemberRole,
-  feature: string,
-  action: PermissionAction
-) => {
-  return canMemberAccess(role, feature, action);
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to load permissions");
+  return (await res.json()) as RolePermissions;
 };
 
-export function useMemberPermissionChecker(user: AppUser | null | undefined) {
-  const role = user?.dashboard?.role;
+export function usePermissions(user: AppUser | null | undefined) {
+  const role = user?.dashboard?.role as MemberRole | undefined;
 
-  function checkPermission(feature: string, action: PermissionAction) {
-    const { data, isLoading } = useSWR(
-      role ? ([role, feature, action] as PermissionKey) : null,
-      ([role, feature, action]) => fetchPermission(role, feature, action),
-      { revalidateOnFocus: false }
-    );
-    return { allowed: data ?? false, isLoading };
-  }
+  const rolePermissions = usePermissionStore((s) => s.rolePermissions);
+  const setRolePermissions = usePermissionStore((s) => s.setRolePermissions);
 
-  return { checkPermission };
+  const { data, isLoading, error } = useSWR(
+    role ? "/api/admin/permissions" : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60_000, // optional
+    }
+  );
+
+  useEffect(() => {
+    if (data) setRolePermissions(data);
+  }, [data, setRolePermissions]);
+
+  const effectivePermissions = rolePermissions ?? data ?? null;
+
+  const hasPermission = useMemo(() => {
+    return (feature: Feature, action: PermissionAction) =>
+      canAccessFromPermissions(effectivePermissions, role, feature, action);
+  }, [effectivePermissions, role]);
+
+  return {
+    hasPermission,
+  };
 }

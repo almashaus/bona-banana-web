@@ -32,20 +32,22 @@ import Loading from "@/src/components/ui/loading";
 import { getAuth } from "firebase/auth";
 import isEqual from "lodash/isEqual";
 import { useToast } from "@/src/components/ui/use-toast";
+import { usePermissionStore } from "@/src/lib/stores/usePermissionStore";
+import { mutate } from "swr";
 
 const PermissionsPage = () => {
   const { user } = useAuth();
   const auth = getAuth();
   const authUser = auth.currentUser!;
   const { toast } = useToast();
-
+  const setRolePermissions = usePermissionStore((s) => s.setRolePermissions);
   const [roles, setRoles] = useState<MemberRole[]>([]);
   const [selectedRole, setSelectedRole] = useState<MemberRole>(roles[0]);
   const [editedPermissions, setEditedPermissions] =
     useState<RolePermissions | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const { data, isLoading, error, mutate } = useSWR<RolePermissions>(
+  const { data, isLoading, error } = useSWR<RolePermissions>(
     "/api/admin/permissions"
   );
 
@@ -112,7 +114,9 @@ const PermissionsPage = () => {
         variant: "success",
       });
 
-      mutate();
+      setRolePermissions(editedPermissions);
+
+      mutate("/api/admin/permissions");
     } catch (err) {
       toast({
         title: "Error updating permission",

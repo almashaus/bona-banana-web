@@ -1,4 +1,3 @@
-// types/permissions.ts
 export enum MemberRole {
   ADMIN = "Admin",
   MANAGER = "Manager",
@@ -16,11 +15,13 @@ export enum MemberStatus {
 export type PermissionAction = "view" | "create" | "edit" | "delete";
 
 export type Feature =
+  | "Dashboard"
   | "Event Management"
   | "Reports"
   | "Reservations"
   | "User Management"
-  | "Settings";
+  | "Settings"
+  | "Profile";
 
 export type FeaturePermission = {
   feature: Feature;

@@ -6,15 +6,77 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { Button } from "./button";
 import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
-import { Item } from "@/src/types/sidebarItem";
 import { usePathname } from "next/navigation";
 import { sidebarData } from "@/src/data/sideBarData";
 import { useAuth } from "@/src/features/auth/auth-provider";
-import { MemberRole, MemberStatus } from "@/src/types/permissions";
-import { useMemberPermissionChecker } from "@/src/hooks/useMemberPermissions";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import {
+  RolePermissions,
+  Feature,
+  PermissionAction,
+  MemberRole,
+  MemberStatus,
+} from "@/src/types/permissions";
+import type { SidebarItem } from "@/src/types/sidebarItem";
+import { usePermissionStore } from "@/src/lib/stores/usePermissionStore";
+
+function makeCan(rolePermissions: RolePermissions | null, role?: MemberRole) {
+  return (feature: Feature, action: PermissionAction) => {
+    if (!rolePermissions || !role) return false;
+    const perms = rolePermissions[role];
+    const featurePerm = perms?.find((p) => p.feature === feature);
+    return !!featurePerm?.[action];
+  };
+}
+
+export function filterSidebarItems(
+  items: SidebarItem[],
+  ctx: {
+    role?: MemberRole;
+    status?: MemberStatus;
+    rolePermissions: RolePermissions | null;
+  }
+) {
+  const can = makeCan(ctx.rolePermissions, ctx.role);
+
+  return items.filter((item) => {
+    // suspend gating (your current logic: hide everything except Profile)
+    if (
+      ctx.status === MemberStatus.SUSPENDED &&
+      item.title !== "Profile" &&
+      item.hideWhenSuspended !== false
+    ) {
+      return false;
+    }
+
+    if (!item.requires) return true;
+
+    if (typeof item.requires === "function")
+      return item.requires({ role: ctx.role, status: ctx.status, can });
+
+    if ("role" in item.requires) return ctx.role === item.requires.role;
+
+    return can(item.requires.feature, item.requires.action);
+  });
+}
+
+// const sidebarRequirements: Record<
+//   string,
+//   { feature: Feature; action: "view" }
+// > = {
+//   Events: { feature: "Event Management", action: "view" },
+//   Reservations: { feature: "Reservations", action: "view" },
+//   Customers: { feature: "User Management", action: "view" },
+//   "Team Members": { feature: "User Management", action: "view" },
+//   Reports: { feature: "Reports", action: "view" },
+//   Settings: { feature: "Settings", action: "view" },
+//   Coupons: { feature: "Settings", action: "view" },
+//   Profile: { feature: "Settings", action: "view" },
+// };
 
 export function DashboardSidebar() {
   const { user } = useAuth();
+  const { hasPermission } = usePermissions(user);
   const [collapsed, setCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const mobileOpen = useMobileSidebar((state) => state.mobileOpen);
@@ -44,72 +106,44 @@ export function DashboardSidebar() {
     }
   }, [mobileOpen, isMobile, showSidebar]);
 
-  const { checkPermission } = useMemberPermissionChecker(user);
+  const rolePermissions = usePermissionStore((s) => s.rolePermissions);
 
-  const { allowed: canViewEvents } = checkPermission("User Management", "view");
+  const visibleItems = filterSidebarItems(sidebarData, {
+    role: user?.dashboard?.role,
+    status: user?.dashboard?.status,
+    rolePermissions,
+  });
 
-  const { allowed: canViewReservations } = checkPermission(
-    "Reservations",
-    "view"
-  );
+  // function shouldShowSidebarItem(item: Item) {
+  //   // keep your existing role/status rules
+  //   if (
+  //     item.title !== "Profile" &&
+  //     user?.dashboard?.status === MemberStatus.SUSPENDED
+  //   )
+  //     return false;
 
-  const { allowed: canViewCustomers } = checkPermission(
-    "User Management",
-    "view"
-  );
+  //   if (
+  //     item.title === "Permissions" &&
+  //     user?.dashboard?.role !== MemberRole.ADMIN
+  //   )
+  //     return false;
 
-  const { allowed: canViewMembers } = checkPermission(
-    "User Management",
-    "view"
-  );
+  //   const req = sidebarRequirements[item.title];
+  //   if (!req) return true;
 
-  const { allowed: canViewReports } = checkPermission("Reports", "view");
+  //   // While loading, you can either:
+  //   // A) hide gated items until ready (no flicker)
+  //   // B) show skeleton placeholders
+  //   if (isPermissionLoading) return false;
 
-  const { allowed: canViewSettings } = checkPermission("Settings", "view");
-
-  // Helper function to determine if a sidebar item should be shown
-  function shouldShowSidebarItem(item: Item) {
-    if (
-      item.title !== "Profile" &&
-      user?.dashboard?.status === MemberStatus.SUSPENDED
-    ) {
-      return false;
-    }
-    if (
-      item.title === "Permissions" &&
-      user?.dashboard?.role !== MemberRole.ADMIN
-    ) {
-      return false;
-    }
-    if (item.title === "Events" && !canViewEvents) {
-      return false;
-    }
-    if (item.title === "Reservations" && !canViewReservations) {
-      return false;
-    }
-    if (item.title === "Customers" && !canViewCustomers) {
-      return false;
-    }
-    if (item.title === "Team Members" && !canViewMembers) {
-      return false;
-    }
-    if (item.title === "Reports" && !canViewReports) {
-      return false;
-    }
-    if (item.title === "Settings" && !canViewSettings) {
-      return false;
-    }
-    return true;
-  }
+  //   return hasPermission(req.feature, req.action);
+  // }
 
   // Sidebar content
   const sidebarContent = (
     <div className="h-full px-3 pb-4 pt-3 overflow-y-auto bg-neutral-300 dark:bg-gray-800 flex flex-col">
       <div className="space-y-2 text-sm">
-        {sidebarData.map((item, idx) => {
-          if (!shouldShowSidebarItem(item)) {
-            return null;
-          }
+        {visibleItems.map((item, idx) => {
           return (
             <SidebarItem
               key={idx}
@@ -196,7 +230,7 @@ export default function SidebarItem({
   item,
   collapsed = false,
 }: {
-  item: Item;
+  item: SidebarItem;
   collapsed?: boolean;
 }) {
   const setMobileOpen = useMobileSidebar((state) => state.setMobileOpen);
@@ -214,14 +248,6 @@ export default function SidebarItem({
       {!collapsed && (
         <>
           <span className="flex-1 ms-3">{item.title}</span>
-          {/* [ Notifications number ] */}
-          <span
-            className={`${
-              item.notifications ? "inline-flex" : "hidden"
-            } items-center justify-center w-2 h-2 p-3 rounded-full text-xs text-neutral-50 bg-greenColor/30 dark:bg-orangeColor dark:text-white`}
-          >
-            {item.notifications}
-          </span>
         </>
       )}
     </Link>

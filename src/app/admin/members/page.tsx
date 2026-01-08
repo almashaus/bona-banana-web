@@ -65,7 +65,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { getAuth } from "firebase/auth";
 import { MemberRole, MemberStatus } from "@/src/types/permissions";
-import { useMemberPermissionChecker } from "@/src/hooks/useMemberPermissions";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
 
 export default function membersPage() {
   const { user } = useAuth();
@@ -254,16 +254,9 @@ export default function membersPage() {
     // });
   };
 
-  const { checkPermission } = useMemberPermissionChecker(user);
-
-  const { allowed: canCreateMember } = checkPermission(
-    "User Management",
-    "create"
-  );
-  const { allowed: canDeleteMember } = checkPermission(
-    "User Management",
-    "delete"
-  );
+  const { hasPermission } = usePermissions(user);
+  const canCreateMember: boolean = hasPermission("User Management", "create");
+  const canDeleteMember: boolean = hasPermission("User Management", "delete");
 
   return (
     <div className="p-4 md:p-6">

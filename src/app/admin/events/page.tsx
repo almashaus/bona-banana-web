@@ -60,8 +60,7 @@ import { AppUser } from "@/src/models/user";
 import Image from "next/image";
 import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 import { useIsMobile } from "@/src/hooks/use-mobile";
-import { canMemberAccess } from "@/src/lib/utils/checkPermission";
-import { useMemberPermissionChecker } from "@/src/hooks/useMemberPermissions";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
 
 export default function EventsPage() {
   const { toast } = useToast();
@@ -145,17 +144,10 @@ export default function EventsPage() {
     setIsDialogOpen(true);
   };
 
-  const { checkPermission } = useMemberPermissionChecker(user);
-
-  const { allowed: canCreateEvent } = checkPermission(
-    "Event Management",
-    "create"
-  );
-  const { allowed: canEditEvent } = checkPermission("Event Management", "edit");
-  const { allowed: canDeleteEvent } = checkPermission(
-    "Event Management",
-    "delete"
-  );
+  const { hasPermission } = usePermissions(user);
+  const canCreateEvent: boolean = hasPermission("Event Management", "create");
+  const canEditEvent: boolean = hasPermission("Event Management", "edit");
+  const canDeleteEvent: boolean = hasPermission("Event Management", "delete");
 
   return (
     <div className="p-4 md:p-6">

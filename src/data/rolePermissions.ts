@@ -3,6 +3,13 @@ import { MemberRole, RolePermissions } from "@/src/types/permissions";
 export const rolePermissions: RolePermissions = {
   [MemberRole.ADMIN]: [
     {
+      feature: "Dashboard",
+      view: true,
+      create: true,
+      edit: true,
+      delete: true,
+    },
+    {
       feature: "Event Management",
       view: true,
       create: true,
@@ -32,6 +39,13 @@ export const rolePermissions: RolePermissions = {
     },
     {
       feature: "Settings",
+      view: true,
+      create: true,
+      edit: true,
+      delete: true,
+    },
+    {
+      feature: "Profile",
       view: true,
       create: true,
       edit: true,
@@ -40,6 +54,13 @@ export const rolePermissions: RolePermissions = {
   ],
   [MemberRole.MANAGER]: [
     {
+      feature: "Dashboard",
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+    },
+    {
       feature: "Event Management",
       view: true,
       create: true,
@@ -73,11 +94,25 @@ export const rolePermissions: RolePermissions = {
       create: true,
       edit: true,
       delete: false,
+    },
+    {
+      feature: "Profile",
+      view: true,
+      create: true,
+      edit: true,
+      delete: true,
     },
   ],
 
   [MemberRole.ORGANIZER]: [
     {
+      feature: "Dashboard",
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+    },
+    {
       feature: "Event Management",
       view: true,
       create: true,
@@ -110,12 +145,26 @@ export const rolePermissions: RolePermissions = {
       view: true,
       create: true,
       edit: false,
+      delete: false,
+    },
+    {
+      feature: "Profile",
+      view: true,
+      create: true,
+      edit: true,
       delete: false,
     },
   ],
 
   [MemberRole.SUPPORT]: [
     {
+      feature: "Dashboard",
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+    },
+    {
       feature: "Event Management",
       view: true,
       create: false,
@@ -148,12 +197,26 @@ export const rolePermissions: RolePermissions = {
       view: false,
       create: false,
       edit: false,
+      delete: false,
+    },
+    {
+      feature: "Profile",
+      view: true,
+      create: true,
+      edit: true,
       delete: false,
     },
   ],
 
   [MemberRole.FINANCE]: [
     {
+      feature: "Dashboard",
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+    },
+    {
       feature: "Event Management",
       view: true,
       create: false,
@@ -188,9 +251,23 @@ export const rolePermissions: RolePermissions = {
       edit: false,
       delete: false,
     },
+    {
+      feature: "Profile",
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+    },
   ],
 
   [MemberRole.PARTNER]: [
+    {
+      feature: "Dashboard",
+      view: true,
+      create: true,
+      edit: true,
+      delete: false,
+    },
     {
       feature: "Event Management",
       view: true,
@@ -224,6 +301,13 @@ export const rolePermissions: RolePermissions = {
       view: false,
       create: false,
       edit: false,
+      delete: false,
+    },
+    {
+      feature: "Profile",
+      view: true,
+      create: true,
+      edit: true,
       delete: false,
     },
   ],

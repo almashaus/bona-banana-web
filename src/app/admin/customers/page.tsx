@@ -22,7 +22,6 @@ import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
 import useSWR from "swr";
 import { CustomerResponse } from "@/src/models/user";
 import Loading from "@/src/components/ui/loading";
-
 import {
   Dialog,
   DialogContent,
@@ -31,10 +30,8 @@ import {
   DialogDescription,
 } from "@/src/components/ui/dialog";
 import { formatDate } from "@/src/lib/utils/formatDate";
-import { useAuth } from "@/src/features/auth/auth-provider";
 
 export default function customersPage() {
-  const { user } = useAuth();
   const [customers, setCustomers] = useState<CustomerResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 

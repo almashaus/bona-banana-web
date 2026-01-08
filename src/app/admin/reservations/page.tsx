@@ -73,7 +73,7 @@ import {
 } from "@/src/components/ui/tooltip";
 import { getAuth } from "firebase/auth";
 import { generateQRCode } from "@/src/lib/utils/utils";
-import { useMemberPermissionChecker } from "@/src/hooks/useMemberPermissions";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
 import { useAuth } from "@/src/features/auth/auth-provider";
 
 export default function ReservationsPage() {
@@ -247,12 +247,8 @@ export default function ReservationsPage() {
     }
   };
 
-  const { checkPermission } = useMemberPermissionChecker(user);
-
-  const { allowed: canCancelOrder } = checkPermission(
-    "Event Management",
-    "delete"
-  );
+  const { hasPermission } = usePermissions(user);
+  const canCancelOrder: boolean = hasPermission("Event Management", "delete");
 
   return (
     <div className="p-4 md:p-6">
