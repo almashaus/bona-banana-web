@@ -336,7 +336,13 @@ export function RepeatDates({ setRepeatedDates }: RepeatDatesInterface) {
                   <span className="text-sm">After</span>
                   <Input
                     value={endsAfter}
-                    onChange={(e) => setEndsAfter(e.target.value)}
+                    type="number"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (Number.parseInt(value) > 0) {
+                        setEndsAfter(value);
+                      }
+                    }}
                     className="h-9 w-20"
                     inputMode="numeric"
                     placeholder=""

@@ -65,9 +65,8 @@ export async function getServerSession(): Promise<{
       return { user: null, authenticated: false };
     }
   } catch (error) {
-    console.error("Session retrieval error:", error);
     // Clear potentially corrupted cookie
-    // cookies().delete("session");
+    cookies().delete("session");
     return { user: null, authenticated: false };
   }
 }
