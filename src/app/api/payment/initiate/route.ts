@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const invoiceAmount = Number(body.invoiceAmount);
-    const currencyIso = String(body.currencyIso || "KWD");
+    const currencyIso = String(body.currencyIso || "SAR");
 
     if (!invoiceAmount || invoiceAmount <= 0) {
       return NextResponse.json(

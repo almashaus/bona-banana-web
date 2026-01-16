@@ -331,7 +331,6 @@ export default function UserProfilePage() {
           </Card>
         </TabsContent>
 
-        {/* TODO: Activity Log Tab */}
         <TabsContent value="activity">
           <Card>
             <CardHeader>

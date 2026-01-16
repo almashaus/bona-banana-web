@@ -238,7 +238,6 @@ export default function UserProfilePage() {
           </Card>
         </TabsContent>
 
-        {/* TODO: Permissions Tab */}
         <TabsContent value="permissions">
           <Card>
             <CardHeader>
@@ -286,7 +285,6 @@ export default function UserProfilePage() {
           </Card>
         </TabsContent>
 
-        {/* TODO: Activity Log Tab */}
         <TabsContent value="activity">
           <Card>
             <CardHeader>

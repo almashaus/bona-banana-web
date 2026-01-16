@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const payload = {
       PaymentMethodId: paymentMethodId,
       InvoiceValue: invoiceValue,
-      CurrencyIso: "KWD", // TODO: "SAR"
+      CurrencyIso: "SAR",
       CustomerName: customerName,
       CustomerEmail: customerEmail,
       CallBackUrl: callbackUrl,
