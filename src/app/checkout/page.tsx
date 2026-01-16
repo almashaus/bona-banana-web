@@ -70,7 +70,8 @@ export default function CheckoutPage() {
   }, [storedEvent]);
 
   // Calculate totals
-  const total = event?.price! * quantity;
+
+  const total = event?.price! * (quantity === 3 ? 2 : quantity);
   const subtotal = total - total * 0.15;
   const fees = (total - subtotal).toFixed(2);
 
@@ -213,7 +214,7 @@ export default function CheckoutPage() {
             "Please select an event and date before proceeding to checkout."}
         </p>
         <Button asChild>
-          <a href="/">{t("home.allEvents")}</a>
+          <a href="/">{t("allEvents")}</a>
         </Button>
       </div>
     );
@@ -250,7 +251,7 @@ export default function CheckoutPage() {
             <div className="flex items-start gap-4 mb-6">
               <div className="h-20 w-20 overflow-hidden rounded-md">
                 <img
-                  src={event.eventImage || "/no-image.svg"}
+                  src={event.eventLogo ?? event.eventImage ?? "/no-image.svg"}
                   alt={event.title}
                   className="h-full w-full object-cover"
                 />

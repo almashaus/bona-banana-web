@@ -223,7 +223,11 @@ export default function EventsPage() {
                       <div className="flex flex-row gap-2 items-center">
                         <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden relative rounded-md">
                           <Image
-                            src={response.event.eventImage || "/no-image.svg"}
+                            src={
+                              response.event.eventLogo ??
+                              response.event.eventImage ??
+                              "/no-image.svg"
+                            }
                             alt={response.event.title}
                             className="h-full w-full object-cover"
                             fill

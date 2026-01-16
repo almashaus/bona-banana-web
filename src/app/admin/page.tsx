@@ -265,7 +265,11 @@ export default function AdminPage() {
                         <TableCell>
                           <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-md relative">
                             <Image
-                              src={event.eventImage || "/no-image.svg"}
+                              src={
+                                event.eventLogo ??
+                                event.eventImage ??
+                                "/no-image.svg"
+                              }
                               alt={event.title}
                               className="h-full w-full object-cover"
                               fill

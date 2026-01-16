@@ -44,7 +44,7 @@ export default function Home() {
 
             <div className="flex flex-col justify-center items-center">
               <Suspense fallback={<LoadingEvents />}>
-                <EventsList language={locale} />
+                <EventsList locale={locale} />
               </Suspense>
 
               <Button asChild>
@@ -62,7 +62,7 @@ export default function Home() {
   );
 }
 
-async function EventsList({ language }: { language: string }) {
+async function EventsList({ locale }: { locale: string }) {
   const res = await fetch(
     "https://tickets.bona-banana.com/api/published-events"
   );
@@ -80,14 +80,24 @@ async function EventsList({ language }: { language: string }) {
 
   const allEvents = (await res.json()) as Event[];
 
+  const platinumLink =
+    "https://riyadh.platinumlist.net/event-tickets/97023/board-game-mondays?_gl=1*bjhow9*_ga*MzA2MTk1Njk4LjE3NTU1MjI1OTg.*_ga_ELQY469HQT*czE3NjQ1MDc5ODUkbzMkZzAkdDE3NjQ1MDc5ODUkajYwJGwwJGgw*_gcl_au*MTM5NTEzNjAwNS4xNzY0NTA3OTg1*_ga_MJ1Y407XEH*czE3NjQ1MDc5ODUkbzMkZzAkdDE3NjQ1MDc5OTEkajU0JGwwJGgw";
+
   return (
     <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 sm:grid-cols-2 lg:grid-cols-3">
       {allEvents.map((event) => (
-        <Link href={`/events/${event.id}`} key={event.id}>
+        <Link
+          href={
+            event.id === "1cn1JPvVPOhCiP8oPQZn"
+              ? platinumLink
+              : `/events/${event.id}`
+          }
+          key={event.id}
+        >
           <Card className="overflow-hidden transition-all shadow-none hover:scale-105 hover:rotate-3 bg-darkColor border-0">
             <div className="flex justify-center items-center m-3">
               <Image
-                src={event.eventImage || "/no-image.svg"}
+                src={event.eventLogo ?? event.eventImage}
                 alt={event.title}
                 width={300}
                 height={260}
@@ -101,27 +111,29 @@ async function EventsList({ language }: { language: string }) {
               />
             </div>
             <CardContent className="p-4 bg-beigeColor mx-3 rounded-md">
-              <h3 className="line-clamp-1 text-lg font-bold">{event.title}</h3>
+              <h3 className="line-clamp-1 text-lg font-bold">
+                {locale === "en" ? event.title : event.titleAr}
+              </h3>
               <div className="mt-2 flex items-center text-sm text-muted-foreground">
                 <CalendarDays className="me-1 h-4 w-4 text-redColor" />
-                {`${formatDate(event.dates[0].date, language)}`}
+                {`${formatDate(event.dates[0].date, locale)}`}
               </div>
               <div className="mt-1 flex items-center text-sm text-muted-foreground">
                 <ClockIcon className="me-1 h-4 w-4 text-redColor" />
-                {`${formatTime(event.dates[0].startTime, language)} - ${formatTime(
+                {`${formatTime(event.dates[0].startTime, locale)} - ${formatTime(
                   event.dates[0].endTime,
-                  language
+                  locale
                 )}`}
               </div>
             </CardContent>
             <CardFooter className="p-3 grid grid-cols-2 gap-3 justify-between items-center bg-dark-color ">
               <div className=" bg-redColor py-3 rounded-md text-white text-center">
                 <span className="">
-                  {language === "en" ? event.city.en : event.city.ar}
+                  {locale === "en" ? event.city.en : event.city.ar}
                 </span>
               </div>
               <div className="bg-yellowColor py-3 rounded-md text-white  text-center">
-                {price(event.price, language)}
+                {price(event.price, locale)}
               </div>
             </CardFooter>
           </Card>

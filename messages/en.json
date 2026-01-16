@@ -10,8 +10,8 @@
     "backToHome": "Back to Main Page",
     "noEvents": "There is no event currently, Come back later!",
     "error": "Something went wrong. Please try again later.",
-    "gallary": "Gallary",
-    "gallarySubtitle": "Here are moments from our events at Bona Banana. dozens of board games, lively matches, and unforgettable game nights. Join us for endless fun and memories you’ll always remember."
+    "gallery": "Gallery",
+    "gallerySubtitle": "Here are moments from our events at Bona Banana. dozens of board games, lively matches, and unforgettable game nights. Join us for endless fun and memories you’ll always remember."
   },
   "Nav": {
     "profile": "Profile",
@@ -36,6 +36,7 @@
     "selectQuantity": "Select quantity",
     "ticket": "ticket",
     "tickets": "tickets",
+    "free": "Buy 2 + 1 free",
     "noDatesAvailable": "No dates available",
     "noTimesAvailable": "No times available",
     "noTicketsAvailable": "No tickets available for this date",
@@ -74,7 +75,8 @@
     "paymentFailed": "Payment Failed",
     "pleaseCheckPaymentAndTryAgain": "Please check your payment details and try again, or use a different payment method.",
     "warning": "Warning",
-    "somethingWentWrong": "Something went wrong!, please try again later."
+    "somethingWentWrong": "Something went wrong!, please try again later.",
+    "allEvents": "View All Events"
   },
   "Confirm": {
     "confirm": "Order Confirmed!",

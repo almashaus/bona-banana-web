@@ -82,6 +82,7 @@ export default function EditEventPage() {
   const [city, setCity] = useState("");
   const [venue, setVenue] = useState("");
   const [locationUrl, setLocationUrl] = useState("");
+  const [eventLogo, setEventLogo] = useState("");
   const [eventImage, setEventImage] = useState("");
   const [adImage, setAdImage] = useState("");
   const [price, setPrice] = useState("");
@@ -122,6 +123,7 @@ export default function EditEventPage() {
         setCity(eventData.city.en);
         setVenue(eventData.venue || "");
         setLocationUrl(eventData.locationUrl || "");
+        setEventLogo(eventData.eventLogo || "");
         setEventImage(eventData.eventImage || "");
         setAdImage(eventData.adImage || "");
         setPrice(eventData.price.toString() || "");
@@ -235,6 +237,7 @@ export default function EditEventPage() {
         slug: slug,
         description: description,
         descriptionAr: descriptionAr,
+        eventLogo: eventLogo,
         eventImage: eventImage,
         adImage: adImage,
         price: parseFloat(price),
@@ -353,6 +356,7 @@ export default function EditEventPage() {
                         value={titleAr}
                         onChange={(e) => setTitleAr(e.target.value)}
                         placeholder="أدخل عنوان الفعالية"
+                        dir="rtl"
                         required
                       />
                     </div>
@@ -387,6 +391,7 @@ export default function EditEventPage() {
                         value={descriptionAr}
                         onChange={(e) => setDescriptionAr(e.target.value)}
                         placeholder="أوصف الفعالية"
+                        dir="rtl"
                         rows={8}
                         required
                       />
@@ -507,7 +512,16 @@ export default function EditEventPage() {
                 <CardHeader>
                   <CardTitle>Event Images</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col md:flex-row justify-around space-y-6 md:space-y-0">
+                <CardContent className="flex flex-col lg:flex-row justify-around space-y-6 md:space-y-0">
+                  <div className="grid gap-4">
+                    <Label htmlFor="event-logo">Event Logo</Label>
+                    <EventLogoInput
+                      eventLogo={eventLogo}
+                      setEventLogo={setEventLogo}
+                      id={id}
+                    />
+                  </div>
+
                   <div className="grid gap-4">
                     <Label htmlFor="event-image">Event Image</Label>
                     <EventImageInput
@@ -552,6 +566,153 @@ export default function EditEventPage() {
             </Button>
           </div>
         </form>
+      )}
+    </div>
+  );
+}
+
+function EventLogoInput({
+  eventLogo,
+  setEventLogo,
+  id,
+}: {
+  eventLogo: string;
+  setEventLogo: (url: string) => void;
+  id: string;
+}) {
+  const [progress, setProgress] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [isURL, setIsURL] = useState(false);
+  const [tempValue, setTempValue] = useState(eventLogo);
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    if (file.size > 5 * 1024 * 1024) {
+      // compress before uploading
+      file = await compressImage(file);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setEventLogo(objectUrl);
+
+    const ext = file.name.split(".").pop();
+    const path = `events/${id}/logo_${Date.now()}.${ext}`;
+
+    const storageRef = ref(storage, path);
+    const metadata = {
+      contentType: file.type,
+    };
+
+    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const pct = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setProgress(Math.round(pct));
+      },
+      (error) => {
+        setUploading(false);
+      },
+      async () => {
+        try {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          setEventLogo(downloadUrl);
+        } finally {
+          setUploading(false);
+          // free memory for the preview
+          URL.revokeObjectURL(objectUrl);
+          setProgress(null);
+        }
+      }
+    );
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div>
+        <div className="border rounded-md p-1 w-64 h-64 2xl:w-72 2xl:h-72 flex flex-col items-center justify-center bg-muted relative">
+          {eventLogo ? (
+            <Image
+              src={eventLogo || "/no-image.svg"}
+              alt="Event"
+              className="w-full h-full object-cover rounded-md"
+              fill
+              priority
+              onError={(e) => {
+                e.currentTarget.src = "/no-image.svg";
+              }}
+            />
+          ) : (
+            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+          )}
+          <input
+            type="file"
+            id="event-logo-upload"
+            accept="image/*"
+            className="hidden"
+            onChange={handleChange}
+          />
+
+          <div className="">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="absolute bottom-1 right-1 h-7 px-2 text-xs"
+              onClick={() =>
+                document.getElementById("event-logo-upload")?.click()
+              }
+            >
+              <UploadIcon className="w-4 h-4 text-redColor" />
+            </Button>
+          </div>
+        </div>
+        {uploading && (
+          <Progress value={progress ?? 0} max={100} className="my-1">
+            {progress}%
+          </Progress>
+        )}
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => {
+          setIsURL(!isURL);
+          if (isURL) {
+            setEventLogo("");
+            setTempValue("");
+          }
+        }}
+        className="text-orangeColor"
+      >
+        {isURL ? (
+          <X className="w-4 h-4 me-1" />
+        ) : (
+          <>
+            <PenLine className="w-4 h-4 me-1" /> Write Image URL
+          </>
+        )}
+      </Button>
+      {isURL && (
+        <div className="flex items-center w-80 gap-2">
+          <Input
+            id="event-Logo"
+            value={tempValue}
+            onChange={(e) => setTempValue(e.target.value)}
+            placeholder="Enter Logo URL"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setEventLogo(tempValue)}
+          >
+            Upload
+          </Button>
+        </div>
       )}
     </div>
   );

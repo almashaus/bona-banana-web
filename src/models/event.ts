@@ -27,6 +27,7 @@ export interface Event {
   slug: string;
   description: string;
   descriptionAr?: string;
+  eventLogo?: string;
   eventImage: string;
   adImage: string;
   price: number;

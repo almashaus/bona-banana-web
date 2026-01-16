@@ -199,25 +199,9 @@ export default function EventPage() {
           </div>
           <div className="space-y-4">
             <h2 className="text-xl font-bold">{tEvent("details")}</h2>
-            <p className="text-muted-foreground whitespace-pre-line">
+            <p className="text-muted-foreground whitespace-pre-line pb-4">
               {locale === "en" ? event.description : event.descriptionAr}
             </p>
-            {event.adImage && (
-              <div>
-                <img
-                  src={
-                    isSafeImageUrl(event.adImage)
-                      ? event.adImage!
-                      : "/no-image.svg"
-                  }
-                  alt={event.title}
-                  className="object-cover rounded-xl my-10"
-                  onError={(e) => {
-                    e.currentTarget.src = "/no-image.svg";
-                  }}
-                />
-              </div>
-            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg border border-neutral-200 bg-card text-card-foreground shadow-sm">
               <div className="flex items-center gap-2">
@@ -297,6 +281,22 @@ export default function EventPage() {
                 </div>
               )}
             </div>
+            {event.adImage && (
+              <div className="pt-4">
+                <img
+                  src={
+                    isSafeImageUrl(event.adImage)
+                      ? event.adImage!
+                      : "/no-image.svg"
+                  }
+                  alt={event.title}
+                  className="object-cover rounded-xl"
+                  onError={(e) => {
+                    e.currentTarget.src = "/no-image.svg";
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -376,6 +376,11 @@ export default function EventPage() {
                           <SelectItem key={num} value={num.toString()}>
                             {num}{" "}
                             {num === 1 ? tEvent("ticket") : tEvent("tickets")}
+                            {num === 3 && (
+                              <span className="text-sm text-green-500 mx-4">
+                                {tEvent("free")}
+                              </span>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -396,7 +401,18 @@ export default function EventPage() {
                   <Separator />
                   <div className="flex items-center justify-between font-bold">
                     <span>{tEvent("total")}</span>
-                    <span>{price(event.price * quantity, locale)}</span>
+                    {quantity === 3 ? (
+                      <div>
+                        <span className="line-through mx-2">
+                          {price(event.price * quantity, locale)}
+                        </span>
+                        <span className=" text-green-500">
+                          {price(event.price * (quantity - 1), locale)}{" "}
+                        </span>
+                      </div>
+                    ) : (
+                      <span>{price(event.price * quantity, locale)}</span>
+                    )}
                   </div>
                   <div className="pt-3">
                     <Button

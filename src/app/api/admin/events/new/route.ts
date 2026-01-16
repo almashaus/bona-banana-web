@@ -32,6 +32,19 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
     const docRef = db.collection("events").doc();
 
+    if (eventData.eventLogo) {
+      await renameFile(
+        `events/${eventData.slug}/${getFileName(eventData.eventLogo)}`,
+        `events/${docRef.id}/${getFileName(eventData.eventLogo)}`
+      );
+
+      // Update URLs to use event ID instead of slug
+      eventData.eventLogo = eventData.eventLogo.replace(
+        eventData.slug,
+        docRef.id
+      );
+    }
+
     if (eventData.eventImage) {
       await renameFile(
         `events/${eventData.slug}/${getFileName(eventData.eventImage)}`,
@@ -44,6 +57,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
         docRef.id
       );
     }
+
     if (eventData.adImage) {
       await renameFile(
         `events/${eventData.slug}/${getFileName(eventData.adImage)}`,

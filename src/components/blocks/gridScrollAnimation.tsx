@@ -32,7 +32,7 @@ const bentoGridVariants = cva(
           md:[&>*:nth-child(2)]:col-span-2 md:[&>*:nth-child(2)]:row-span-2  
           md:[&>*:nth-child(3)]:col-span-2 md:[&>*:nth-child(3)]:row-span-2 
           md:[&>*:nth-child(4)]:col-span-4 md:[&>*:nth-child(4)]:col-span-3
-          md:[&>*:nth-child(5)]:col-span-4 md:[&>*:nth-child(5)]:col-span-3 md:[&>*:nth-child(5)]:block
+          md:[&>*:nth-child(5)]:col-span-4 md:[&>*:nth-child(5)]:col-span-3 
         `,
       },
     },
