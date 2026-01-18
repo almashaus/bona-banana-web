@@ -517,7 +517,7 @@ function EventLogoInput({
     setEventLogo(objectUrl);
 
     const ext = file.name.split(".").pop();
-    const path = `events/${slug}/event_${Date.now()}.${ext}`;
+    const path = `events/${slug}/logo_${Date.now()}.${ext}`;
 
     const storageRef = ref(storage, path);
     const metadata = {
@@ -569,7 +569,7 @@ function EventLogoInput({
           )}
           <input
             type="file"
-            id="event-image-upload"
+            id="event-logo-upload"
             accept="image/*"
             className="hidden"
             onChange={handleChange}
@@ -582,7 +582,7 @@ function EventLogoInput({
               size="sm"
               className="absolute bottom-1 right-1 h-7 px-2 text-xs"
               onClick={() =>
-                document.getElementById("event-image-upload")?.click()
+                document.getElementById("event-logo-upload")?.click()
               }
             >
               <UploadIcon className="w-4 h-4 text-redColor" />

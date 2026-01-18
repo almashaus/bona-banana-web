@@ -1,1 +1,1 @@
-export const paymentMethodsIds = [6, 11, 2, 14, 32];
+export const paymentMethodsIds = [6, 11, 2, 12];

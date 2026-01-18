@@ -21,7 +21,7 @@ export async function getEvents() {
   try {
     const eventsQuery = query(
       collection(db, "events"),
-      orderBy("updatedAt", "desc")
+      orderBy("updatedAt", "desc"),
     );
     const querySnapshot = await getDocs(eventsQuery);
 
@@ -37,7 +37,7 @@ export async function getEventsByStatus(status: EventStatus) {
     const eventsQuery = query(
       collection(db, "events"),
       where("status", "==", status),
-      orderBy("updatedAt", "desc")
+      orderBy("updatedAt", "desc"),
     );
     const querySnapshot = await getDocs(eventsQuery);
 
@@ -49,30 +49,8 @@ export async function getEventsByStatus(status: EventStatus) {
   }
 }
 
-export async function getEventsInMonth() {
-  try {
-    const target = new Date();
-    const formatted = target.toISOString().split("T")[0];
-
-    const q = query(
-      collection(db, "events"),
-      where("eventDates", "array-contains", formatted)
-    );
-
-    const snapshot = await getDocs(q);
-    const matchingEvents = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    return matchingEvents;
-  } catch (error) {
-    throw new Error("Error fetching data!");
-  }
-}
-
 export const getAllDocuments = async (
-  collectionName: string
+  collectionName: string,
 ): Promise<DocumentData[]> => {
   try {
     const querySnapshot = await getDocs(collection(db, collectionName));
@@ -106,7 +84,7 @@ export const getEventById = async (docId: string) => {
 
 export const getDocumentById = async (
   collectionName: string,
-  docId: string
+  docId: string,
 ): Promise<DocumentData | null> => {
   try {
     const docRef = doc(db, collectionName, docId);
@@ -126,7 +104,7 @@ export const getDocumentById = async (
 export async function addDocToCollection<T extends object>(
   collectionName: string,
   data: T,
-  id?: string
+  id?: string,
 ): Promise<string> {
   try {
     if (id) {
@@ -149,7 +127,7 @@ export async function addDocToCollection<T extends object>(
 export async function updateDocument(
   collectionName: string,
   docId: string,
-  data: Partial<Record<string, any>>
+  data: Partial<Record<string, any>>,
 ): Promise<void> {
   try {
     const docRef = doc(db, collectionName, docId);
@@ -179,7 +157,7 @@ export async function deleteDocById(collectionName: string, docId: string) {
 export async function deleteField(
   collectionName: string,
   docId: string,
-  fieldName: string
+  fieldName: string,
 ): Promise<void> {
   try {
     const docRef = doc(db, collectionName, docId);
@@ -216,7 +194,7 @@ export async function getUsersWithDashboardAccess(): Promise<AppUser[]> {
 }
 
 export async function storeRolePermissions(
-  rolePermissions: RolePermissions
+  rolePermissions: RolePermissions,
 ): Promise<void> {
   try {
     const ops = Object.entries(rolePermissions).map(
@@ -228,14 +206,14 @@ export async function storeRolePermissions(
           permissions,
           updatedAt: new Date().toISOString(),
         });
-      }
+      },
     );
 
     await Promise.all(ops);
   } catch (error) {
     console.error("Failed to store role permissions:", error);
     throw new Error(
-      "Failed to store role permissions. Please try again later."
+      "Failed to store role permissions. Please try again later.",
     );
   }
 }

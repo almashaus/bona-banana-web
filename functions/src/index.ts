@@ -68,10 +68,32 @@ export const onMemberAdded = functions.firestore
   Scheduled function: Change event status from "published" to "completed" if its date has passed
 */
 export const completePastEvents = functions.pubsub
-  .schedule("every day 00:00") // runs at UTC midnight
-  .onRun(async (context) => {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0); // normalize to UTC midnight
+  .schedule("every day 00:05")
+  .timeZone("Asia/Riyadh")
+  .onRun(async () => {
+    const TZ = "Asia/Riyadh";
+
+    // Format a Date into YYYY-MM-DD in a specific timezone (Saudi)
+    const dayKey = (d: Date) => {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: TZ,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(d);
+
+      const y = parts.find((p) => p.type === "year")?.value;
+      const m = parts.find((p) => p.type === "month")?.value;
+      const da = parts.find((p) => p.type === "day")?.value;
+
+      // If Intl fails for any reason, do not risk completing events incorrectly
+      if (!y || !m || !da) return null;
+
+      return `${y}-${m}-${da}`; // lexicographically sortable
+    };
+
+    const todayKey = dayKey(new Date());
+    if (!todayKey) return null;
 
     const eventsSnap = await db
       .collection("events")
@@ -84,44 +106,40 @@ export const completePastEvents = functions.pubsub
 
     eventsSnap.forEach((doc) => {
       const event = doc.data();
-      const dates = event.dates || [];
+      const dates = Array.isArray(event.dates) ? event.dates : [];
 
-      // Find the latest event date without sorting (more efficient than .sort)
-      const latestDateObj = dates.reduce((latest: Date | null, d: any) => {
-        let dateVal = d.date?.toDate?.() ?? d.date;
-        if (dateVal instanceof admin.firestore.Timestamp) {
-          dateVal = dateVal.toDate();
-        }
-        const current = dateVal instanceof Date ? dateVal : new Date(dateVal);
-        return !latest || current > latest ? current : latest;
-      }, null);
+      // Find latest "Saudi day" among all date strings
+      let latestKey: string | null = null;
 
-      if (latestDateObj) {
-        const latestDate = new Date(latestDateObj);
-        latestDate.setUTCHours(0, 0, 0, 0); // compare only by day (UTC)
+      for (const d of dates) {
+        if (typeof d?.date !== "string") continue;
 
-        if (latestDate < today) {
-          batch.update(doc.ref, { status: "completed" });
-          count++;
+        const parsed = new Date(d.date);
+        if (Number.isNaN(parsed.getTime())) continue;
 
-          // Firestore limit: 500 writes per batch
-          if (count === 500) {
-            commits.push(batch.commit());
-            batch = db.batch();
-            count = 0;
-          }
+        const k = dayKey(parsed);
+        if (!k) continue;
+
+        if (!latestKey || k > latestKey) latestKey = k;
+      }
+
+      if (!latestKey) return;
+
+      // Only complete if the latest Saudi day is strictly before today Saudi day
+      if (latestKey < todayKey) {
+        batch.update(doc.ref, { status: "completed" });
+        count++;
+
+        if (count === 500) {
+          commits.push(batch.commit());
+          batch = db.batch();
+          count = 0;
         }
       }
     });
 
-    // Commit remaining writes
-    if (count > 0) {
-      commits.push(batch.commit());
-    }
-
-    if (commits.length > 0) {
-      await Promise.all(commits);
-    }
+    if (count > 0) commits.push(batch.commit());
+    if (commits.length) await Promise.all(commits);
 
     return null;
   });
@@ -135,7 +153,7 @@ export const verifyIdToken = functions.https.onCall(async (data, context) => {
   if (!idToken) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "ID token is required."
+      "ID token is required.",
     );
   }
   try {
@@ -143,7 +161,7 @@ export const verifyIdToken = functions.https.onCall(async (data, context) => {
     if (!decodedToken) {
       throw new functions.https.HttpsError(
         "unauthenticated",
-        "Invalid ID token."
+        "Invalid ID token.",
       );
     }
     return {
@@ -181,12 +199,12 @@ export const onEventCreated = functions.firestore
       await addActivityLog(
         creatorId,
         `Created event '${eventData.title}'`,
-        "Event Management"
+        "Event Management",
       );
     } catch (error) {
       console.error(
         `Error incrementing eventsManaged for user ${creatorId}:`,
-        error
+        error,
       );
     }
   });
@@ -227,31 +245,11 @@ export const onTicketCreated = functions.firestore
     } catch (error) {
       console.error(
         `Error decrementing availableTickets for event ${eventId}, date ${eventDateId}:`,
-        error
+        error,
       );
     }
   });
 
-const formatDate = (d: Date): string => d.toISOString().split("T")[0];
-/*
-  [ 7 ]
-  Triggered when a new event is added or updated; add eventsDates
-*/
-export const updateEventDates = functions.firestore
-  .document("events/{eventId}")
-  .onWrite(async (change, context) => {
-    const eventData = change.after.exists ? change.after.data() : null;
-    if (!eventData) return null; // Document deleted
-
-    const dates = eventData.dates || [];
-
-    const eventDates = dates.map((d: any) => {
-      const date = d.date?.toDate?.() ?? new Date(d.date);
-      return formatDate(date);
-    });
-
-    return change.after.ref.update({ eventDates });
-  });
 /*
   [ 8 ]
   Triggered when an event date's capacity is updated; adjusts availableTickets accordingly
@@ -269,7 +267,7 @@ export const onEventDateCapacityChanged = functions.firestore
 
     // Map dates by id for easy lookup
     const beforeDatesMap = Object.fromEntries(
-      beforeDates.map((d: any) => [d.id, d])
+      beforeDates.map((d: any) => [d.id, d]),
     );
 
     const updatedDates = afterDates.map((afterDate: any) => {
@@ -379,7 +377,7 @@ export const onEventUpdated = functions.firestore
     }
 
     // Build the activity log action
-    const action = `Updated event '${after.title}'${changesDescription}`;
+    const action = `Updated event "${after.title}" ${changesDescription}`;
 
     // Write log
     await addActivityLog(userId, action, "Event Management");
@@ -401,7 +399,7 @@ export const onUserRoleChanged = functions.firestore
       await addActivityLog(
         userId,
         "Edited member permissions",
-        "User Management"
+        "User Management",
       );
     }
   });
@@ -410,7 +408,7 @@ export const onUserRoleChanged = functions.firestore
 export const addActivityLog = async (
   userId: string,
   action: string,
-  type: "Event Management" | "User Management" | "Settings"
+  type: "Event Management" | "User Management" | "Settings",
 ) => {
   const logRef = admin
     .firestore()

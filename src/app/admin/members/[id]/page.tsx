@@ -53,7 +53,7 @@ import {
 } from "@/src/types/permissions";
 import Link from "next/link";
 import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
-import { formatDate } from "@/src/lib/utils/formatDate";
+import { formatDate, formatDateTime } from "@/src/lib/utils/formatDate";
 import { GrayX, GreenCheck } from "@/src/lib/utils/statusIcons";
 
 export default function UserProfilePage() {
@@ -356,7 +356,7 @@ export default function UserProfilePage() {
                     <div className="flex-1">
                       <p className="font-medium">{activity.action}</p>
                       <p className="text-sm text-muted-foreground">
-                        {activity.timestamp}
+                        {formatDateTime(new Date(activity.timestamp))}
                       </p>
                     </div>
                   </div>

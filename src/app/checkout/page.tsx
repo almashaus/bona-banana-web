@@ -55,7 +55,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<number>(6);
+  const [selectedMethod, setSelectedMethod] = useState<number>(2);
   const [event, setEvent] = useState<Event | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
 
@@ -172,6 +172,7 @@ export default function CheckoutPage() {
           invoiceValue: total,
           customerName: user.name,
           customerEmail: user.email,
+          customerReference: event?.id,
           orderId,
         };
 

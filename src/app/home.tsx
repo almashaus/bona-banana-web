@@ -97,7 +97,7 @@ async function EventsList({ locale }: { locale: string }) {
           <Card className="overflow-hidden transition-all shadow-none hover:scale-105 hover:rotate-3 bg-darkColor border-0">
             <div className="flex justify-center items-center m-3">
               <Image
-                src={event.eventLogo ?? event.eventImage}
+                src={event.eventLogo ?? event.eventImage ?? "/no-image.svg"}
                 alt={event.title}
                 width={300}
                 height={260}

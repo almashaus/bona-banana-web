@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       invoiceValue,
       customerName,
       customerEmail,
+      customerReference,
       orderId,
     } = body;
 
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       CurrencyIso: "SAR",
       CustomerName: customerName,
       CustomerEmail: customerEmail,
+      CustomerReference: customerReference,
       CallBackUrl: callbackUrl,
       ErrorUrl: errorUrl,
     };

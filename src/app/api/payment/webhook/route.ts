@@ -32,12 +32,15 @@ export async function POST(req: NextRequest) {
       .update(Buffer.from(rawBody, "utf8"))
       .digest("base64");
 
+    console.log("computed :>> ", computed);
+
     // Timing-safe compare
     const isMatch =
       safeCompare(header, computed) ||
       safeCompare(header, computed.replace(/\=+$/, ""));
 
     if (!isMatch) {
+      console.log("NOT MATCH");
       return new NextResponse("Invalid webhook signature", { status: 403 });
     }
 
@@ -106,7 +109,7 @@ async function updateOrder(invoiceId: string) {
 
   // Collect all ticket queries
   const ticketPromises = orderSnapshot.docs.map((doc) =>
-    db.collection("tickets").where("orderId", "==", doc.ref).get()
+    db.collection("tickets").where("orderId", "==", doc.ref).get(),
   );
 
   const ticketSnapshots = await Promise.all(ticketPromises);

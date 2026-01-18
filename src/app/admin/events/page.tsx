@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   CircleAlertIcon,
+  Copy,
   Edit2,
   MapPin,
   Plus,
@@ -149,6 +150,40 @@ export default function EventsPage() {
   const canEditEvent: boolean = hasPermission("Event Management", "edit");
   const canDeleteEvent: boolean = hasPermission("Event Management", "delete");
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard &&
+        window.isSecureContext
+      ) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+
+      toast({
+        title: "Copied",
+        description: "Event ID copied to clipboard",
+        variant: "default",
+      });
+    } catch (e) {
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy ID",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="p-4 md:p-6">
       {eventUrl && (
@@ -255,6 +290,14 @@ export default function EventsPage() {
                       </div>
 
                       <div className="flex flex-col gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(response.event.id)}
+                        >
+                          <Copy className="h-3 w-3" /> Copy ID
+                        </Button>
+
                         {canEditEvent && (
                           <Button variant="outline" size="sm" asChild>
                             <Link

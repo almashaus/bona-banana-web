@@ -689,7 +689,10 @@ export default function ReservationsPage() {
                     <div className="flex items-center justify-center gap-6 flex-wrap">
                       {selectedReservation.tickets.map((ticket) => {
                         return (
-                          <div className="flex flex-col items-center gap-2">
+                          <div
+                            key={ticket.id}
+                            className="flex flex-col items-center gap-2"
+                          >
                             <span className="text-sm text-muted-foreground">
                               {ticket.id}
                             </span>

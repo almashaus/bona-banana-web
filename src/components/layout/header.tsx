@@ -11,7 +11,7 @@ import { ModeToggle } from "@/src/components/theme/mode-toggle";
 import { AppUser } from "@/src/models/user";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { useMobileSidebar } from "@/src/lib/stores/useMobileSidebar";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function Header({
   initialUser,
@@ -24,9 +24,11 @@ export default function Header({
 
   const { user, initialLoading } = useAuth();
   const t = useTranslations("Nav");
+  const locale = useLocale();
 
   return (
     <header
+      dir={locale === "en" || pathname.startsWith("/admin") ? "ltr" : "rtl"}
       className={`fixed top-0 z-50 w-full bg-white/95 backdrop-blur ${pathname.startsWith("/admin") ? "supports-[backdrop-filter]:bg-greenColor/90" : "supports-[backdrop-filter]:bg-white/60 border-b"}`}
     >
       <div className="px-4 flex h-16 items-center justify-between">
