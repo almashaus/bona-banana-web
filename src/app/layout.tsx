@@ -13,6 +13,7 @@ import { DINNextLT } from "../styles/fonts";
 import { getServerSession } from "../features/auth/auth-server";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { ThemeProvider } from "../components/theme/theme-provider";
 import { headers } from "next/headers";
 
@@ -49,6 +50,7 @@ export default async function RootLayout({
       <head>
         <link rel="stylesheet" href="/css/riyal.css" />
       </head>
+      <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
       <body className={DINNextLT.className}>
         {/* <ThemeProvider attribute="class" defaultTheme="light"> */}
         <AuthProvider>
