@@ -1,15 +1,19 @@
-import { getEventById } from "@/src/lib/firebase/firestore";
+import { getDocumentByKey } from "@/src/lib/firebase/firestore";
 import { Event } from "@/src/models/event";
 import { NextRequest } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = (await params).id;
+    const slug = (await params).id;
 
-    const event: Event = await getEventById(id);
+    const event: Event = (await getDocumentByKey(
+      "events",
+      "slug",
+      slug,
+    )) as Event;
     if (event) {
       return new Response(JSON.stringify(event), {
         status: 200,

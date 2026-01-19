@@ -24,7 +24,7 @@ export async function getServerSession(): Promise<{
       try {
         decoded = await auth.verifySessionCookie(
           sessionCookie,
-          true // Check if revoked
+          true, // Check if revoked
         );
       } catch (error: any) {
         // Handle expired session cookie
@@ -66,7 +66,7 @@ export async function getServerSession(): Promise<{
     }
   } catch (error) {
     // Clear potentially corrupted cookie
-    cookies().delete("session");
+    // cookies().delete("session");
     return { user: null, authenticated: false };
   }
 }

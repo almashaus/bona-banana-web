@@ -6,7 +6,7 @@ type GalleryKeys = "image1" | "image2" | "image3" | "image4" | "image5";
 type GalleryImages = Record<GalleryKeys, string>;
 type PartialGalleryImages = Partial<GalleryImages>;
 
-const SETTINGS_DOC_PATH = "settings/images"; // collection: settings, doc: images
+const SETTINGS_DOC_PATH = "settings/images";
 
 function isGalleryKey(k: string): k is GalleryKeys {
   return (
@@ -22,12 +22,6 @@ function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-/**
- * Allows:
- * - https/http URLs (Firebase download URLs)
- * - absolute local path starting with "/"
- * Tighten if you want only Firebase URLs.
- */
 function isAllowedImageUrl(url: string): boolean {
   if (url.startsWith("/")) return true;
 
@@ -51,12 +45,7 @@ async function requireAdmin() {
   }
 
   try {
-    // checkRevoked = true is safer (handles revoked sessions)
     const decoded = await auth.verifySessionCookie(sessionCookie, true);
-
-    // Your code style: claims.customClaims?.admin
-    // In Firebase Admin JWT, custom claims appear directly on decoded token payload too,
-    // but your existing logic uses customClaims, so we keep it consistent by loading user record:
     const user = await auth.getUser(decoded.uid);
 
     if (!user.customClaims?.admin) {
@@ -77,20 +66,7 @@ async function requireAdmin() {
   }
 }
 
-/**
- * GET /api/admin/settings/images
- * Returns:
- * { images: { image1?: string, ... } }
- */
 export async function GET() {
-  //   const gate = await requireAdmin();
-  //   if (!gate.ok) {
-  //     return NextResponse.json(
-  //       { error: gate.message },
-  //       { status: gate.status, headers: { "Cache-Control": "no-store" } }
-  //     );
-  //   }
-
   const snapshot = await db.doc(SETTINGS_DOC_PATH).get();
   const data = snapshot.exists ? snapshot.data() : null;
 
@@ -98,33 +74,18 @@ export async function GET() {
 
   return NextResponse.json(
     { images },
-    { status: 200, headers: { "Cache-Control": "no-store" } }
+    { status: 200, headers: { "Cache-Control": "no-store" } },
   );
 }
 
-/**
- * POST /api/admin/settings/images
- * Body:
- * { images: { image1?: string, ... } }
- *
- * - Partial updates allowed.
- */
 export async function POST(req: NextRequest) {
-  //   const gate = await requireAdmin();
-  //   if (!gate.ok) {
-  //     return NextResponse.json(
-  //       { error: gate.message },
-  //       { status: gate.status, headers: { "Cache-Control": "no-store" } }
-  //     );
-  //   }
-
   let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json(
       { error: "Invalid JSON body" },
-      { status: 400, headers: { "Cache-Control": "no-store" } }
+      { status: 400, headers: { "Cache-Control": "no-store" } },
     );
   }
 
@@ -132,7 +93,7 @@ export async function POST(req: NextRequest) {
   if (!imagesObj || typeof imagesObj !== "object") {
     return NextResponse.json(
       { error: 'Body must be: { "images": { ... } }' },
-      { status: 400, headers: { "Cache-Control": "no-store" } }
+      { status: 400, headers: { "Cache-Control": "no-store" } },
     );
   }
 
@@ -141,7 +102,6 @@ export async function POST(req: NextRequest) {
   for (const [key, value] of Object.entries(imagesObj)) {
     if (!isGalleryKey(key)) continue; // ignore extra keys silently
 
-    // Optional: support clearing an image by sending empty string
     if (value === "") {
       updates[key] = "";
       continue;
@@ -150,7 +110,7 @@ export async function POST(req: NextRequest) {
     if (!isNonEmptyString(value)) {
       return NextResponse.json(
         { error: `Invalid value for ${key}` },
-        { status: 400, headers: { "Cache-Control": "no-store" } }
+        { status: 400, headers: { "Cache-Control": "no-store" } },
       );
     }
 
@@ -159,7 +119,7 @@ export async function POST(req: NextRequest) {
     if (!isAllowedImageUrl(url)) {
       return NextResponse.json(
         { error: `URL not allowed for ${key}` },
-        { status: 400, headers: { "Cache-Control": "no-store" } }
+        { status: 400, headers: { "Cache-Control": "no-store" } },
       );
     }
 
@@ -169,7 +129,7 @@ export async function POST(req: NextRequest) {
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(
       { error: "No valid images provided" },
-      { status: 400, headers: { "Cache-Control": "no-store" } }
+      { status: 400, headers: { "Cache-Control": "no-store" } },
     );
   }
 
@@ -178,7 +138,7 @@ export async function POST(req: NextRequest) {
       images: updates,
       updatedAt: new Date(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   const snap = await db.doc(SETTINGS_DOC_PATH).get();
@@ -186,6 +146,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(
     { images: (data?.images ?? {}) as PartialGalleryImages },
-    { status: 200, headers: { "Cache-Control": "no-store" } }
+    { status: 200, headers: { "Cache-Control": "no-store" } },
   );
 }

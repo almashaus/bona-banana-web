@@ -7,10 +7,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { Image as ImageIcon, UploadIcon } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Image as ImageIcon, TriangleAlert, UploadIcon } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
-import { ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/src/lib/firebase/firebaseConfig";
 
 type GalleryKeys = "image1" | "image2" | "image3" | "image4" | "image5";
@@ -26,7 +26,7 @@ const fetcher = async (url: string) => {
   return (await res.json()) as ImagesApiResponse;
 };
 
-const STORAGE_DIR = "settings/gallery";
+const STORAGE_DIR = "gallery";
 
 const STORAGE_OBJECTS: Record<GalleryKeys, string> = {
   image1: `${STORAGE_DIR}/image1`,
@@ -37,17 +37,17 @@ const STORAGE_OBJECTS: Record<GalleryKeys, string> = {
 };
 
 const DEFAULT_IMAGES: GalleryImages = {
-  image1: "/images/20.jpeg",
-  image2: "/images/60.jpeg",
-  image3: "/images/50.jpeg",
-  image4: "/images/40.jpeg",
-  image5: "/images/10.jpeg",
+  image1: "",
+  image2: "",
+  image3: "",
+  image4: "",
+  image5: "",
 };
 
 const ImagesGallery = () => {
   const { data, error, isLoading, mutate } = useSWR<ImagesApiResponse>(
-    "/api/admin/settings/images",
-    fetcher
+    "/api/images",
+    fetcher,
   );
 
   const [images, setImages] = useState<GalleryImages>(DEFAULT_IMAGES);
@@ -138,7 +138,7 @@ const ImagesGallery = () => {
   /**
    * Save flow:
    * 1) Upload selected files to Firebase Storage (client SDK) -> get download URLs
-   * 2) POST URLs to Next API (/api/admin/settings/images) so your app can persist the chosen URLs
+   * 2) POST URLs to Next API (/api/images) so your app can persist the chosen URLs
    * 3) SWR mutate to refresh UI
    */
   const handleSaveImages = async () => {
@@ -147,13 +147,12 @@ const ImagesGallery = () => {
 
       const uploadedUrls = await saveImagesToFirebaseStorage();
 
-      // If user didn’t change anything, don’t call API.
       if (Object.keys(uploadedUrls).length === 0) {
         setImagesAreSaving(false);
         return;
       }
 
-      const res = await fetch("/api/admin/settings/images", {
+      const res = await fetch("/api/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images: uploadedUrls }),
@@ -187,13 +186,17 @@ const ImagesGallery = () => {
     className: string;
   }) => (
     <div className={`${className} rounded-xl relative`}>
-      <img
-        className="size-full object-cover object-center rounded-xl"
-        src={images[keyName]}
-        alt=""
-        loading="lazy"
-        decoding="async"
-      />
+      {images[keyName] ? (
+        <img
+          className="size-full object-cover object-center rounded-xl"
+          src={images[keyName]}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <div className="bg-muted size-full object-cover object-center" />
+      )}
       <input
         type="file"
         id={keyName}
@@ -255,10 +258,11 @@ const ImagesGallery = () => {
 
             <div className="flex flex-col items-center gap-3">
               <Button onClick={handleSaveImages} disabled={imagesAreSaving}>
-                {imagesAreSaving ? "Saving..." : "Save Images"}
+                {imagesAreSaving ? "Uplaoding..." : "Uplaod Images"}
               </Button>
-              <p className="text-xs text-muted-foreground">
-                Upload the changes to the storage
+              <p className="flex text-xs text-muted-foreground">
+                <TriangleAlert className="w-4 h-4 me-1" /> Upload the changes to
+                the storage
               </p>
             </div>
           </CardContent>

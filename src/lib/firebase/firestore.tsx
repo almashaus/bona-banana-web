@@ -101,6 +101,30 @@ export const getDocumentById = async (
   }
 };
 
+export const getDocumentByKey = async (
+  collectionName: string,
+  key: string,
+  value: string,
+): Promise<DocumentData | null> => {
+  try {
+    const dataQuery = query(
+      collection(db, collectionName),
+      where(key, "==", value),
+    );
+    const querySnapshot = await getDocs(dataQuery);
+
+    if (querySnapshot.docs.length > 0) {
+      const data = querySnapshot.docs[0].data();
+      return data;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error(error);
+    throw new Error("Error fetching data!");
+  }
+};
+
 export async function addDocToCollection<T extends object>(
   collectionName: string,
   data: T,

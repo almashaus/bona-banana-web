@@ -12,6 +12,8 @@ import { AnimatedImages } from "./(components)/animatedImages";
 import { Hero } from "./(components)/animatedHero";
 import LoadingEvents from "./(components)/loadingEvents";
 
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
+
 export default function Home() {
   const t = useTranslations("Home");
   const locale = useLocale();
@@ -63,9 +65,7 @@ export default function Home() {
 }
 
 async function EventsList({ locale }: { locale: string }) {
-  const res = await fetch(
-    "https://tickets.bona-banana.com/api/published-events"
-  );
+  const res = await fetch(`${baseURL}/api/published-events`);
 
   if (!res.ok) {
     return (
@@ -90,7 +90,7 @@ async function EventsList({ locale }: { locale: string }) {
           href={
             event.id === "1cn1JPvVPOhCiP8oPQZn"
               ? platinumLink
-              : `/events/${event.id}`
+              : `/events/${event.slug}`
           }
           key={event.id}
         >
@@ -122,7 +122,7 @@ async function EventsList({ locale }: { locale: string }) {
                 <ClockIcon className="me-1 h-4 w-4 text-redColor" />
                 {`${formatTime(event.dates[0].startTime, locale)} - ${formatTime(
                   event.dates[0].endTime,
-                  locale
+                  locale,
                 )}`}
               </div>
             </CardContent>

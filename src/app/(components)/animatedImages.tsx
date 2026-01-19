@@ -23,17 +23,17 @@ const fetcher = async (url: string) => {
   return (await res.json()) as ImagesApiResponse;
 };
 const DEFAULT_IMAGES: GalleryImages = {
-  image1: "/images/20.jpeg",
-  image2: "/images/60.jpeg",
-  image3: "/images/50.jpeg",
-  image4: "/images/40.jpeg",
-  image5: "/images/10.jpeg",
+  image1: "",
+  image2: "",
+  image3: "",
+  image4: "",
+  image5: "",
 };
 
 const AnimatedImages = () => {
   const { data, error, isLoading, mutate } = useSWR<ImagesApiResponse>(
-    "/api/admin/settings/images",
-    fetcher
+    "/api/images",
+    fetcher,
   );
 
   const [images, setImages] = useState<GalleryImages>(DEFAULT_IMAGES);
@@ -61,13 +61,17 @@ const AnimatedImages = () => {
             key={index}
             className="overflow-hidden rounded-xl shadow-xl"
           >
-            <img
-              className="size-full object-cover object-center"
-              src={image}
-              alt=""
-              loading="lazy"
-              decoding="async"
-            />
+            {image ? (
+              <img
+                className="size-full object-cover object-center"
+                src={image}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div className="bg-muted size-full object-cover object-center" />
+            )}
           </BentoCell>
         ))}
         <ContainerScale className="absolute top-1/4 md:top-1/2 left-1/2 z-0 text-center mt-12 md:mt-4 mb-8 w-full md:w-fit space-y-3">

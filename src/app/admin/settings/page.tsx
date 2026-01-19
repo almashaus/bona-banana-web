@@ -51,7 +51,7 @@ const SettingsPage = () => {
       !cities?.city.some(
         (cityObj) =>
           cityObj.en.toLowerCase() === newCityEn.toLowerCase() ||
-          cityObj.ar === newCityAr
+          cityObj.ar === newCityAr,
       )
     ) {
       const response = await fetch("/api/admin/settings/city", {
@@ -142,7 +142,7 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        <div className="space-y-3 max-w-[500px]">
+        {/* <div className="space-y-3 max-w-[500px]">
           <h2 className="text-xl font-bold">Members Settings</h2>
 
           <div className="flex flex-col gap-6 mb-6">
@@ -177,12 +177,12 @@ const SettingsPage = () => {
               </CardContent>
             </Card>
           </div>
-        </div>
+        </div> */}
       </div>
       {user?.dashboard?.role === MemberRole.ADMIN && (
-        <div className="space-y-6">
+        <div className="space-y-3">
           <Separator />
-
+          <h2 className="text-xl font-bold">Images Settings</h2>
           <ImagesGallery />
         </div>
       )}

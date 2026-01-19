@@ -45,6 +45,7 @@ import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "@/src/lib/firebase/firebaseConfig";
 import Image from "next/image";
 import { EventDatesSelect } from "../(components)/eventDatesSelect";
+import { getDocumentByKey } from "@/src/lib/firebase/firestore";
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -61,7 +62,7 @@ export default function CreateEventPage() {
   }
 
   const { data, error, isLoading } = useSWR<Response>(
-    `/api/admin/settings/city`
+    `/api/admin/settings/city`,
   );
 
   // Initialize state variables with default values
@@ -95,7 +96,7 @@ export default function CreateEventPage() {
   const generateSlug = (title: string) => {
     return title
       .toLowerCase()
-      .replace(/[^\w ]+/g, "")
+      .replace(/[^\w\s-]+/g, "")
       .replace(/ +/g, "-");
   };
 
@@ -103,7 +104,6 @@ export default function CreateEventPage() {
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
     setTitle(newTitle);
-
     setSlug(generateSlug(newTitle));
   };
 
@@ -137,7 +137,7 @@ export default function CreateEventPage() {
           return { ...date, [field]: value };
         }
         return date;
-      })
+      }),
     );
   };
 
@@ -170,6 +170,17 @@ export default function CreateEventPage() {
         setIsSubmitting(false);
         return;
       }
+    }
+
+    const event = await getDocumentByKey("events", "slug", slug);
+    if (event) {
+      toast({
+        title: "Error",
+        description: "The slug already exists. Please update the slug",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
     }
 
     const idToken = await authUser.getIdToken();
@@ -318,6 +329,24 @@ export default function CreateEventPage() {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="grid gap-2 lg:w-1/2">
+                  <Label htmlFor="slug">
+                    Slug{" "}
+                    <span className="text-muted-foreground text-sm">
+                      "tickets.bona-banana.com/events/{slug}"
+                    </span>
+                  </Label>
+                  <Input
+                    id="slug"
+                    value={slug}
+                    onChange={(e) => {
+                      setSlug(generateSlug(e.target.value));
+                    }}
+                    placeholder="Enter slug"
+                    required
+                  />
                 </div>
 
                 <div className="grid gap-2">
@@ -545,7 +574,7 @@ function EventLogoInput({
           URL.revokeObjectURL(objectUrl);
           setProgress(null);
         }
-      }
+      },
     );
   };
 
@@ -692,7 +721,7 @@ function EventImageInput({
           URL.revokeObjectURL(objectUrl);
           setProgress(null);
         }
-      }
+      },
     );
   };
 
@@ -841,7 +870,7 @@ function AdImageInput({
           URL.revokeObjectURL(objectUrl);
           setProgress(null);
         }
-      }
+      },
     );
   };
 

@@ -102,7 +102,7 @@ function CheckoutResult() {
           });
 
           if (!updateResponse.ok) {
-            throw new Error("Error in updating oorder");
+            throw new Error("Error in updating order");
           }
 
           await mutate("/api/admin/events");
