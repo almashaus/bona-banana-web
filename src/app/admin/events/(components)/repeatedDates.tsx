@@ -54,7 +54,7 @@ export function RepeatDates({ setRepeatedDates }: RepeatDatesInterface) {
   const [repeatOn, setRepeatOn] = useState<Weekday[]>([2, 4]);
 
   const [startsOnDate, setStartsOnDate] = useState<Date | undefined>(
-    new Date()
+    new Date(),
   );
 
   const [endsMode, setEndsMode] = useState<EndsMode>("onDate");
@@ -209,7 +209,7 @@ export function RepeatDates({ setRepeatedDates }: RepeatDatesInterface) {
                     setRepeatOn(
                       Array.isArray(vals)
                         ? (vals.map((v) => Number(v)) as Weekday[])
-                        : []
+                        : [],
                     );
                   }
                 }}
@@ -222,7 +222,7 @@ export function RepeatDates({ setRepeatedDates }: RepeatDatesInterface) {
                     value={String(d.key)}
                     className={cn(
                       "h-9 w-[54px] rounded-md border text-sm",
-                      "data-[state=on]:border-transparent data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      "data-[state=on]:border-transparent data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
                     )}
                   >
                     {d.label}

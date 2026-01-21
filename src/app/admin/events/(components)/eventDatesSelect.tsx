@@ -116,7 +116,7 @@ export const EventDatesSelect = ({
                               variant="outline"
                               className={cn(
                                 "justify-start text-left font-normal bg-white",
-                                !eventDate.date && "text-muted-foreground"
+                                !eventDate.date && "text-muted-foreground",
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -135,44 +135,38 @@ export const EventDatesSelect = ({
                               onSelect={(day) => {
                                 if (day) {
                                   const startTime = new Date(
-                                    eventDate.startTime
+                                    eventDate.startTime,
                                   );
                                   const newStartDate = new Date(day);
                                   newStartDate.setHours(
-                                    Number(startTime.getHours())
+                                    Number(startTime.getHours()),
                                   );
                                   newStartDate.setMinutes(
-                                    Number(startTime.getMinutes())
+                                    Number(startTime.getMinutes()),
                                   );
 
                                   updateEventDate(
                                     eventDate.id,
                                     "startTime",
-                                    newStartDate
+                                    newStartDate,
                                   );
 
                                   const endTime = new Date(eventDate.endTime);
                                   const newEndDate = new Date(day);
                                   newEndDate.setHours(
-                                    Number(endTime.getHours())
+                                    Number(endTime.getHours()),
                                   );
                                   newEndDate.setMinutes(
-                                    Number(endTime.getMinutes())
+                                    Number(endTime.getMinutes()),
                                   );
 
                                   updateEventDate(
                                     eventDate.id,
                                     "endTime",
-                                    newEndDate
+                                    newEndDate,
                                   );
 
-                                  const newDate = new Date(day);
-
-                                  updateEventDate(
-                                    eventDate.id,
-                                    "date",
-                                    newDate
-                                  );
+                                  updateEventDate(eventDate.id, "date", day);
                                 }
                               }}
                             />
@@ -204,7 +198,7 @@ export const EventDatesSelect = ({
                               updateEventDate(
                                 eventDate.id,
                                 "startTime",
-                                newDate
+                                newDate,
                               );
                             } catch (_) {}
                           }}
@@ -254,7 +248,7 @@ export const EventDatesSelect = ({
                             updateEventDate(
                               eventDate.id,
                               "capacity",
-                              Number.parseInt(e.target.value)
+                              Number.parseInt(e.target.value),
                             );
                           }}
                           placeholder="20"

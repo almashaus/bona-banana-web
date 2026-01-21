@@ -1,8 +1,9 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
-import { OrderResponse } from "@/src/models/order";
+import { OrderResponse, OrderStatus } from "@/src/models/order";
 import { NextRequest } from "next/server";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
 import { Event } from "@/src/models/event";
+import { TicketStatus } from "@/src/models/ticket";
 
 export async function GET() {
   try {
@@ -61,7 +62,7 @@ export async function GET() {
           total: orderData.totalAmount,
           orderDate: orderData.orderDate,
         } as OrderResponse;
-      })
+      }),
     );
     return new Response(JSON.stringify(orders), {
       status: 200,
@@ -89,9 +90,27 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, data } = body;
+    const { orderId } = body;
 
-    await db.collection("orders").doc(id).update(data);
+    // 1. Update order status
+    await db
+      .collection("orders")
+      .doc(orderId)
+      .update({ status: OrderStatus.PAID });
+
+    // 2. Query tickets by orderId
+    const ticketsSnapshot = await db
+      .collection("tickets")
+      .where("orderId", "==", orderId)
+      .get();
+
+    // 3. Firestore batch update
+    const batch = db.batch();
+    ticketsSnapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, { status: TicketStatus.VALID });
+    });
+
+    await batch.commit();
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

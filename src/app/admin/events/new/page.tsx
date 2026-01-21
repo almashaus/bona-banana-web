@@ -112,8 +112,10 @@ export default function CreateEventPage() {
     const newDate: EventDate = {
       id: `date${Date.now()}`,
       date: new Date(),
-      startTime: new Date(new Date().setHours(18, 0, 0, 0)),
-      endTime: new Date(new Date().setHours(23, 0, 0, 0)),
+      startTime:
+        eventDates[0].startTime ?? new Date(new Date().setHours(18, 0, 0, 0)),
+      endTime:
+        eventDates[0].endTime ?? new Date(new Date().setHours(23, 0, 0, 0)),
       capacity: 20,
       availableTickets: 20,
       eventId: "",

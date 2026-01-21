@@ -73,8 +73,9 @@ export default function EventPage() {
       setEvent(eventData);
 
       const currentDate = findFirstTodayOrAfter(
-        eventData.dates.map((d) => d.date)
+        eventData.dates.map((d) => d.date),
       );
+
       setSelectedDate(eventData.dates.find((d) => d.date === currentDate));
     }
   }, [data]);
@@ -215,7 +216,7 @@ export default function EventPage() {
                         ? event.dates.length > 1
                           ? `${formatDate(event.dates[0].date, locale)} - ${formatDate(
                               event.dates[event.dates.length - 1].date,
-                              locale
+                              locale,
                             )}`
                           : `${formatDate(event.dates[0].date, locale)}`
                         : tEvent("noDatesAvailable") || "No dates available"}
@@ -232,7 +233,7 @@ export default function EventPage() {
                       : event.dates && event.dates.length > 0
                         ? `${formatTime(event.dates[0].startTime, locale)} - ${formatTime(
                             event.dates[0].endTime,
-                            locale
+                            locale,
                           )}`
                         : tEvent("noTimesAvailable") || "No times available"}
                   </p>
@@ -368,10 +369,10 @@ export default function EventPage() {
                           {
                             length: Math.min(
                               selectedDate?.availableTickets ?? 0,
-                              5
+                              5,
                             ),
                           },
-                          (_, i) => i + 1
+                          (_, i) => i + 1,
                         ).map((num) => (
                           <SelectItem key={num} value={num.toString()}>
                             {num}{" "}

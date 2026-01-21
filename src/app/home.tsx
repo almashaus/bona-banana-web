@@ -11,6 +11,7 @@ import { price } from "../lib/utils/locales";
 import { AnimatedImages } from "./(components)/animatedImages";
 import { Hero } from "./(components)/animatedHero";
 import LoadingEvents from "./(components)/loadingEvents";
+import { findFirstTodayOrAfter } from "../lib/utils/utils";
 
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -19,7 +20,7 @@ export default function Home() {
   const locale = useLocale();
 
   return (
-    <div className="flex flex-col min-h-screen w-screen">
+    <div className="flex flex-col min-h-screen w-full">
       <div className="w-full pt-10">
         <div>
           <Hero />
@@ -97,7 +98,11 @@ async function EventsList({ locale }: { locale: string }) {
           <Card className="overflow-hidden transition-all shadow-none hover:scale-105 hover:rotate-3 bg-darkColor border-0">
             <div className="flex justify-center items-center m-3">
               <Image
-                src={event.eventLogo ?? event.eventImage ?? "/no-image.svg"}
+                src={
+                  event.eventLogo?.length !== 0
+                    ? event.eventLogo!
+                    : (event.eventImage ?? "/no-image.svg")
+                }
                 alt={event.title}
                 width={300}
                 height={260}
@@ -116,7 +121,7 @@ async function EventsList({ locale }: { locale: string }) {
               </h3>
               <div className="mt-2 flex items-center text-sm text-muted-foreground">
                 <CalendarDays className="me-1 h-4 w-4 text-redColor" />
-                {`${formatDate(event.dates[0].date, locale)}`}
+                {`${formatDate(findFirstTodayOrAfter(event.dates.map((d) => d.date)) ?? event.dates[0].date, locale)}`}
               </div>
               <div className="mt-1 flex items-center text-sm text-muted-foreground">
                 <ClockIcon className="me-1 h-4 w-4 text-redColor" />

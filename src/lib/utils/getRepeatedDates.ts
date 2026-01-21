@@ -46,7 +46,7 @@ export function getRepeatedDates(settings: RepeatSettings): Date[] {
   if (endsMode === "after") {
     if (!Number.isInteger(afterOccurrences) || (afterOccurrences ?? 0) <= 0) {
       throw new Error(
-        "afterOccurrences must be a positive integer when endsMode='after'"
+        "afterOccurrences must be a positive integer when endsMode='after'",
       );
     }
   } else {
@@ -55,12 +55,8 @@ export function getRepeatedDates(settings: RepeatSettings): Date[] {
     }
   }
 
-  // Work in UTC-midday to avoid DST edge cases.
-  const toUtcNoon = (d: Date) =>
-    new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0));
-
-  const start = toUtcNoon(startsOn);
-  const endInclusive = endsMode === "onDate" ? toUtcNoon(endsOnDate!) : null;
+  const start = startsOn;
+  const endInclusive = endsMode === "onDate" ? endsOnDate! : null;
   const maxCount =
     endsMode === "after" ? (afterOccurrences as number) : Infinity;
 
@@ -81,7 +77,7 @@ export function getRepeatedDates(settings: RepeatSettings): Date[] {
     const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
 
     const lastDay = new Date(
-      Date.UTC(targetYear, targetMonth + 1, 0, 12)
+      Date.UTC(targetYear, targetMonth + 1, 0, 12),
     ).getUTCDate();
     const clampedDay = Math.min(day, lastDay);
 

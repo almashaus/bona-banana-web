@@ -82,7 +82,7 @@ export default function AdminPage() {
       revalidateOnFocus: true,
       revalidateIfStale: true,
       refreshInterval: 30000,
-    }
+    },
   );
 
   useEffect(() => {
@@ -266,9 +266,9 @@ export default function AdminPage() {
                           <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-md relative">
                             <Image
                               src={
-                                event.eventLogo ??
-                                event.eventImage ??
-                                "/no-image.svg"
+                                event.eventLogo?.length !== 0
+                                  ? event.eventLogo!
+                                  : (event.eventImage ?? "/no-image.svg")
                               }
                               alt={event.title}
                               className="h-full w-full object-cover"
@@ -383,7 +383,7 @@ export default function AdminPage() {
                                   <Image
                                     src={
                                       generateQRCode(
-                                        ticket.token || ticket.id
+                                        ticket.token || ticket.id,
                                       ) || "/no-image.svg"
                                     }
                                     alt={"QR code"}

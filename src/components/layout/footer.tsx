@@ -8,6 +8,9 @@ import { useTranslations } from "next-intl";
 const BONA_PHONE = process.env.NEXT_PUBLIC_BONA_PHONE;
 const BONA_EMAIL = process.env.NEXT_PUBLIC_BONA_EMAIL;
 const BONA_INSTAGRAM = process.env.NEXT_PUBLIC_BONA_INSTAGRAM;
+const BONA_TIKTOK = process.env.NEXT_PUBLIC_BONA_TIKTOK;
+const BONA_DISCORD = process.env.NEXT_PUBLIC_BONA_DISCORD;
+const BONA_MEETUP = process.env.NEXT_PUBLIC_BONA_MEETUP;
 
 export default function Footer() {
   const pathname = usePathname();
@@ -65,6 +68,45 @@ export default function Footer() {
                   height={24}
                 />
               </a>
+              <a
+                href={`https://www.tiktok.com/@${BONA_TIKTOK}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-75"
+              >
+                <Image
+                  src="/icons/tiktok.svg"
+                  alt="tiktok"
+                  width={28}
+                  height={28}
+                />
+              </a>
+              <a
+                href={`https://discord.com/invite/${BONA_DISCORD}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-75"
+              >
+                <Image
+                  src="/icons/discord.svg"
+                  alt="discord"
+                  width={24}
+                  height={30}
+                />
+              </a>
+              <a
+                href={`https://www.meetup.com/${BONA_MEETUP}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-75"
+              >
+                <Image
+                  src="/icons/meetup.svg"
+                  alt="meetup"
+                  width={24}
+                  height={24}
+                />
+              </a>
             </div>
           </div>
 
@@ -72,14 +114,20 @@ export default function Footer() {
           <div className="flex flex-col items-center gap-4 ">
             <a
               href="https://bona-banana.com"
-              className="text-sm hover:underline"
+              className="text-sm md:text-base hover:underline"
             >
               {t("aboutUs")}
             </a>
-            <a href="/contact-us" className="text-sm hover:underline">
+            <a
+              href="/contact-us"
+              className="text-sm md:text-base hover:underline"
+            >
               {t("contactUs")}
             </a>
-            <a href="/privacy-policy" className="text-sm hover:underline">
+            <a
+              href="/privacy-policy"
+              className="text-sm md:text-base hover:underline"
+            >
               {t("privacyPolicy")}
             </a>
           </div>

@@ -5,6 +5,11 @@ import { usePathname } from "next/navigation";
 import { useToast } from "@/src/components/ui/use-toast";
 import Link from "next/link";
 import {
+  CalendarCheck,
+  CalendarCheck2,
+  CalendarClock,
+  Check,
+  CheckCircle,
   ChevronDown,
   ChevronUp,
   CircleAlertIcon,
@@ -62,6 +67,8 @@ import Image from "next/image";
 import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import { isBefore, isToday } from "date-fns";
+import { isBeforeDate, isBeforeToday } from "@/src/lib/utils/utils";
 
 export default function EventsPage() {
   const { toast } = useToast();
@@ -74,10 +81,10 @@ export default function EventsPage() {
   const [responseData, setResponseData] = useState<Response[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [openCollapsibleIds, setOpenCollapsibleIds] = useState<Set<string>>(
-    () => new Set()
+    () => new Set(),
   );
   const [selectedEventDate, setSelectedEventDate] = useState<EventDate | null>(
-    null
+    null,
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -103,7 +110,7 @@ export default function EventsPage() {
       setIsDeleting(true);
 
       const event: Event = responseData.find(
-        (data) => data.event.id === eventId
+        (data) => data.event.id === eventId,
       )?.event!;
 
       const idToken = await authUser.getIdToken();
@@ -259,9 +266,9 @@ export default function EventsPage() {
                         <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden relative rounded-md">
                           <Image
                             src={
-                              response.event.eventLogo ??
-                              response.event.eventImage ??
-                              "/no-image.svg"
+                              response.event.eventLogo?.length !== 0
+                                ? response.event.eventLogo!
+                                : (response.event.eventImage ?? "/no-image.svg")
                             }
                             alt={response.event.title}
                             className="h-full w-full object-cover"
@@ -303,8 +310,7 @@ export default function EventsPage() {
                             <Link
                               href={`/admin/events/edit/${response.event.id}`}
                             >
-                              <Edit2 className="h-3 w-3" />{" "}
-                              {!isMobile && "Edit"}
+                              <Edit2 className="h-3 w-3" /> Edit
                             </Link>
                           </Button>
                         )}
@@ -317,8 +323,7 @@ export default function EventsPage() {
                                 size="sm"
                                 disabled={isDeleting}
                               >
-                                <Trash className="h-3 w-3" />{" "}
-                                {!isMobile && "Delete"}
+                                <Trash className="h-3 w-3" /> Delete
                               </Button>
                             )}
                           </AlertDialogTrigger>
@@ -380,6 +385,7 @@ export default function EventsPage() {
                         <Table>
                           <TableHeader>
                             <TableRow>
+                              <TableHead className=""></TableHead>
                               <TableHead>Date and Time</TableHead>
                               <TableHead>Available Tickets</TableHead>
                               <TableHead>Purchased Tickets</TableHead>
@@ -388,40 +394,54 @@ export default function EventsPage() {
                           </TableHeader>
 
                           <TableBody>
-                            {response.event.dates?.map((date) => (
-                              <TableRow key={date.id}>
-                                <TableCell className="font-medium">
-                                  <div>{formatDate(date.date)}</div>
-                                  <div className="text-muted-foreground">
-                                    {formatTime(date.startTime)} -{" "}
-                                    {formatTime(date.endTime)}
-                                  </div>
-                                </TableCell>
+                            {response.event.dates
+                              .sort(
+                                (a, b) =>
+                                  new Date(b.date).getTime() -
+                                  new Date(a.date).getTime(),
+                              )
+                              ?.map((date) => (
+                                <TableRow key={date.id}>
+                                  <TableCell className="flex justify-center">
+                                    {isBeforeToday(date.date) ? (
+                                      <CalendarCheck2 className="w-5 h-5 mt-3 text-green-500" />
+                                    ) : (
+                                      <CalendarClock className="w-5 h-5 mt-3 text-muted-foreground" />
+                                    )}
+                                  </TableCell>
 
-                                <TableCell>
-                                  <Badge
-                                    className={`${
-                                      date.availableTickets < 5
-                                        ? "bg-orange-100 text-orange-600"
-                                        : "bg-green-100 text-green-700"
-                                    } pb-1`}
-                                  >
-                                    {date.availableTickets}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  {date.capacity - date.availableTickets}
-                                </TableCell>
-                                <TableCell>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleViewDetails(date)}
-                                  >
-                                    <TicketIcon className="h-3 w-3" /> Tickets
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                                  <TableCell className="font-medium">
+                                    <div>{formatDate(date.date)}</div>
+                                    <div className="text-muted-foreground">
+                                      {formatTime(date.startTime)} -{" "}
+                                      {formatTime(date.endTime)}
+                                    </div>
+                                  </TableCell>
+
+                                  <TableCell>
+                                    <Badge
+                                      className={`${
+                                        date.availableTickets < 5
+                                          ? "bg-orange-100 text-orange-600"
+                                          : "bg-green-100 text-green-700"
+                                      } pb-1`}
+                                    >
+                                      {date.availableTickets}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {date.capacity - date.availableTickets}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleViewDetails(date)}
+                                    >
+                                      <TicketIcon className="h-3 w-3" /> Tickets
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
                           </TableBody>
                         </Table>
                       </div>
@@ -463,8 +483,9 @@ export default function EventsPage() {
                     const ticketsForSelectedDate = data.flatMap((item) =>
                       item.tickets.filter(
                         (ticketObj) =>
-                          ticketObj.ticket.eventDateId === selectedEventDate?.id
-                      )
+                          ticketObj.ticket.eventDateId ===
+                          selectedEventDate?.id,
+                      ),
                     );
                     if (ticketsForSelectedDate.length === 0) {
                       return (
@@ -489,7 +510,7 @@ export default function EventsPage() {
                         <TableCell>
                           <Badge
                             className={`${getTicketStatusBadgeColor(
-                              ticketObj.ticket.status
+                              ticketObj.ticket.status,
                             )}`}
                           >
                             {ticketObj.ticket.status}

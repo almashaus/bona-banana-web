@@ -36,21 +36,12 @@ import {
 } from "@/src/components/ui/select";
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
-import { Calendar } from "@/src/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
-import { formatDate, formatTime24H } from "@/src/lib/utils/formatDate";
+
 import {
   cityMap,
-  cn,
   compressImage,
   isAfterDate,
   isAfterToday,
-  isBeforeDate,
-  isBeforeToday,
 } from "@/src/lib/utils/utils";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
 import Loading from "@/src/components/ui/loading";
@@ -154,8 +145,10 @@ export default function EditEventPage() {
     const newDate: EventDate = {
       id: `date${Date.now()}`,
       date: new Date(),
-      startTime: new Date(new Date().setHours(18, 0, 0, 0)),
-      endTime: new Date(new Date().setHours(23, 0, 0, 0)),
+      startTime:
+        eventDates[0].startTime ?? new Date(new Date().setHours(18, 0, 0, 0)),
+      endTime:
+        eventDates[0].endTime ?? new Date(new Date().setHours(23, 0, 0, 0)),
       capacity: 20,
       availableTickets: 20,
       eventId: event?.id || "",
@@ -226,8 +219,12 @@ export default function EditEventPage() {
         }
       } // ------
 
-      const findSlug = await getDocumentByKey("events", "slug", slug);
-      if (findSlug) {
+      const findSlug: Event = (await getDocumentByKey(
+        "events",
+        "slug",
+        slug,
+      )) as Event;
+      if (findSlug && findSlug.id !== event?.id) {
         toast({
           title: "Error",
           description: "The slug already exists. Please update the slug",
@@ -263,7 +260,7 @@ export default function EditEventPage() {
         id: event!.id,
       };
 
-      const response = await fetch("/api/admin/events/edit", {
+      const response = await fetch(`/api/admin/events/edit/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -293,7 +290,6 @@ export default function EditEventPage() {
         });
       }
     } catch (error) {
-      console.log("error :>> ", error);
       toast({
         title: "Error",
         description: "There was an error updating the event",

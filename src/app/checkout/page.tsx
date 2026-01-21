@@ -252,7 +252,11 @@ export default function CheckoutPage() {
             <div className="flex items-start gap-4 mb-6">
               <div className="h-20 w-20 overflow-hidden rounded-md">
                 <img
-                  src={event.eventLogo ?? event.eventImage ?? "/no-image.svg"}
+                  src={
+                    event.eventLogo?.length !== 0
+                      ? event.eventLogo!
+                      : (event.eventImage ?? "/no-image.svg")
+                  }
                   alt={event.title}
                   className="h-full w-full object-cover"
                 />
@@ -341,7 +345,7 @@ export default function CheckoutPage() {
 
                   {paymentMethods
                     .filter((m) =>
-                      paymentMethodsIds.includes(m.PaymentMethodId)
+                      paymentMethodsIds.includes(m.PaymentMethodId),
                     )
                     .map((method: PaymentMethod) => (
                       <div

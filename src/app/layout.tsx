@@ -58,7 +58,7 @@ export default async function RootLayout({
             <NextIntlClientProvider messages={messages}>
               <Analytics />
               <SpeedInsights />
-              <div className="flex flex-col min-h-screen w-screen">
+              <div className="flex flex-col min-h-screen w-full">
                 <Header initialUser={session.user} />
                 <main className="flex-grow pt-16">{children}</main>
                 <Footer />

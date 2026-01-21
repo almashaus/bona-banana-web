@@ -120,7 +120,7 @@ export default function ReservationsPage() {
         return (
           matchesSearch && matchesEvent && matchesStatus && matchesPaymentMethod
         );
-      }
+      },
     );
 
     setReservations(filteredReservations as OrderResponse[]);
@@ -189,10 +189,7 @@ export default function ReservationsPage() {
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          id: reservationId,
-          data: {
-            status: OrderStatus.PAID,
-          },
+          orderId: reservationId,
         }),
       });
       if (response.ok) {
@@ -218,7 +215,7 @@ export default function ReservationsPage() {
 
   const handleResendTicket = async (
     order: OrderResponse,
-    userEmail: string
+    userEmail: string,
   ) => {
     if (order) {
       const response = await fetch("/api/send-ticket", {
@@ -298,7 +295,7 @@ export default function ReservationsPage() {
                   <SelectItem value="all">All Events</SelectItem>
                   {[
                     ...new Set<string>(
-                      orders.map((order: OrderResponse) => order.event.title)
+                      orders.map((order: OrderResponse) => order.event.title),
                     ),
                   ].map((eventName) => (
                     <SelectItem key={eventName} value={eventName}>
@@ -460,7 +457,7 @@ export default function ReservationsPage() {
                               handleResendTicket(
                                 order,
 
-                                order.contact.email
+                                order.contact.email,
                               )
                             }
                           >
@@ -631,7 +628,7 @@ export default function ReservationsPage() {
                       <div>
                         <Badge
                           className={getOrderStatusBadgeColor(
-                            selectedReservation.status
+                            selectedReservation.status,
                           )}
                         >
                           {selectedReservation.status}
@@ -723,7 +720,7 @@ export default function ReservationsPage() {
                   onClick={() =>
                     handleResendTicket(
                       selectedReservation,
-                      selectedReservation.contact.email
+                      selectedReservation.contact.email,
                     )
                   }
                 >

@@ -7,6 +7,7 @@ export function formatDate(date: Date, language: string = "en"): string {
     year: "numeric",
     month: "numeric",
     day: "numeric",
+    timeZone: "Asia/Riyadh",
   });
 }
 
@@ -16,6 +17,7 @@ export function formatTime(date: Date, language: string = "en"): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
+    timeZone: "Asia/Riyadh",
   });
 }
 
@@ -27,6 +29,7 @@ export function formatDateTime(date: Date): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
+    timeZone: "Asia/Riyadh",
   });
 }
 
@@ -35,21 +38,22 @@ export function formatTime24H(date: Date): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: "Asia/Riyadh",
   });
 }
 
 export const eventDateTimeString = (
   date: EventDate,
-  language: string = "en"
+  language: string = "en",
 ): string => {
   return `${date.id}-${formatDate(date.date, language)}-${formatTime(
     date.startTime,
-    language
+    language,
   )}-${formatTime(date.endTime, language)}-${date.capacity}`;
 };
 
 export const eventDateTimeShortString = (date: EventDate): string => {
   return `${formatDate(date.date)} | ${formatTime(
-    date.startTime
+    date.startTime,
   )} - ${formatTime(date.endTime)}`;
 };
