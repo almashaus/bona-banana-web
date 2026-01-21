@@ -1,13 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
+import { Button } from "@/src/components/ui/button";
+import { ChevronDown, ChevronUp, MailIcon, MoveRight } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+
+const BONA_PHONE = process.env.NEXT_PUBLIC_BONA_PHONE;
+const BONA_EMAIL = process.env.NEXT_PUBLIC_BONA_EMAIL;
+const BONA_INSTAGRAM = process.env.NEXT_PUBLIC_BONA_INSTAGRAM;
+const BONA_TIKTOK = process.env.NEXT_PUBLIC_BONA_TIKTOK;
+const BONA_DISCORD = process.env.NEXT_PUBLIC_BONA_DISCORD;
+const BONA_MEETUP = process.env.NEXT_PUBLIC_BONA_MEETUP;
 
 function Hero() {
   const t = useTranslations("Home");
   const [titleNumber, setTitleNumber] = useState(0);
   const titles = [t("hero1"), t("hero2"), t("hero3")];
+  const [isDown, setisDown] = useState(true);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -56,14 +71,106 @@ function Hero() {
               {t("heroSubtitle")}
             </p>
           </div>
-          {/* <div className="flex flex-row gap-3">
-            <Button size="lg" className="gap-4" variant="outline">
-              click here <MoveRight className="w-4 h-4" />
-            </Button>
+          <div className="flex flex-row gap-3">
             <Button size="lg" className="gap-4">
-              click here <MoveRight className="w-4 h-4" />
+              Discover Events
             </Button>
-          </div> */}
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="lg"
+                  className="gap-4"
+                  variant="outline"
+                  onClick={() => setisDown(!isDown)}
+                >
+                  Contact Us{" "}
+                  {isDown ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4" />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="bg-darkColor">
+                <div className="flex justify-center items-center gap-4">
+                  <a
+                    href={`https://wa.me/${BONA_PHONE}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-75"
+                  >
+                    <img
+                      src="/icons/socials/whatsapp.svg"
+                      alt="Whatsapp"
+                      width={24}
+                      height={24}
+                    />
+                  </a>
+                  <a
+                    href={`mailto:${BONA_EMAIL}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-75"
+                  >
+                    <MailIcon strokeWidth={1.5} className="h-6 text-white" />
+                  </a>
+                  <a
+                    href={`https://instagram.com/${BONA_INSTAGRAM}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-75"
+                  >
+                    <img
+                      src="/icons/socials/instagram.svg"
+                      alt="Instagram"
+                      width={24}
+                      height={24}
+                    />
+                  </a>
+                  <a
+                    href={`https://www.tiktok.com/@${BONA_TIKTOK}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-75"
+                  >
+                    <img
+                      src="/icons/socials/tiktok.svg"
+                      alt="tiktok"
+                      width={28}
+                      height={28}
+                    />
+                  </a>
+                  <a
+                    href={`https://discord.com/invite/${BONA_DISCORD}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-75"
+                  >
+                    <img
+                      src="/icons/socials/discord.svg"
+                      alt="discord"
+                      width={28}
+                      height={30}
+                    />
+                  </a>
+                  <a
+                    href={`https://www.meetup.com/${BONA_MEETUP}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-75"
+                  >
+                    <img
+                      src="/icons/socials/meetup.svg"
+                      alt="meetup"
+                      width={24}
+                      height={24}
+                    />
+                  </a>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
     </div>

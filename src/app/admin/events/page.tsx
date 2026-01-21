@@ -68,7 +68,11 @@ import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
 import { isBefore, isToday } from "date-fns";
-import { isBeforeDate, isBeforeToday } from "@/src/lib/utils/utils";
+import {
+  copyToClipboard,
+  isBeforeDate,
+  isBeforeToday,
+} from "@/src/lib/utils/utils";
 
 export default function EventsPage() {
   const { toast } = useToast();
@@ -157,32 +161,15 @@ export default function EventsPage() {
   const canEditEvent: boolean = hasPermission("Event Management", "edit");
   const canDeleteEvent: boolean = hasPermission("Event Management", "delete");
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      if (
-        typeof navigator !== "undefined" &&
-        navigator.clipboard &&
-        window.isSecureContext
-      ) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.style.position = "fixed";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-
+  const handleCopy = async (text: string) => {
+    const success = await copyToClipboard(text);
+    if (success) {
       toast({
         title: "Copied",
         description: "Event ID copied to clipboard",
         variant: "default",
       });
-    } catch (e) {
+    } else {
       toast({
         title: "Copy failed",
         description: "Unable to copy ID",
@@ -297,13 +284,15 @@ export default function EventsPage() {
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyToClipboard(response.event.id)}
-                        >
-                          <Copy className="h-3 w-3" /> Copy ID
-                        </Button>
+                        {canEditEvent && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopy(response.event.id)}
+                          >
+                            <Copy className="h-3 w-3" /> Copy ID
+                          </Button>
+                        )}
 
                         {canEditEvent && (
                           <Button variant="outline" size="sm" asChild>

@@ -124,3 +124,35 @@ export function isBeforeDate(a: Date, b: Date): boolean {
 export function isSameDate(a: Date, b: Date): boolean {
   return new Date(a) === new Date(b);
 }
+
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.clipboard &&
+      window.isSecureContext
+    ) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    // Fallback (deprecated but still supported)
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.opacity = "0";
+
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textarea);
+
+    return successful;
+  } catch (err) {
+    console.error("Copy failed:", err);
+    return false;
+  }
+}

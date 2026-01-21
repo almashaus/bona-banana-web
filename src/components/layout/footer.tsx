@@ -41,7 +41,7 @@ export default function Footer() {
                 className="hover:opacity-75"
               >
                 <Image
-                  src="/icons/whatsapp.svg"
+                  src="/icons/socials/whatsapp.svg"
                   alt="Whatsapp"
                   width={24}
                   height={24}
@@ -53,7 +53,7 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="hover:opacity-75"
               >
-                <MailIcon className="h-6" />
+                <MailIcon strokeWidth={1.5} className="h-6 text-white" />
               </a>
               <a
                 href={`https://instagram.com/${BONA_INSTAGRAM}`}
@@ -61,8 +61,8 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="hover:opacity-75"
               >
-                <Image
-                  src="/icons/instagram.svg"
+                <img
+                  src="/icons/socials/instagram.svg"
                   alt="Instagram"
                   width={24}
                   height={24}
@@ -74,8 +74,8 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="hover:opacity-75"
               >
-                <Image
-                  src="/icons/tiktok.svg"
+                <img
+                  src="/icons/socials/tiktok.svg"
                   alt="tiktok"
                   width={28}
                   height={28}
@@ -87,10 +87,10 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="hover:opacity-75"
               >
-                <Image
-                  src="/icons/discord.svg"
+                <img
+                  src="/icons/socials/discord.svg"
                   alt="discord"
-                  width={24}
+                  width={28}
                   height={30}
                 />
               </a>
@@ -101,7 +101,7 @@ export default function Footer() {
                 className="hover:opacity-75"
               >
                 <Image
-                  src="/icons/meetup.svg"
+                  src="/icons/socials/meetup.svg"
                   alt="meetup"
                   width={24}
                   height={24}
