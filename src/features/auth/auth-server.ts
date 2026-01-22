@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { auth, db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { AppUser } from "@/src/models/user";
-import { decryptPayload } from "@/src/lib/session/encrypt";
 
 export async function getServerSession(): Promise<{
   user: AppUser | null;
@@ -9,23 +8,17 @@ export async function getServerSession(): Promise<{
   expired?: boolean;
 }> {
   try {
-    const sessionEncrypt = cookies().get("session");
+    const sessionCookie = cookies().get("session")?.value;
 
-    if (!sessionEncrypt) {
+    if (!sessionCookie) {
       return { user: null, authenticated: false };
     }
-
-    const payload = await decryptPayload(sessionEncrypt.value);
-    const sessionCookie = typeof payload.sc === "string" ? payload.sc : null;
 
     if (sessionCookie) {
       // Verify the session cookie with proper error handling
       let decoded;
       try {
-        decoded = await auth.verifySessionCookie(
-          sessionCookie,
-          true, // Check if revoked
-        );
+        decoded = await auth.verifySessionCookie(sessionCookie, true);
       } catch (error: any) {
         // Handle expired session cookie
         if (error?.errorInfo?.code === "auth/session-cookie-expired") {
@@ -40,8 +33,6 @@ export async function getServerSession(): Promise<{
           return { user: null, authenticated: false };
         }
 
-        // For any other error, treat as unauthenticated
-        console.error("Session verification error:", error);
         cookies().delete("session");
         return { user: null, authenticated: false };
       }

@@ -8,6 +8,6 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(
     { ok: true },
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    { status: 200, headers: { "Content-Type": "application/json" } },
   );
 }

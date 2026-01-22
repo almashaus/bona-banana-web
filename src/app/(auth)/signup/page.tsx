@@ -10,12 +10,14 @@ import { Label } from "@/src/components/ui/label";
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useLocale, useTranslations } from "next-intl";
+import { SignupFormSchema, FormState } from "@/src/lib/auth/validation";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [validation, setValidation] = useState<FormState>();
   const [isLoading, setIsLoading] = useState(false);
   const { register, signInWithGoogle } = useAuth();
   const { toast } = useToast();
@@ -31,6 +33,19 @@ export default function RegisterPage() {
         title: t("passwordsDoNotMatch"),
         description: t("passwordsDoNotMatchDesc"),
         variant: "destructive",
+      });
+      return;
+    }
+    // Validate form fields
+    const validatedFields = SignupFormSchema.safeParse({
+      name: name,
+      email: email,
+      password: password,
+    });
+
+    if (!validatedFields.success) {
+      setValidation({
+        errors: validatedFields.error.flatten().fieldErrors,
       });
       return;
     }
@@ -78,7 +93,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="container flex lg:h-screen w-screen flex-col items-center justify-center">
+    <div className="container flex  w-screen flex-col items-center justify-center">
       <div className="mx-auto my-10 flex w-full flex-col justify-center space-y-6 sm:w-[350px] rounded-lg border p-6 shadow-sm bg-white">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -103,6 +118,11 @@ export default function RegisterPage() {
                   onChange={(e) => setName(e.target.value)}
                   required
                 />
+                {validation?.errors?.name && (
+                  <p className="text-xs text-red-500">
+                    {validation.errors.name}
+                  </p>
+                )}
               </div>
               <div className="grid gap-3">
                 <Label htmlFor="email">{t("email")}</Label>
@@ -118,6 +138,11 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
+                {validation?.errors?.email && (
+                  <p className="text-xs text-red-500">
+                    {validation.errors.email}
+                  </p>
+                )}
               </div>
               <div className="grid gap-3">
                 <Label htmlFor="password">{t("password")}</Label>
@@ -129,6 +154,13 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                {validation?.errors?.password && (
+                  <p className="text-xs text-red-500">
+                    {validation.errors.password.map((error) => (
+                      <div key={error}>- {error}</div>
+                    ))}
+                  </p>
+                )}
               </div>
               <div className="grid gap-3">
                 <Label htmlFor="confirm-password">{t("confirmPassword")}</Label>
@@ -140,6 +172,13 @@ export default function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
+                {validation?.errors?.password && (
+                  <p className="text-xs text-red-500">
+                    {validation.errors.password.map((error) => (
+                      <div key={error}>- {error}</div>
+                    ))}
+                  </p>
+                )}
               </div>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? t("creatingAccount") : t("createAccount")}

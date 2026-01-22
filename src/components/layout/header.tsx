@@ -61,7 +61,8 @@ export default function Header({
         <div className="flex items-center gap-2">
           {!pathname.startsWith("/admin") && (
             <div className="flex items-center gap-2">
-              {user?.hasDashboardAccess && (
+              {(initialLoading && initialUser?.hasDashboardAccess) ||
+              user?.hasDashboardAccess ? (
                 <Button
                   variant="outline"
                   size="default"
@@ -69,6 +70,8 @@ export default function Header({
                 >
                   <MonitorCog className="text-redColor" />
                 </Button>
+              ) : (
+                <></>
               )}
 
               {/* <ModeToggle /> */}

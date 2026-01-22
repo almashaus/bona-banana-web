@@ -15,7 +15,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { ThemeProvider } from "../components/theme/theme-provider";
-import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Bona Banana",

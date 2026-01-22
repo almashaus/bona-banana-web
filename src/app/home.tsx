@@ -85,7 +85,7 @@ async function EventsList({ locale }: { locale: string }) {
     "https://riyadh.platinumlist.net/event-tickets/97023/board-game-mondays?_gl=1*bjhow9*_ga*MzA2MTk1Njk4LjE3NTU1MjI1OTg.*_ga_ELQY469HQT*czE3NjQ1MDc5ODUkbzMkZzAkdDE3NjQ1MDc5ODUkajYwJGwwJGgw*_gcl_au*MTM5NTEzNjAwNS4xNzY0NTA3OTg1*_ga_MJ1Y407XEH*czE3NjQ1MDc5ODUkbzMkZzAkdDE3NjQ1MDc5OTEkajU0JGwwJGgw";
 
   return (
-    <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 md:grid-cols-2 lg:grid-cols-3">
       {allEvents.map((event) => (
         <Link
           href={
@@ -107,9 +107,8 @@ async function EventsList({ locale }: { locale: string }) {
                 width={300}
                 height={260}
                 priority
+                className="w-auto h-auto max-w-[300px] max-h-[260px]"
                 style={{
-                  width: "300px",
-                  height: "260px",
                   objectFit: "cover",
                   borderRadius: "0.5rem",
                 }}

@@ -10,10 +10,13 @@ import { Label } from "@/src/components/ui/label";
 import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useTranslations } from "next-intl";
+import { FormState, LoginFormSchema } from "@/src/lib/auth/validation";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [validation, setValidation] = useState<FormState>();
+
   const [isLoading, setIsLoading] = useState(false);
   const { login, signInWithGoogle } = useAuth();
   const { toast } = useToast();
@@ -24,6 +27,20 @@ function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate form fields
+    const validatedFields = LoginFormSchema.safeParse({
+      email: email,
+      password: password,
+    });
+
+    if (!validatedFields.success) {
+      setValidation({
+        errors: validatedFields.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -67,7 +84,7 @@ function Login() {
   };
 
   return (
-    <div className="container flex lg:h-screen w-screen flex-col items-center justify-center">
+    <div className="container flex w-screen flex-col items-center justify-center">
       <div className="mx-auto my-10 flex w-full flex-col justify-center space-y-6 sm:w-[350px] rounded-lg border p-6 shadow-sm bg-white">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -94,6 +111,11 @@ function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
+                {validation?.errors?.email && (
+                  <p className="text-xs text-red-500">
+                    {validation.errors.email}
+                  </p>
+                )}
               </div>
               <div className="grid gap-3">
                 <div className="flex items-center justify-between">
@@ -107,10 +129,17 @@ function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                {validation?.errors?.password && (
+                  <p className="text-xs text-red-400">
+                    {validation.errors.password.map((error) => (
+                      <div key={error}>- {error}</div>
+                    ))}
+                  </p>
+                )}
                 <div className="text-right">
                   <Link
                     href="/reset-password"
-                    className="text-xs font-light text-redColor underline-offset-4 hover:underline"
+                    className="text-xs text-redColor underline-offset-4 hover:underline"
                   >
                     {t("forgotPassword")}
                   </Link>
