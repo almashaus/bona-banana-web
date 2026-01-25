@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 
-const protectedRoutes = ["/profile", "/checkout", "/confirmation"];
+const protectedRoutes = ["/profile", "/confirmation"];
 
 export function middleware(request: NextRequest) {
   const memberCookie = request.cookies.get("member")?.value;
@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
   const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+    pathname.startsWith(route),
   );
 
   if (isProtectedRoute && !sessionCookie) {
@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
 
     if (hasTicketAccess) {
       return NextResponse.redirect(
-        new URL(`/admin/ticket?token=${token}`, request.url)
+        new URL(`/admin/ticket?token=${token}`, request.url),
       );
     } else {
       return NextResponse.next();
@@ -44,7 +44,6 @@ export const config = {
     "/admin/:path*",
     "/ticket/:path*",
     "/profile/:path*",
-    "/checkout/:path*",
     "/confirmation/:path*",
   ],
 };

@@ -253,17 +253,16 @@ export default function EventsPage() {
                         <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden relative rounded-md">
                           <Image
                             src={
-                              response.event.eventLogo?.length !== 0
-                                ? response.event.eventLogo!
-                                : (response.event.eventImage ?? "/no-image.svg")
+                              response.event.eventLogo?.trim()
+                                ? response.event.eventLogo
+                                : response.event.eventImage?.trim()
+                                  ? response.event.eventImage
+                                  : "/no-image.svg"
                             }
                             alt={response.event.title}
                             className="h-full w-full object-cover"
                             fill
                             priority
-                            onError={(e) => {
-                              e.currentTarget.src = "/no-image.svg";
-                            }}
                           />
                         </div>
 

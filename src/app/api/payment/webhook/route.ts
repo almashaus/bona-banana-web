@@ -110,4 +110,5 @@ async function updateOrder(invoiceId: string) {
   });
 
   await batch.commit();
+  console.log("Update");
 }

@@ -75,6 +75,7 @@ import { getAuth } from "firebase/auth";
 import { generateQRCode } from "@/src/lib/utils/utils";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
 import { useAuth } from "@/src/features/auth/auth-provider";
+import { TicketStatus } from "@/src/models/ticket";
 
 export default function ReservationsPage() {
   const { user } = useAuth();
@@ -153,9 +154,10 @@ export default function ReservationsPage() {
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          id: reservationId,
+          orderId: reservationId,
           data: {
-            status: OrderStatus.CANCELED,
+            order: { status: OrderStatus.CANCELED },
+            ticket: { status: TicketStatus.CANCELED },
           },
         }),
       });
@@ -190,6 +192,10 @@ export default function ReservationsPage() {
         },
         body: JSON.stringify({
           orderId: reservationId,
+          data: {
+            order: { status: OrderStatus.PAID },
+            ticket: { status: TicketStatus.VALID },
+          },
         }),
       });
       if (response.ok) {
@@ -207,7 +213,7 @@ export default function ReservationsPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to cancel the reservation. Please try again.",
+        description: "Failed to confirm the reservation. Please try again.",
         variant: "destructive",
       });
     }

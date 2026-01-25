@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, MonitorCog } from "lucide-react";
+import { AlertCircle, Menu, MonitorCog, User } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { LanguageToggle } from "@/src/components/i18n/language-toggle";
 import { UserNav } from "@/src/components/auth/user-nav";
@@ -80,10 +80,10 @@ export default function Header({
           )}
           {initialLoading ? (
             initialUser ? (
-              <UserNav user={initialUser!} />
+              <UserNav user={initialUser} />
             ) : (
-              <Button asChild variant="outline" size="default">
-                <Link href="/login">{t("login")}</Link>
+              <Button variant="outline" size="icon" className="bg-muted">
+                <User className="h-[1.2rem] w-[1.2rem]" />
               </Button>
             )
           ) : user ? (

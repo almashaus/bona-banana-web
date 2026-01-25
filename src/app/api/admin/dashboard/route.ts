@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
+import { formatDate } from "@/src/lib/utils/formatDate";
 import { DashboardEvent, Event } from "@/src/models/event";
 import { Ticket } from "@/src/models/ticket";
 import { AppUser } from "@/src/models/user"; // Add this import
@@ -11,10 +12,12 @@ import { NextRequest } from "next/server";
 
 function getDateRangeStrings(startDate: Date, days: number): Set<string> {
   const set = new Set<string>();
+
   for (let i = 0; i < days; i++) {
     const d = new Date(startDate);
     d.setDate(startDate.getDate() + i);
-    set.add(d.toISOString().split("T")[0]);
+
+    set.add(formatDate(d));
   }
   return set;
 }
@@ -34,7 +37,8 @@ export async function GET() {
 
     const ticketsPromises = events.flatMap((event) =>
       event.dates.map(async (date) => {
-        const formattedDate = new Date(date.date).toISOString().split("T")[0];
+        const formattedDate = formatDate(new Date(date.date));
+
         if (rangeSet.has(formattedDate)) {
           const ticketsSnapshot = await db
             .collection("tickets")
@@ -63,7 +67,7 @@ export async function GET() {
                     };
 
                 return { ...ticket, user };
-              })
+              }),
             );
 
           dashboardEvents.push({
@@ -72,7 +76,7 @@ export async function GET() {
             ...event,
           });
         }
-      })
+      }),
     );
 
     await Promise.all(ticketsPromises);
@@ -81,7 +85,7 @@ export async function GET() {
     const sortedEvents = dashboardEvents.sort(
       (a, b) =>
         new Date(a.eventDate.date).getTime() -
-        new Date(b.eventDate.date).getTime()
+        new Date(b.eventDate.date).getTime(),
     );
 
     // count
@@ -110,7 +114,7 @@ export async function GET() {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache, no-store, must-revalidate",
         },
-      }
+      },
     );
   } catch (error) {
     return new Response(JSON.stringify({ data: "Error" }), {

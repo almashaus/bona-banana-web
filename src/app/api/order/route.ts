@@ -13,14 +13,14 @@ export async function GET(request: NextRequest) {
 
     const order: Order = (await getDocumentById(
       "orders",
-      orderNumber as string
+      orderNumber as string,
     )) as Order;
 
     const event: Event = await getEventById(order.eventId);
 
     const ticketsQuery = query(
       collection(db, "tickets"),
-      where("orderId", "==", orderNumber)
+      where("orderId", "==", orderNumber),
     );
     const ticketsSnapshot = await getDocs(ticketsQuery);
     const tickets = ticketsSnapshot.docs.map((doc) => doc.data() as Ticket);
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     } else {
       return new Response(JSON.stringify({ data: "Error" }), {

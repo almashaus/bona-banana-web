@@ -99,9 +99,11 @@ async function EventsList({ locale }: { locale: string }) {
             <div className="flex justify-center items-center m-3">
               <Image
                 src={
-                  event.eventLogo?.length !== 0
-                    ? event.eventLogo!
-                    : (event.eventImage ?? "/no-image.svg")
+                  event.eventLogo?.trim()
+                    ? event.eventLogo
+                    : event.eventImage?.trim()
+                      ? event.eventImage
+                      : "/no-image.svg"
                 }
                 alt={event.title}
                 width={300}

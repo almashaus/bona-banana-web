@@ -34,6 +34,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { useToast } from "@/src/components/ui/use-toast";
 import {
   Avatar,
@@ -73,6 +80,8 @@ function Profile() {
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const tabParam = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabParam || "profile");
+  const [selectedQR, setSelectedQR] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const t = useTranslations("Profile");
   const locale = useLocale();
 
@@ -86,7 +95,7 @@ function Profile() {
   }
 
   const { data, error, isLoading } = useSWR<Response>(
-    user ? `/api/profile/${user.id}` : null
+    user ? `/api/profile/${user.id}` : null,
   );
 
   useEffect(() => {
@@ -170,6 +179,11 @@ function Profile() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleViewQR = (qr: string) => {
+    setSelectedQR(qr);
+    setIsDialogOpen(true);
   };
 
   return (
@@ -297,14 +311,14 @@ function Profile() {
                             <Button
                               variant="outline"
                               className={cn(
-                                "justify-start text-left font-normal bg-white"
+                                "justify-start text-left font-normal bg-white",
                               )}
                             >
                               <CalendarIcon className="me-2 h-4 w-4" />
                               {userData?.birthDate ? (
                                 formatDate(
                                   new Date(userData?.birthDate),
-                                  locale
+                                  locale,
                                 )
                               ) : (
                                 <span>{t("pickDate")}</span>
@@ -372,7 +386,19 @@ function Profile() {
                       <TableBody>
                         {data?.tickets.map((ticketData) => {
                           return (
-                            <TableRow key={ticketData.ticket.id}>
+                            <TableRow
+                              key={ticketData.ticket.id}
+                              role="row"
+                              tabIndex={0}
+                              className="cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewQR(
+                                  ticketData.ticket.token ||
+                                    ticketData.ticket.id,
+                                );
+                              }}
+                            >
                               <TableCell>
                                 {ticketData.event?.title || ""}
                               </TableCell>
@@ -387,7 +413,7 @@ function Profile() {
                                     src={
                                       generateQRCode(
                                         ticketData.ticket.token ||
-                                          ticketData.ticket.id
+                                          ticketData.ticket.id,
                                       ) || "/no-image.svg"
                                     }
                                     alt={"QR code"}
@@ -443,6 +469,19 @@ function Profile() {
             </div>
           </TabsContent>
         </Tabs>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent dir="ltr" className="bg-stone-100">
+            <div className="flex justify-center bg-white m-2 p-4 rounded-lg ">
+              <Image
+                src={generateQRCode(selectedQR!) || "/no-image.svg"}
+                alt={"QR code"}
+                width={150}
+                height={150}
+                priority
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
@@ -515,7 +554,7 @@ function ProfileImageInput({
           // free memory for the preview
           URL.revokeObjectURL(objectUrl);
         }
-      }
+      },
     );
   };
 

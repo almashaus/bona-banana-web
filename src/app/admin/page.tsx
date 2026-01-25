@@ -266,17 +266,16 @@ export default function AdminPage() {
                           <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-md relative">
                             <Image
                               src={
-                                event.eventLogo?.length !== 0
-                                  ? event.eventLogo!
-                                  : (event.eventImage ?? "/no-image.svg")
+                                event.eventLogo?.trim()
+                                  ? event.eventLogo
+                                  : event.eventImage?.trim()
+                                    ? event.eventImage
+                                    : "/no-image.svg"
                               }
                               alt={event.title}
                               className="h-full w-full object-cover"
                               fill
                               priority
-                              onError={(e) => {
-                                e.currentTarget.src = "/no-image.svg";
-                              }}
                             />
                           </div>
                         </TableCell>

@@ -90,13 +90,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { orderId } = body;
+    const { orderId, data } = body;
 
     // 1. Update order status
-    await db
-      .collection("orders")
-      .doc(orderId)
-      .update({ status: OrderStatus.PAID });
+    await db.collection("orders").doc(orderId).update(data.order);
 
     // 2. Query tickets by orderId
     const ticketsSnapshot = await db
@@ -107,7 +104,7 @@ export async function POST(req: NextRequest) {
     // 3. Firestore batch update
     const batch = db.batch();
     ticketsSnapshot.docs.forEach((doc) => {
-      batch.update(doc.ref, { status: TicketStatus.VALID });
+      batch.update(doc.ref, data.ticket);
     });
 
     await batch.commit();
@@ -117,6 +114,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.log(error);
     return new Response(JSON.stringify({ error: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
