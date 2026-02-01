@@ -236,207 +236,213 @@ export default function EventsPage() {
         {responseData && responseData.length > 0 && (
           <div>
             {responseData.map((response: Response, index, array) => {
-              return (
-                <div
-                  key={response.event.id}
-                  className={`${index !== array.length - 1 && "border-b pb-6"} p-3 mb-3 `}
-                >
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">
-                        {response.event.title}
-                      </h3>
-                    </div>
+              if (
+                !user?.dashboard?.eventsAccess ||
+                user?.dashboard?.eventsAccess?.length === 0 ||
+                user?.dashboard?.eventsAccess?.includes(response.event.id)
+              )
+                return (
+                  <div
+                    key={response.event.id}
+                    className={`${index !== array.length - 1 && "border-b pb-6"} p-3 mb-3 `}
+                  >
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">
+                          {response.event.title}
+                        </h3>
+                      </div>
 
-                    <div className="flex flex-row items-start justify-between gap-2 md:gap-4">
-                      <div className="flex flex-row gap-2 items-center">
-                        <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden relative rounded-md">
-                          <Image
-                            src={
-                              response.event.eventLogo?.trim()
-                                ? response.event.eventLogo
-                                : response.event.eventImage?.trim()
-                                  ? response.event.eventImage
-                                  : "/no-image.svg"
-                            }
-                            alt={response.event.title}
-                            className="h-full w-full object-cover"
-                            fill
-                            priority
-                          />
+                      <div className="flex flex-row items-start justify-between gap-2 md:gap-4">
+                        <div className="flex flex-row gap-2 items-center">
+                          <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden relative rounded-md">
+                            <Image
+                              src={
+                                response.event.eventLogo?.trim()
+                                  ? response.event.eventLogo
+                                  : response.event.eventImage?.trim()
+                                    ? response.event.eventImage
+                                    : "/no-image.svg"
+                              }
+                              alt={response.event.title}
+                              className="h-full w-full object-cover"
+                              fill
+                              priority
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-end text-xs md:text-sm text-muted-foreground">
+                              <MapPin className="mr-1 h-4 w-4 md:h-4 md:w-4 text-orangeColor" />
+                              {response.event.city.en}
+                            </div>
+                            <div className="flex items-end text-xs md:text-sm text-muted-foreground">
+                              <span className="icon-saudi_riyal text-orangeColor" />
+                              {response.event.price}
+                            </div>
+                            <div className="flex items-end text-xs md:text-sm text-muted-foreground">
+                              {getStatusIcon(response.event.status)}
+                              {response.event.status}
+                            </div>
+                          </div>
                         </div>
 
                         <div className="flex flex-col gap-2">
-                          <div className="flex items-end text-xs md:text-sm text-muted-foreground">
-                            <MapPin className="mr-1 h-4 w-4 md:h-4 md:w-4 text-orangeColor" />
-                            {response.event.city.en}
-                          </div>
-                          <div className="flex items-end text-xs md:text-sm text-muted-foreground">
-                            <span className="icon-saudi_riyal text-orangeColor" />
-                            {response.event.price}
-                          </div>
-                          <div className="flex items-end text-xs md:text-sm text-muted-foreground">
-                            {getStatusIcon(response.event.status)}
-                            {response.event.status}
-                          </div>
+                          {canEditEvent && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCopy(response.event.id)}
+                            >
+                              <Copy className="h-3 w-3" /> Copy ID
+                            </Button>
+                          )}
+
+                          {canEditEvent && (
+                            <Button variant="outline" size="sm" asChild>
+                              <Link
+                                href={`/admin/events/edit/${response.event.id}`}
+                              >
+                                <Edit2 className="h-3 w-3" /> Edit
+                              </Link>
+                            </Button>
+                          )}
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              {canDeleteEvent && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  disabled={isDeleting}
+                                >
+                                  <Trash className="h-3 w-3" /> Delete
+                                </Button>
+                              )}
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="ltr">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Are you absolutely sure?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will
+                                  permanently delete the event data.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => deleteEvent(response.event.id)}
+                                  disabled={isDeleting}
+                                >
+                                  {isDeleting ? (
+                                    <LoadingDots />
+                                  ) : (
+                                    <>
+                                      <Trash className="h-3 w-3 me-1" /> Delete
+                                    </>
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
-
-                      <div className="flex flex-col gap-2">
-                        {canEditEvent && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCopy(response.event.id)}
-                          >
-                            <Copy className="h-3 w-3" /> Copy ID
-                          </Button>
-                        )}
-
-                        {canEditEvent && (
-                          <Button variant="outline" size="sm" asChild>
-                            <Link
-                              href={`/admin/events/edit/${response.event.id}`}
-                            >
-                              <Edit2 className="h-3 w-3" /> Edit
-                            </Link>
-                          </Button>
-                        )}
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            {canDeleteEvent && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                disabled={isDeleting}
-                              >
-                                <Trash className="h-3 w-3" /> Delete
-                              </Button>
-                            )}
-                          </AlertDialogTrigger>
-                          <AlertDialogContent dir="ltr">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Are you absolutely sure?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will
-                                permanently delete the event data.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => deleteEvent(response.event.id)}
-                                disabled={isDeleting}
-                              >
-                                {isDeleting ? (
-                                  <LoadingDots />
-                                ) : (
-                                  <>
-                                    <Trash className="h-3 w-3 me-1" /> Delete
-                                  </>
-                                )}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
                     </div>
+                    <Collapsible
+                      open={openCollapsibleIds.has(response.event.id)}
+                      onOpenChange={(open) => {
+                        setOpenCollapsibleIds((prev) => {
+                          const newSet = new Set(prev);
+                          if (open) {
+                            newSet.add(response.event.id);
+                          } else {
+                            newSet.delete(response.event.id);
+                          }
+                          return newSet;
+                        });
+                      }}
+                    >
+                      <CollapsibleTrigger className="flex items-end mt-4 font-medium gap-1">
+                        {openCollapsibleIds.has(response.event.id) ? (
+                          <ChevronUp className="text-orangeColor" />
+                        ) : (
+                          <ChevronDown className="text-redColor" />
+                        )}
+                        <span> Dates & Tickets</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="mt-2 rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className=""></TableHead>
+                                <TableHead>Date and Time</TableHead>
+                                <TableHead>Available Tickets</TableHead>
+                                <TableHead>Purchased Tickets</TableHead>
+                                <TableHead>View Tickets</TableHead>
+                              </TableRow>
+                            </TableHeader>
+
+                            <TableBody>
+                              {response.event.dates
+                                .sort(
+                                  (a, b) =>
+                                    new Date(b.date).getTime() -
+                                    new Date(a.date).getTime(),
+                                )
+                                ?.map((date) => (
+                                  <TableRow key={date.id}>
+                                    <TableCell className="flex justify-center">
+                                      {isBeforeToday(date.date) ? (
+                                        <CalendarCheck2 className="w-5 h-5 mt-3 text-green-500" />
+                                      ) : (
+                                        <CalendarClock className="w-5 h-5 mt-3 text-muted-foreground" />
+                                      )}
+                                    </TableCell>
+
+                                    <TableCell className="font-medium">
+                                      <div>{formatDate(date.date)}</div>
+                                      <div className="text-muted-foreground">
+                                        {formatTime(date.startTime)} -{" "}
+                                        {formatTime(date.endTime)}
+                                      </div>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <Badge
+                                        className={`${
+                                          date.availableTickets < 5
+                                            ? "bg-orange-100 text-orange-600"
+                                            : "bg-green-100 text-green-700"
+                                        } pb-1`}
+                                      >
+                                        {date.availableTickets}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                      {date.capacity - date.availableTickets}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleViewDetails(date)}
+                                      >
+                                        <TicketIcon className="h-3 w-3" />{" "}
+                                        Tickets
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
-                  <Collapsible
-                    open={openCollapsibleIds.has(response.event.id)}
-                    onOpenChange={(open) => {
-                      setOpenCollapsibleIds((prev) => {
-                        const newSet = new Set(prev);
-                        if (open) {
-                          newSet.add(response.event.id);
-                        } else {
-                          newSet.delete(response.event.id);
-                        }
-                        return newSet;
-                      });
-                    }}
-                  >
-                    <CollapsibleTrigger className="flex items-end mt-4 font-medium gap-1">
-                      {openCollapsibleIds.has(response.event.id) ? (
-                        <ChevronUp className="text-orangeColor" />
-                      ) : (
-                        <ChevronDown className="text-redColor" />
-                      )}
-                      <span> Dates & Tickets</span>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="mt-2 rounded-md border">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className=""></TableHead>
-                              <TableHead>Date and Time</TableHead>
-                              <TableHead>Available Tickets</TableHead>
-                              <TableHead>Purchased Tickets</TableHead>
-                              <TableHead>View Tickets</TableHead>
-                            </TableRow>
-                          </TableHeader>
-
-                          <TableBody>
-                            {response.event.dates
-                              .sort(
-                                (a, b) =>
-                                  new Date(b.date).getTime() -
-                                  new Date(a.date).getTime(),
-                              )
-                              ?.map((date) => (
-                                <TableRow key={date.id}>
-                                  <TableCell className="flex justify-center">
-                                    {isBeforeToday(date.date) ? (
-                                      <CalendarCheck2 className="w-5 h-5 mt-3 text-green-500" />
-                                    ) : (
-                                      <CalendarClock className="w-5 h-5 mt-3 text-muted-foreground" />
-                                    )}
-                                  </TableCell>
-
-                                  <TableCell className="font-medium">
-                                    <div>{formatDate(date.date)}</div>
-                                    <div className="text-muted-foreground">
-                                      {formatTime(date.startTime)} -{" "}
-                                      {formatTime(date.endTime)}
-                                    </div>
-                                  </TableCell>
-
-                                  <TableCell>
-                                    <Badge
-                                      className={`${
-                                        date.availableTickets < 5
-                                          ? "bg-orange-100 text-orange-600"
-                                          : "bg-green-100 text-green-700"
-                                      } pb-1`}
-                                    >
-                                      {date.availableTickets}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    {date.capacity - date.availableTickets}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleViewDetails(date)}
-                                    >
-                                      <TicketIcon className="h-3 w-3" /> Tickets
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              );
+                );
             })}
           </div>
         )}

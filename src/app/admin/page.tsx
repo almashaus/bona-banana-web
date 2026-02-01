@@ -171,10 +171,18 @@ export default function AdminPage() {
                 <CardTitle className="text-sm font-medium mb-1">
                   Ticket Sales
                 </CardTitle>
-                <span className="text-2xl font-bold">
-                  {isLoading || error ? "..." : (data?.ticketsCount ?? 0)}
-                </span>
-                <span className="text-sm font-normal"> Tickets</span>
+                {canViewRevenue ? (
+                  <div>
+                    <span className="text-2xl font-bold">
+                      {isLoading || error ? "..." : (data?.ticketsCount ?? 0)}
+                    </span>
+                    <span className="text-sm font-normal"> Tickets</span>
+                  </div>
+                ) : (
+                  <span className="text-2xl font-bold">
+                    <EyeOffIcon className="w-4 h-4 mt-2.5" />
+                  </span>
+                )}
               </div>
               <Ticket strokeWidth={1} className="h-12 w-12 text-orangeColor" />
             </div>
@@ -260,66 +268,73 @@ export default function AdminPage() {
                   </TableHeader>
 
                   <TableBody>
-                    {events.map((event, index, array) => (
-                      <TableRow key={event.eventDate.id} role="row">
-                        <TableCell>
-                          <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-md relative">
-                            <Image
-                              src={
-                                event.eventLogo?.trim()
-                                  ? event.eventLogo
-                                  : event.eventImage?.trim()
-                                    ? event.eventImage
-                                    : "/no-image.svg"
-                              }
-                              alt={event.title}
-                              className="h-full w-full object-cover"
-                              fill
-                              priority
-                            />
-                          </div>
-                        </TableCell>
+                    {events.map((event) => {
+                      if (
+                        !user.dashboard?.eventsAccess ||
+                        user.dashboard?.eventsAccess?.length === 0 ||
+                        user.dashboard?.eventsAccess?.includes(event.id)
+                      )
+                        return (
+                          <TableRow key={event.eventDate.id} role="row">
+                            <TableCell>
+                              <div className="h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-md relative">
+                                <Image
+                                  src={
+                                    event.eventLogo?.trim()
+                                      ? event.eventLogo
+                                      : event.eventImage?.trim()
+                                        ? event.eventImage
+                                        : "/no-image.svg"
+                                  }
+                                  alt={event.title}
+                                  className="h-full w-full object-cover"
+                                  fill
+                                  priority
+                                />
+                              </div>
+                            </TableCell>
 
-                        <TableCell className="font-medium">
-                          <div className="flex flex-col">
-                            <p>{event.title}</p>
-                            <p className="text-orangeColor">
-                              {formatDate(event.eventDate.date)}
-                            </p>
-                          </div>
-                        </TableCell>
+                            <TableCell className="font-medium">
+                              <div className="flex flex-col">
+                                <p>{event.title}</p>
+                                <p className="text-orangeColor">
+                                  {formatDate(event.eventDate.date)}
+                                </p>
+                              </div>
+                            </TableCell>
 
-                        <TableCell>{event.city.en}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col items-center justify-center text-muted-foreground">
-                            {getStatusIcon(event.status)}
-                            {event.status}
-                          </div>
-                        </TableCell>
-                        <TableCell
-                          className={`${event.tickets.length === event.eventDate.capacity && "text-redColor"}`}
-                        >
-                          {event.tickets.length}/{event.eventDate.capacity}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            onClick={() => handleViewDetails(event.id)}
-                          >
-                            <TicketIcon className="h-3 w-3" /> Tickets
-                          </Button>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setOpenCamera(true)}
-                          >
-                            <CameraIcon className="h-3 w-3" /> Scan Code
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            <TableCell>{event.city.en}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                {getStatusIcon(event.status)}
+                                {event.status}
+                              </div>
+                            </TableCell>
+                            <TableCell
+                              className={`${event.tickets.length === event.eventDate.capacity && "text-redColor"}`}
+                            >
+                              {event.tickets.length}/{event.eventDate.capacity}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                onClick={() => handleViewDetails(event.id)}
+                              >
+                                <TicketIcon className="h-3 w-3" /> Tickets
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setOpenCamera(true)}
+                              >
+                                <CameraIcon className="h-3 w-3" /> Scan Code
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                    })}
                   </TableBody>
                 </Table>
               </div>

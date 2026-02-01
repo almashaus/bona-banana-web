@@ -18,6 +18,7 @@ export interface DashboardUser {
   status: MemberStatus;
   joinedDate?: Date;
   eventsManaged: number;
+  eventsAccess?: string[];
   activityLog?: ActivityLog[];
 }
 

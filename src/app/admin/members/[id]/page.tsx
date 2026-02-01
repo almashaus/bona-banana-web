@@ -55,6 +55,7 @@ import Link from "next/link";
 import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
 import { formatDate, formatDateTime } from "@/src/lib/utils/formatDate";
 import { GrayX, GreenCheck } from "@/src/lib/utils/statusIcons";
+import EventsAccess from "./eventsAccess";
 
 export default function UserProfilePage() {
   const { user, resetPassword } = useAuth();
@@ -116,7 +117,7 @@ export default function UserProfilePage() {
   const handlePermissionChange = (
     featureIndex: number,
     permission: string,
-    value: boolean
+    value: boolean,
   ) => {
     const updatedPermissions = [...permissions];
     updatedPermissions[featureIndex] = {
@@ -160,14 +161,14 @@ export default function UserProfilePage() {
               <div className="flex items-center gap-4 mt-2">
                 <Badge
                   className={getRoleBadgeColor(
-                    member?.dashboard?.role as MemberRole
+                    member?.dashboard?.role as MemberRole,
                   )}
                 >
                   {member?.dashboard?.role}
                 </Badge>
                 <Badge
                   className={getStatusBadgeColor(
-                    member?.dashboard?.status as MemberStatus
+                    member?.dashboard?.status as MemberStatus,
                   )}
                 >
                   {member?.dashboard?.status}
@@ -201,7 +202,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    value={member?.name}
+                    value={member?.name ?? ""}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -210,7 +211,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
-                    value={member?.email}
+                    value={member?.email ?? ""}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -219,7 +220,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="role">Role</Label>
                   <Input
                     id="role"
-                    value={member?.dashboard?.role}
+                    value={member?.dashboard?.role ?? ""}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -228,7 +229,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
-                    value={member?.phone}
+                    value={member?.phone ?? ""}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -237,7 +238,7 @@ export default function UserProfilePage() {
                   <Label htmlFor="status">Status</Label>
                   <Input
                     id="status"
-                    value={member?.dashboard?.status}
+                    value={member?.dashboard?.status ?? ""}
                     className="focus-visible:ring-0"
                     readOnly
                   />
@@ -292,7 +293,7 @@ export default function UserProfilePage() {
                 View user permissions for different features
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -327,6 +328,8 @@ export default function UserProfilePage() {
                   </TableBody>
                 </Table>
               </div>
+
+              <EventsAccess member={member} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -340,7 +343,7 @@ export default function UserProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {member?.dashboard?.activityLog?.map((activity) => (
                   <div
                     key={activity.id}
