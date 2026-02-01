@@ -84,31 +84,35 @@ function safeCompare(a: string, b: string) {
 }
 
 async function updateOrder(invoiceId: string) {
-  const orderSnapshot = await db
-    .collection("orders")
-    .where("invoiceId", "==", invoiceId)
-    .get();
+  try {
+    const orderSnapshot = await db
+      .collection("orders")
+      .where("invoiceId", "==", invoiceId)
+      .get();
 
-  // Collect all ticket queries
-  const ticketPromises = orderSnapshot.docs.map((doc) =>
-    db.collection("tickets").where("orderId", "==", doc.ref).get(),
-  );
+    // Collect all ticket queries
+    const ticketPromises = orderSnapshot.docs.map((doc) =>
+      db.collection("tickets").where("orderId", "==", doc.ref).get(),
+    );
 
-  const ticketSnapshots = await Promise.all(ticketPromises);
+    const ticketSnapshots = await Promise.all(ticketPromises);
 
-  // Single batch for everything
-  const batch = db.batch();
+    // Single batch for everything
+    const batch = db.batch();
 
-  orderSnapshot.docs.forEach((doc) => {
-    batch.update(doc.ref, { orderStatus: OrderStatus.PAID });
-  });
-
-  ticketSnapshots.forEach((snapshot) => {
-    snapshot.docs.forEach((doc) => {
-      batch.update(doc.ref, { status: TicketStatus.VALID });
+    orderSnapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, { orderStatus: OrderStatus.PAID });
     });
-  });
 
-  await batch.commit();
-  console.log("Update");
+    ticketSnapshots.forEach((snapshot) => {
+      snapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, { status: TicketStatus.VALID });
+      });
+    });
+
+    await batch.commit();
+    console.log("Update");
+  } catch (error) {
+    console.log("error :>> ", error);
+  }
 }
