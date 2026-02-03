@@ -124,6 +124,7 @@
     "loginSuccessDesc": "You have been logged in successfully",
     "loginFailed": "Login failed",
     "loginFailedDesc": "Please check your credentials and try again",
+    "manyRequests": "Too many requests, please try after 5 minutes",
     "loginGoogleSuccessDesc": "You have been logged in with Google",
     "googleSignInFailed": "Google sign-in failed",
     "googleSignInFailedDesc": "Please try again",

@@ -377,11 +377,12 @@ export default function EventPage() {
                           <SelectItem key={num} value={num.toString()}>
                             {num}{" "}
                             {num === 1 ? tEvent("ticket") : tEvent("tickets")}
-                            {num === 3 && (
-                              <span className="text-sm text-green-500 mx-4">
-                                {tEvent("free")}
-                              </span>
-                            )}
+                            {num === 3 &&
+                              event.id === "nsF44tZPR5lr3jRCMRJF" && (
+                                <span className="text-sm text-green-500 mx-4">
+                                  {tEvent("free")}
+                                </span>
+                              )}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -402,7 +403,7 @@ export default function EventPage() {
                   <Separator />
                   <div className="flex items-center justify-between font-bold">
                     <span>{tEvent("total")}</span>
-                    {quantity === 3 ? (
+                    {quantity === 3 && event.id === "nsF44tZPR5lr3jRCMRJF" ? (
                       <div>
                         <span className="line-through mx-2">
                           {price(event.price * quantity, locale)}

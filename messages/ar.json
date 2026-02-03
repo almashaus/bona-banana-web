@@ -124,6 +124,7 @@
     "loginSuccessDesc": "تم تسجيل دخولك بنجاح",
     "loginFailed": "فشل تسجيل الدخول",
     "loginFailedDesc": "يرجى التحقق من بياناتك والمحاولة مرة أخرى",
+    "manyRequests": "محاولات عدة خاطئة، يرجى المحاولة بعد 5 دقائق",
     "loginGoogleSuccessDesc": "تم تسجيل الدخول باستخدام جوجل",
     "googleSignInFailed": "فشل تسجيل الدخول عبر جوجل",
     "googleSignInFailedDesc": "يرجى المحاولة مرة أخرى",

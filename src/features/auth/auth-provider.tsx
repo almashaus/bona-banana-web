@@ -99,8 +99,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
       });
-    } catch {
-      throw new Error("Login failed");
+    } catch (error: any) {
+      if (error.code === "auth/too-many-requests") {
+        throw new Error("too-many-requests");
+      } else {
+        throw new Error("invalid-credential");
+      }
     } finally {
       setLoading(false);
     }
@@ -113,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const result = await createUserWithEmailAndPassword(
           auth,
           email,
-          password
+          password,
         );
         const fbUser = result.user;
 
@@ -140,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [mapFirebaseUserToAppUser]
+    [mapFirebaseUserToAppUser],
   );
 
   const logout = useCallback(() => {

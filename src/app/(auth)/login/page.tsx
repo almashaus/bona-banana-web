@@ -51,12 +51,20 @@ function Login() {
         variant: "success",
       });
       router.replace(redirectUrl);
-    } catch (error) {
-      toast({
-        title: t("loginFailed"),
-        description: t("loginFailedDesc"),
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error.message === "too-many-requests") {
+        toast({
+          title: t("loginFailed"),
+          description: t("manyRequests"),
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: t("loginFailed"),
+          description: t("loginFailedDesc"),
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
