@@ -1,9 +1,10 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
 import { Event } from "@/src/models/event";
-import { Ticket } from "@/src/models/ticket";
-import { AppUser } from "@/src/models/user";
 import { NextRequest } from "next/server";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {

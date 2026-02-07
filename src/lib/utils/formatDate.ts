@@ -42,6 +42,26 @@ export function formatTime24H(date: Date): string {
   });
 }
 
+export function nowDateInRiyadh(): Date {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Riyadh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+
+  return new Date(
+    `${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}:${map.second}`,
+  );
+}
+
 export const eventDateTimeString = (
   date: EventDate,
   language: string = "en",

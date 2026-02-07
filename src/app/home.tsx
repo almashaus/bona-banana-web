@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
-import { Event } from "@/src/models/event";
+import { Event, EventStatus } from "@/src/models/event";
 import { CalendarDays, ClockIcon, TriangleAlert } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/src/components/ui/card";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
@@ -83,58 +83,72 @@ async function EventsList({ locale }: { locale: string }) {
 
   return (
     <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 md:grid-cols-2 lg:grid-cols-3">
-      {allEvents.map((event) => (
-        <Link href={`/events/${event.slug}`} key={event.id}>
-          <Card className="overflow-hidden transition-all shadow-none hover:scale-105 hover:rotate-3 bg-darkColor border-0">
-            <div className="flex justify-center items-center m-3">
-              <Image
-                src={
-                  event.eventLogo?.trim()
-                    ? event.eventLogo
-                    : event.eventImage?.trim()
-                      ? event.eventImage
-                      : "/no-image.svg"
-                }
-                alt={event.title}
-                width={300}
-                height={260}
-                priority
-                className="w-auto h-auto max-w-[300px] max-h-[260px]"
-                style={{
-                  objectFit: "cover",
-                  borderRadius: "0.5rem",
-                }}
-              />
-            </div>
-            <CardContent className="p-4 bg-beigeColor mx-3 rounded-md">
-              <h3 className="line-clamp-1 text-lg font-bold">
-                {locale === "en" ? event.title : event.titleAr}
-              </h3>
-              <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                <CalendarDays className="me-1 h-4 w-4 text-redColor" />
-                {`${formatDate(findFirstTodayOrAfter(event.dates.map((d) => d.date)) ?? event.dates[0].date, locale)}`}
+      {allEvents.map((event) => {
+        const isDisabled = event.status !== EventStatus.PUBLISHED;
+
+        return (
+          <Link href={`/events/${event.slug}`} key={event.id}>
+            <Card
+              className={`overflow-hidden transition-all shadow-none hover:scale-105 hover:rotate-3 bg-darkColor border-0 ${
+                isDisabled ? "grayscale opacity-80" : ""
+              }`}
+            >
+              <div className="flex justify-center items-center m-3">
+                <Image
+                  src={
+                    event.eventLogo?.trim()
+                      ? event.eventLogo
+                      : event.eventImage?.trim()
+                        ? event.eventImage
+                        : "/no-image.svg"
+                  }
+                  alt={event.title}
+                  width={300}
+                  height={260}
+                  priority
+                  className="w-auto h-auto max-w-[300px] max-h-[260px]"
+                  style={{
+                    objectFit: "cover",
+                    borderRadius: "0.5rem",
+                  }}
+                />
               </div>
-              <div className="mt-1 flex items-center text-sm text-muted-foreground">
-                <ClockIcon className="me-1 h-4 w-4 text-redColor" />
-                {`${formatTime(event.dates[0].startTime, locale)} - ${formatTime(
-                  event.dates[0].endTime,
-                  locale,
-                )}`}
-              </div>
-            </CardContent>
-            <CardFooter className="p-3 grid grid-cols-2 gap-3 justify-between items-center bg-dark-color ">
-              <div className=" bg-redColor py-3 rounded-md text-white text-center">
-                <span className="">
-                  {locale === "en" ? event.city.en : event.city.ar}
-                </span>
-              </div>
-              <div className="bg-yellowColor py-3 rounded-md text-white  text-center">
-                {price(event.price, locale)}
-              </div>
-            </CardFooter>
-          </Card>
-        </Link>
-      ))}
+              <CardContent
+                className={`p-4 mx-3 rounded-md ${
+                  isDisabled
+                    ? "bg-gray-200 text-muted-foreground"
+                    : "bg-beigeColor"
+                }`}
+              >
+                <h3 className="line-clamp-1 text-lg font-bold">
+                  {locale === "en" ? event.title : event.titleAr}
+                </h3>
+                <div className="mt-2 flex items-center text-sm text-muted-foreground">
+                  <CalendarDays className="me-1 h-4 w-4 text-redColor" />
+                  {`${formatDate(findFirstTodayOrAfter(event.dates.map((d) => d.date)) ?? event.dates[0].date, locale)}`}
+                </div>
+                <div className="mt-1 flex items-center text-sm text-muted-foreground">
+                  <ClockIcon className="me-1 h-4 w-4 text-redColor" />
+                  {`${formatTime(event.dates[0].startTime, locale)} - ${formatTime(
+                    event.dates[0].endTime,
+                    locale,
+                  )}`}
+                </div>
+              </CardContent>
+              <CardFooter className="p-3 grid grid-cols-2 gap-3 justify-between items-center bg-dark-color">
+                <div className=" bg-redColor py-3 rounded-md text-white text-center">
+                  <span className="">
+                    {locale === "en" ? event.city.en : event.city.ar}
+                  </span>
+                </div>
+                <div className="bg-yellowColor py-3 rounded-md text-white  text-center">
+                  {price(event.price, locale)}
+                </div>
+              </CardFooter>
+            </Card>
+          </Link>
+        );
+      })}
     </div>
   );
 }
