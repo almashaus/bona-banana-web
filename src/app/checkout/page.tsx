@@ -71,7 +71,9 @@ export default function CheckoutPage() {
 
   // Calculate totals
 
-  const total = event?.price! * (quantity === 3 ? 2 : quantity);
+  const total =
+    event?.price! *
+    (quantity === 3 && event?.id === "nsF44tZPR5lr3jRCMRJF" ? 2 : quantity);
   const subtotal = total - total * 0.15;
   const fees = (total - subtotal).toFixed(2);
 
