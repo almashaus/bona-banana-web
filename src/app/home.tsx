@@ -129,8 +129,9 @@ async function EventsList({ locale }: { locale: string }) {
                 </div>
                 <div className="mt-1 flex items-center text-sm text-muted-foreground">
                   <ClockIcon className="me-1 h-4 w-4 text-redColor" />
-                  {`${formatTime(event.dates[0].startTime, locale)} - ${formatTime(
-                    event.dates[0].endTime,
+                  {`${formatTime(findFirstTodayOrAfter(event.dates.map((d) => d.startTime)) ?? event.dates[0].startTime, locale)} - ${formatTime(
+                    findFirstTodayOrAfter(event.dates.map((d) => d.endTime)) ??
+                      event.dates[0].endTime,
                     locale,
                   )}`}
                 </div>
