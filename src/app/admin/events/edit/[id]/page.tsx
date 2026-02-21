@@ -194,15 +194,15 @@ export default function EditEventPage() {
           setIsSubmitting(false);
           return;
         }
-        if (isAfterDate(eventDate.startTime, eventDate.endTime)) {
-          toast({
-            title: "Error",
-            description: "Start time must be before end time.",
-            variant: "destructive",
-          });
-          setIsSubmitting(false);
-          return;
-        }
+        // if (isAfterDate(eventDate.startTime, eventDate.endTime)) {
+        //   toast({
+        //     title: "Error",
+        //     description: "Start time must be before end time.",
+        //     variant: "destructive",
+        //   });
+        //   setIsSubmitting(false);
+        //   return;
+        // }
         if (status === EventStatus.COMPLETED && isAfterToday(eventDate.date)) {
           statusRef.current?.scrollIntoView({
             behavior: "smooth",

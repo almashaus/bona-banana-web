@@ -162,17 +162,17 @@ export default function CreateEventPage() {
       return;
     }
 
-    for (const eventDate of eventDates) {
-      if (isAfterDate(eventDate.startTime, eventDate.endTime)) {
-        toast({
-          title: "Error",
-          description: "Start time must be before end time.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-    }
+    // for (const eventDate of eventDates) {
+    //   if (isAfterDate(eventDate.startTime, eventDate.endTime)) {
+    //     toast({
+    //       title: "Error",
+    //       description: "Start time must be before end time.",
+    //       variant: "destructive",
+    //     });
+    //     setIsSubmitting(false);
+    //     return;
+    //   }
+    // }
 
     const event = await getDocumentByKey("events", "slug", slug);
     if (event) {

@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
+import { nowDateInRiyadh } from "./formatDate";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -98,7 +99,7 @@ export function isAfterToday(date: Date): boolean {
 }
 
 export function findFirstTodayOrAfter(dates: Date[]): Date | null {
-  const today = new Date();
+  const today = nowDateInRiyadh();
   today.setHours(0, 0, 0, 0);
 
   for (const date of dates) {
