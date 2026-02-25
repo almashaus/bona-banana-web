@@ -11,6 +11,16 @@ export function formatDate(date: Date, language: string = "en"): string {
   });
 }
 
+export const formatDateShort = (date: Date, language: string = "en"): string => {
+  const locale = language === "en" ? "en-UK" : "ar-UK";
+  return new Date(date).toLocaleString(locale, {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "Asia/Riyadh",
+  });
+};
+
 export function formatTime(date: Date, language: string = "en"): string {
   const locale = language === "en" ? "en-UK" : "ar-UK";
   return new Date(date).toLocaleString(locale, {

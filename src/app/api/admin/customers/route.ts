@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { Ticket } from "@/src/models/ticket";
 import { AppUser, CustomerResponse } from "@/src/models/user";
 import { NextRequest } from "next/server";
@@ -11,13 +12,21 @@ export async function GET(req: NextRequest) {
     // Get all users
     const usersSnapshot = await db.collection("users").get();
 
-    // Fetch tickets in a single batch query
+    // Fetch tickets in batches (Firestore IN limit is 30)
     const userIds = usersSnapshot.docs.map((doc) => doc.id);
+    const chunkSize = 30;
+    const ticketChunks: QueryDocumentSnapshot[] = [];
 
-    const ticketsSnapshot = await db
-      .collection("tickets")
-      .where("userId", "in", userIds)
-      .get();
+    for (let i = 0; i < userIds.length; i += chunkSize) {
+      const chunk = userIds.slice(i, i + chunkSize);
+      const snapshot = await db
+        .collection("tickets")
+        .where("userId", "in", chunk)
+        .get();
+      ticketChunks.push(...snapshot.docs);
+    }
+
+    const ticketsSnapshot = { docs: ticketChunks };
 
     // Get all unique eventIds from tickets
     const eventIdsSet = new Set<string>();
@@ -27,20 +36,25 @@ export async function GET(req: NextRequest) {
     });
     const eventIds = Array.from(eventIdsSet);
 
-    // Fetch all relevant events in one batch
+    // Fetch all relevant events in batches (Firestore IN limit is 30)
     let eventsMap: Record<string, string> = {};
     if (eventIds.length > 0) {
-      const eventsSnapshot = await db
-        .collection("events")
-        .where("id", "in", eventIds)
-        .get();
-      eventsMap = eventsSnapshot.docs.reduce(
+      const eventChunks: QueryDocumentSnapshot[] = [];
+      for (let i = 0; i < eventIds.length; i += chunkSize) {
+        const chunk = eventIds.slice(i, i + chunkSize);
+        const snapshot = await db
+          .collection("events")
+          .where("id", "in", chunk)
+          .get();
+        eventChunks.push(...snapshot.docs);
+      }
+      eventsMap = eventChunks.reduce(
         (acc, doc) => {
           const event = doc.data();
           acc[event.id] = event.title;
           return acc;
         },
-        {} as Record<string, string>
+        {} as Record<string, string>,
       );
     }
 
@@ -54,7 +68,7 @@ export async function GET(req: NextRequest) {
         acc[ticket.userId].push(ticketWithEventName);
         return acc;
       },
-      {} as Record<string, (Ticket & { eventName: string })[]>
+      {} as Record<string, (Ticket & { eventName: string })[]>,
     );
 
     // Map users to customers
@@ -72,6 +86,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
+    console.log(error);
     return new Response(JSON.stringify({ data: "Error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

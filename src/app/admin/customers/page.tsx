@@ -56,7 +56,7 @@ export default function customersPage() {
   );
 
   useEffect(() => {
-    if (data) {
+    if (data?.customers) {
       const filteredData = data.customers.filter((customer) => {
         const matchesSearch =
           customer.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

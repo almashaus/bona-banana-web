@@ -1,3 +1,4 @@
+import { CouponStatus, CouponType } from "@/src/models/coupon";
 import { OrderStatus } from "@/src/models/order";
 import { TicketStatus } from "@/src/models/ticket";
 import { MemberRole, MemberStatus } from "@/src/types/permissions";
@@ -80,3 +81,29 @@ export const getTicketStatusBadgeColor = (status: string) => {
       return "bg-gray-100 text-gray-800";
   }
 };
+
+export function statusColor(s: CouponStatus) {
+  switch (s) {
+    case "Active":
+      return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
+    case "Scheduled":
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
+    case "Expired":
+      return "bg-muted text-muted-foreground";
+    case "Disabled":
+      return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
+    case "Fully Redeemed":
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
+  }
+}
+
+export function typeBadgeColor(t: CouponType) {
+  switch (t) {
+    case "Discount":
+      return "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300";
+    case "Voucher":
+      return "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300";
+    case "Offer":
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300";
+  }
+}
