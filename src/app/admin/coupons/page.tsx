@@ -386,18 +386,60 @@ export default function CouponsPage() {
     const displayName = payload.code || payload.description || "Offer";
 
     if (editingCoupon) {
-      setCoupons((prev) =>
-        prev.map((c) =>
-          c.id === editingCoupon.id ? ({ ...payload, id: c.id } as Coupon) : c,
-        ),
-      );
-      toast({
-        title: "Coupon Updated",
-        description: `${payload.code ? `"${payload.code}"` : displayName} has been updated.`,
-        variant: "success",
-      });
-      setIsSaving(false);
-      setIsFormOpen(false);
+      try {
+        const auth = getAuth();
+        const authUser = auth.currentUser;
+        if (!authUser) {
+          toast({
+            title: "Error",
+            description: "You must be logged in to update a coupon.",
+            variant: "destructive",
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        const idToken = await authUser.getIdToken();
+        const updatePayload = { ...payload, id: editingCoupon.id };
+        const response = await fetch("/api/admin/coupons", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ coupon: updatePayload }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.data ?? "Failed to update coupon");
+        }
+
+        const result = await response.json();
+        const updatedCoupon = result.coupon as Coupon;
+
+        setCoupons((prev) =>
+          prev.map((c) =>
+            c.id === editingCoupon.id ? updatedCoupon : c,
+          ),
+        );
+        await mutate("/api/admin/coupons");
+        toast({
+          title: "Coupon Updated",
+          description: `${payload.code ? `"${payload.code}"` : displayName} has been updated.`,
+          variant: "success",
+        });
+        setIsFormOpen(false);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description:
+            error instanceof Error ? error.message : "Failed to update coupon",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSaving(false);
+      }
       return;
     }
 
@@ -468,7 +510,7 @@ export default function CouponsPage() {
   };
 
   // ── Delete ──────────────────────────────────────────────────────────
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deletingCoupon) return;
     if (deletingCoupon.usageCount > 0) {
       toast({
@@ -481,16 +523,56 @@ export default function CouponsPage() {
       setDeletingCoupon(null);
       return;
     }
-    setCoupons((prev) => prev.filter((c) => c.id !== deletingCoupon.id));
-    const displayName =
-      deletingCoupon.code || deletingCoupon.description || "Offer";
-    toast({
-      title: "Coupon Deleted",
-      description: `${deletingCoupon.code ? `"${deletingCoupon.code}"` : displayName} has been permanently deleted.`,
-      variant: "success",
-    });
-    setIsDeleteOpen(false);
-    setDeletingCoupon(null);
+
+    try {
+      const auth = getAuth();
+      const authUser = auth.currentUser;
+      if (!authUser) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to delete a coupon.",
+          variant: "destructive",
+        });
+        setIsDeleteOpen(false);
+        setDeletingCoupon(null);
+        return;
+      }
+
+      const idToken = await authUser.getIdToken();
+      const response = await fetch("/api/admin/coupons", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ id: deletingCoupon.id }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.data ?? "Failed to delete coupon");
+      }
+
+      setCoupons((prev) => prev.filter((c) => c.id !== deletingCoupon.id));
+      await mutate("/api/admin/coupons");
+      const displayName =
+        deletingCoupon.code || deletingCoupon.description || "Offer";
+      toast({
+        title: "Coupon Deleted",
+        description: `${deletingCoupon.code ? `"${deletingCoupon.code}"` : displayName} has been permanently deleted.`,
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to delete coupon",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleteOpen(false);
+      setDeletingCoupon(null);
+    }
   };
 
   // ── Export ──────────────────────────────────────────────────────────
