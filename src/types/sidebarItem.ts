@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import type {
-  Feature,
   PermissionAction,
   MemberRole,
   MemberStatus,
@@ -8,7 +7,7 @@ import type {
 
 export type SidebarRequirement =
   | {
-      feature: Feature;
+      feature: string;
       action: PermissionAction;
     }
   | {
@@ -17,7 +16,7 @@ export type SidebarRequirement =
   | ((ctx: {
       role?: MemberRole;
       status?: MemberStatus;
-      can: (feature: Feature, action: PermissionAction) => boolean;
+      can: (feature: string, action: PermissionAction) => boolean;
     }) => boolean);
 
 export type SidebarItem = {

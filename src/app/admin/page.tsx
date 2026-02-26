@@ -52,6 +52,7 @@ import QrScanner from "@/src/features/scanner/qr-scanner";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { MemberStatus } from "@/src/types/permissions";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import AccessDenied from "@/src/components/ui/access-denied";
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -93,6 +94,11 @@ export default function AdminPage() {
 
   const { hasPermission } = usePermissions(user);
   const canViewRevenue: boolean = hasPermission("Reports", "view");
+  const canViewDashboard: boolean = hasPermission("Dashboard", "view");
+
+  if (!canViewDashboard) {
+    return <></>;
+  }
 
   const handleValidToUsedTicket = async (ticketId: string) => {
     try {

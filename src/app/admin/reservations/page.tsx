@@ -76,6 +76,7 @@ import { generateQRCode } from "@/src/lib/utils/utils";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { TicketStatus } from "@/src/models/ticket";
+import AccessDenied from "@/src/components/ui/access-denied";
 
 export default function ReservationsPage() {
   const { user } = useAuth();
@@ -251,7 +252,12 @@ export default function ReservationsPage() {
   };
 
   const { hasPermission } = usePermissions(user);
-  const canCancelOrder: boolean = hasPermission("Event Management", "delete");
+  const canViewReservations: boolean = hasPermission("Reservations", "view");
+  const canCancelOrder: boolean = hasPermission("Reservations", "delete");
+
+  if (!canViewReservations) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="p-4 md:p-6">

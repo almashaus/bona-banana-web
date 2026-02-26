@@ -66,6 +66,7 @@ import {
 import { getAuth } from "firebase/auth";
 import { MemberRole, MemberStatus } from "@/src/types/permissions";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import AccessDenied from "@/src/components/ui/access-denied";
 
 export default function membersPage() {
   const { user } = useAuth();
@@ -255,8 +256,13 @@ export default function membersPage() {
   };
 
   const { hasPermission } = usePermissions(user);
+  const canViewMembers: boolean = hasPermission("User Management", "view");
   const canCreateMember: boolean = hasPermission("User Management", "create");
   const canDeleteMember: boolean = hasPermission("User Management", "delete");
+
+  if (!canViewMembers) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="p-4 md:p-6">

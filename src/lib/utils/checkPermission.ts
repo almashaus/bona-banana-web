@@ -2,14 +2,13 @@ import {
   MemberRole,
   PermissionAction,
   RolePermissions,
-  Feature,
 } from "@/src/types/permissions";
 
 export function canAccessFromPermissions(
   rolePermissions: RolePermissions | null,
   role: MemberRole | undefined,
-  feature: Feature,
-  action: PermissionAction
+  feature: string,
+  action: PermissionAction,
 ): boolean {
   if (!rolePermissions || !role) return false;
 

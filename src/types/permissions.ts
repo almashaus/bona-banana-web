@@ -14,17 +14,8 @@ export enum MemberStatus {
 
 export type PermissionAction = "view" | "create" | "edit" | "delete";
 
-export type Feature =
-  | "Dashboard"
-  | "Event Management"
-  | "Reports"
-  | "Reservations"
-  | "User Management"
-  | "Settings"
-  | "Profile";
-
 export type FeaturePermission = {
-  feature: Feature;
+  feature: string;
   view: boolean;
   create: boolean;
   edit: boolean;

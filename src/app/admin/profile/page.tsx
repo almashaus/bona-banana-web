@@ -47,6 +47,8 @@ import { getRoleBadgeColor, getStatusBadgeColor } from "@/src/lib/utils/styles";
 import { formatDate, formatDateTime } from "@/src/lib/utils/formatDate";
 import Loading from "@/src/components/ui/loading";
 import { GrayX, GreenCheck } from "@/src/lib/utils/statusIcons";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import AccessDenied from "@/src/components/ui/access-denied";
 
 export default function UserProfilePage() {
   const { user, resetPassword } = useAuth();
@@ -102,6 +104,13 @@ export default function UserProfilePage() {
     }
   };
 
+  const { hasPermission } = usePermissions(user);
+  const canViewProfile: boolean = hasPermission("Profile", "view");
+
+  if (!canViewProfile) {
+    return <AccessDenied />;
+  }
+
   return (
     <div className="p-4 md:p-6">
       {/* Header */}
@@ -131,14 +140,14 @@ export default function UserProfilePage() {
               <div className="flex items-center gap-4 mt-2">
                 <Badge
                   className={getRoleBadgeColor(
-                    member?.dashboard?.role as MemberRole
+                    member?.dashboard?.role as MemberRole,
                   )}
                 >
                   {member?.dashboard?.role}
                 </Badge>
                 <Badge
                   className={getStatusBadgeColor(
-                    member?.dashboard?.status as MemberStatus
+                    member?.dashboard?.status as MemberStatus,
                   )}
                 >
                   {member?.dashboard?.status}

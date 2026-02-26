@@ -4,7 +4,6 @@ import { AppUser } from "@/src/models/user";
 import {
   RolePermissions,
   MemberRole,
-  Feature,
   PermissionAction,
 } from "@/src/types/permissions";
 import { usePermissionStore } from "@/src/lib/stores/usePermissionStore";
@@ -28,7 +27,7 @@ export function usePermissions(user: AppUser | null | undefined) {
     {
       revalidateOnFocus: false,
       dedupingInterval: 60_000, // optional
-    }
+    },
   );
 
   useEffect(() => {
@@ -38,7 +37,7 @@ export function usePermissions(user: AppUser | null | undefined) {
   const effectivePermissions = rolePermissions ?? data ?? null;
 
   const hasPermission = useMemo(() => {
-    return (feature: Feature, action: PermissionAction) =>
+    return (feature: string, action: PermissionAction) =>
       canAccessFromPermissions(effectivePermissions, role, feature, action);
   }, [effectivePermissions, role]);
 

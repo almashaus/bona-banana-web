@@ -48,7 +48,7 @@ export const sidebarData: SidebarItem[] = [
     title: "Coupons",
     url: "/admin/coupons",
     icon: Percent,
-    requires: { feature: "Event Management", action: "view" },
+    requires: { feature: "Coupons", action: "view" },
   },
   {
     title: "Reports",

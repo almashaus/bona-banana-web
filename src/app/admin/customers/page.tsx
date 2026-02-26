@@ -30,8 +30,12 @@ import {
   DialogDescription,
 } from "@/src/components/ui/dialog";
 import { formatDate } from "@/src/lib/utils/formatDate";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import AccessDenied from "@/src/components/ui/access-denied";
+import { useAuth } from "@/src/features/auth/auth-provider";
 
 export default function customersPage() {
+  const { user } = useAuth();
   const [customers, setCustomers] = useState<CustomerResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -52,7 +56,7 @@ export default function customersPage() {
       revalidateOnFocus: true,
       revalidateIfStale: true,
       refreshInterval: 30000,
-    }
+    },
   );
 
   useEffect(() => {
@@ -72,6 +76,13 @@ export default function customersPage() {
     setSelectedCustomer(customer);
     setIsDialogOpen(true);
   };
+
+  const { hasPermission } = usePermissions(user);
+  const canViewCustomers: boolean = hasPermission("User Management", "view");
+
+  if (!canViewCustomers) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="p-4 md:p-6">

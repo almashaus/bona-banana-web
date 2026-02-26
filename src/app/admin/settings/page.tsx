@@ -17,6 +17,8 @@ import { Image, MapPin, MonitorCog, UploadIcon } from "lucide-react";
 import React, { useState } from "react";
 import useSWR, { mutate } from "swr";
 import ImagesGallery from "./imagesGallery";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import AccessDenied from "@/src/components/ui/access-denied";
 
 const SettingsPage = () => {
   const { user } = useAuth();
@@ -86,6 +88,13 @@ const SettingsPage = () => {
 
     setImagesAreSaving(false);
   };
+
+  const { hasPermission } = usePermissions(user);
+  const canViewSettings: boolean = hasPermission("Settings", "view");
+
+  if (!canViewSettings) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="p-4 md:p-6 flex flex-col gap-6">

@@ -73,6 +73,7 @@ import {
   isBeforeDate,
   isBeforeToday,
 } from "@/src/lib/utils/utils";
+import AccessDenied from "@/src/components/ui/access-denied";
 
 export default function EventsPage() {
   const { toast } = useToast();
@@ -156,11 +157,6 @@ export default function EventsPage() {
     setIsDialogOpen(true);
   };
 
-  const { hasPermission } = usePermissions(user);
-  const canCreateEvent: boolean = hasPermission("Event Management", "create");
-  const canEditEvent: boolean = hasPermission("Event Management", "edit");
-  const canDeleteEvent: boolean = hasPermission("Event Management", "delete");
-
   const handleCopy = async (text: string) => {
     const success = await copyToClipboard(text);
     if (success) {
@@ -177,6 +173,16 @@ export default function EventsPage() {
       });
     }
   };
+
+  const { hasPermission } = usePermissions(user);
+  const canViewEvents: boolean = hasPermission("Event Management", "view");
+  const canCreateEvent: boolean = hasPermission("Event Management", "create");
+  const canEditEvent: boolean = hasPermission("Event Management", "edit");
+  const canDeleteEvent: boolean = hasPermission("Event Management", "delete");
+
+  if (!canViewEvents) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="p-4 md:p-6">

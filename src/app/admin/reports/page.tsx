@@ -38,14 +38,25 @@ import useSWR from "swr";
 import { ReportsData } from "../../api/admin/reports/route";
 import RevenueTable from "./components/revenueTable";
 import AttendanceTable from "./components/attendanceTable";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import { useAuth } from "@/src/features/auth/auth-provider";
+import AccessDenied from "@/src/components/ui/access-denied";
 
 export default function ReportsPage() {
+  const { user } = useAuth();
   const { data, error, isLoading } = useSWR<ReportsData>("/api/admin/reports");
 
   const handleExport = (format: "excel" | "pdf") => {
     // In a real app, this would trigger an export
     alert(`Exporting report as ${format.toUpperCase()}...`);
   };
+
+  const { hasPermission } = usePermissions(user);
+  const canViewReports: boolean = hasPermission("Reports", "view");
+
+  if (!canViewReports) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -230,7 +241,7 @@ export default function ReportsPage() {
                   Tickets sold number:{" "}
                   {
                     data?.charts.attendanceRatio.find(
-                      (item) => item.name === "ticketsSold"
+                      (item) => item.name === "ticketsSold",
                     )?.value
                   }
                 </CardDescription>

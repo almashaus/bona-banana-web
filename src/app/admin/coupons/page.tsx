@@ -19,6 +19,7 @@ import {
   Megaphone,
   MoreHorizontal,
   ArrowUpDown,
+  LockIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -72,6 +73,9 @@ import {
   type CouponFormState,
 } from "./(components)/CreateEditDialog";
 import { DeleteConfirmationDialog } from "./(components)/DeleteConfirmationDialog";
+import { usePermissions } from "@/src/hooks/useMemberPermissions";
+import { useAuth } from "@/src/features/auth/auth-provider";
+import AccessDenied from "@/src/components/ui/access-denied";
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -116,6 +120,7 @@ const blankForm: CouponFormState = {
 // ── Page ───────────────────────────────────────────────────────────────
 
 export default function CouponsPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -419,9 +424,7 @@ export default function CouponsPage() {
         const updatedCoupon = result.coupon as Coupon;
 
         setCoupons((prev) =>
-          prev.map((c) =>
-            c.id === editingCoupon.id ? updatedCoupon : c,
-          ),
+          prev.map((c) => (c.id === editingCoupon.id ? updatedCoupon : c)),
         );
         await mutate("/api/admin/coupons");
         toast({
@@ -596,6 +599,15 @@ export default function CouponsPage() {
     }));
   };
 
+  const { hasPermission } = usePermissions(user);
+  const canViewCoupons: boolean = hasPermission("Coupons", "view");
+  const canCreateCoupon: boolean = hasPermission("Coupons", "create");
+  const canEditCoupon: boolean = hasPermission("Coupons", "edit");
+  const canDeleteCoupon: boolean = hasPermission("Coupons", "delete");
+
+  if (!canViewCoupons) {
+    return <AccessDenied />;
+  }
   return (
     <div className="p-4 md:p-6">
       {/* ── Header ──────────────────────────────────────────────────── */}
@@ -608,12 +620,14 @@ export default function CouponsPage() {
             Create, configure, monitor and control Offer incentives.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button className="gap-2" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Create New Coupon
-          </Button>
-        </div>
+        {canCreateCoupon && (
+          <div className="flex items-center gap-2">
+            <Button className="gap-2" onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Create New Coupon
+            </Button>
+          </div>
+        )}
       </div>
 
       {isLoading && (
@@ -993,36 +1007,44 @@ export default function CouponsPage() {
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openEdit(c)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Coupon
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => toggleEnabled(c)}
-                              >
-                                {c.status === "Disabled" ? (
-                                  <>
-                                    <ToggleRight className="mr-2 h-4 w-4" />
-                                    Enable Coupon
-                                  </>
-                                ) : (
-                                  <>
-                                    <ToggleLeft className="mr-2 h-4 w-4" />
-                                    Disable Coupon
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-600"
-                                onClick={() => {
-                                  setDeletingCoupon(c);
-                                  setIsDeleteOpen(true);
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Coupon
-                              </DropdownMenuItem>
+                              {canEditCoupon && (
+                                <>
+                                  <DropdownMenuItem onClick={() => openEdit(c)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Coupon
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => toggleEnabled(c)}
+                                  >
+                                    {c.status === "Disabled" ? (
+                                      <>
+                                        <ToggleRight className="mr-2 h-4 w-4" />
+                                        Enable Coupon
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ToggleLeft className="mr-2 h-4 w-4" />
+                                        Disable Coupon
+                                      </>
+                                    )}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {canDeleteCoupon && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-red-600 focus:text-red-600"
+                                    onClick={() => {
+                                      setDeletingCoupon(c);
+                                      setIsDeleteOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete Coupon
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

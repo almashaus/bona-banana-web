@@ -12,7 +12,6 @@ import { useAuth } from "@/src/features/auth/auth-provider";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
 import {
   RolePermissions,
-  Feature,
   PermissionAction,
   MemberRole,
   MemberStatus,
@@ -21,7 +20,7 @@ import type { SidebarItem } from "@/src/types/sidebarItem";
 import { usePermissionStore } from "@/src/lib/stores/usePermissionStore";
 
 function makeCan(rolePermissions: RolePermissions | null, role?: MemberRole) {
-  return (feature: Feature, action: PermissionAction) => {
+  return (feature: string, action: PermissionAction) => {
     if (!rolePermissions || !role) return false;
     const perms = rolePermissions[role];
     const featurePerm = perms?.find((p) => p.feature === feature);
@@ -35,7 +34,7 @@ export function filterSidebarItems(
     role?: MemberRole;
     status?: MemberStatus;
     rolePermissions: RolePermissions | null;
-  }
+  },
 ) {
   const can = makeCan(ctx.rolePermissions, ctx.role);
 

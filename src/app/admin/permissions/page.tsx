@@ -34,6 +34,18 @@ import isEqual from "lodash/isEqual";
 import { useToast } from "@/src/components/ui/use-toast";
 import { usePermissionStore } from "@/src/lib/stores/usePermissionStore";
 import { mutate } from "swr";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/src/components/ui/dialog";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Plus } from "lucide-react";
 
 const PermissionsPage = () => {
   const { user } = useAuth();
@@ -46,9 +58,19 @@ const PermissionsPage = () => {
   const [editedPermissions, setEditedPermissions] =
     useState<RolePermissions | null>(null);
   const [saving, setSaving] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newFeatureName, setNewFeatureName] = useState("");
+  const [newFeatureRoles, setNewFeatureRoles] = useState<
+    Record<MemberRole, boolean>
+  >(
+    Object.fromEntries(
+      Object.values(MemberRole).map((role) => [role, false]),
+    ) as Record<MemberRole, boolean>,
+  );
+  const [creating, setCreating] = useState(false);
 
   const { data, isLoading, error } = useSWR<RolePermissions>(
-    "/api/admin/permissions"
+    "/api/admin/permissions",
   );
 
   useEffect(() => {
@@ -71,14 +93,14 @@ const PermissionsPage = () => {
   const handlePermissionChange = (
     featureIdx: number,
     action: "view" | "create" | "edit" | "delete",
-    value: boolean
+    value: boolean,
   ) => {
     if (!editedPermissions || !selectedRole) return;
     setEditedPermissions((prev) => {
       if (!prev) return prev;
       const updated = { ...prev };
       updated[selectedRole] = updated[selectedRole].map((perm, idx) =>
-        idx === featureIdx ? { ...perm, [action]: value } : perm
+        idx === featureIdx ? { ...perm, [action]: value } : perm,
       );
       return updated;
     });
@@ -92,7 +114,7 @@ const PermissionsPage = () => {
     try {
       const idToken = await authUser.getIdToken();
       const res = await fetch("/api/admin/permissions", {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
@@ -128,6 +150,54 @@ const PermissionsPage = () => {
     }
   };
 
+  const handleCreatePermission = async () => {
+    if (!newFeatureName.trim()) return;
+    setCreating(true);
+    try {
+      const idToken = await authUser.getIdToken();
+      const res = await fetch("/api/admin/permissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          featureName: newFeatureName.trim(),
+          roles: Object.entries(newFeatureRoles).map(([role, enabled]) => ({
+            role,
+            enabled,
+          })),
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to create permission");
+      toast({
+        title: "Permission Created",
+        description: `"${newFeatureName}" has been added successfully`,
+        variant: "success",
+      });
+
+      setCreateDialogOpen(false);
+      setNewFeatureName("");
+      setNewFeatureRoles(
+        Object.fromEntries(
+          Object.values(MemberRole).map((role) => [role, false]),
+        ) as Record<MemberRole, boolean>,
+      );
+      mutate("/api/admin/permissions");
+    } catch (err) {
+      toast({
+        title: "Error creating permission",
+        description: "Failed to create permission. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const hasSelectedRole = Object.values(newFeatureRoles).some(Boolean);
+
   if (user?.dashboard?.role !== MemberRole.ADMIN) {
     return (
       <div className="flex justify-center items-center h-2/3">
@@ -138,11 +208,74 @@ const PermissionsPage = () => {
 
   return (
     <div className="p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Members Permissions</h1>
-        <p className="text-muted-foreground">
-          Manage user permissions for different features
-        </p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Members Permissions</h1>
+          <p className="text-muted-foreground">
+            Manage user permissions for different features
+          </p>
+        </div>
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Permission
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Permission</DialogTitle>
+              <DialogDescription>
+                Add a new feature permission and assign it to roles.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="featureName">Feature Name</Label>
+                <Input
+                  id="featureName"
+                  placeholder="e.g. Reports, Analytics, Settings..."
+                  value={newFeatureName}
+                  onChange={(e) => setNewFeatureName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-3">
+                <Label>Assign to Roles</Label>
+                <div className="space-y-3">
+                  {Object.values(MemberRole).map((role) => (
+                    <div
+                      key={role}
+                      className="flex items-center justify-between rounded-md border px-4 py-3"
+                    >
+                      <span className={`font-medium ${getRoleColor(role)}`}>
+                        {role}
+                      </span>
+                      <Switch
+                        checked={newFeatureRoles[role]}
+                        onCheckedChange={(checked) =>
+                          setNewFeatureRoles((prev) => ({
+                            ...prev,
+                            [role]: checked,
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={handleCreatePermission}
+                disabled={
+                  creating || !newFeatureName.trim() || !hasSelectedRole
+                }
+              >
+                {creating ? "Creating..." : "Save Permission"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
       <Card>
         <CardHeader>
@@ -234,7 +367,7 @@ const PermissionsPage = () => {
                               />
                             </TableCell>
                           </TableRow>
-                        )
+                        ),
                       )}
                   </TableBody>
                 </Table>

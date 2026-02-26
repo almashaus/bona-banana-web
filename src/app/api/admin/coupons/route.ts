@@ -27,7 +27,7 @@ export async function GET() {
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
         },
-      }
+      },
     );
   } catch (error) {
     return NextResponse.json({ data: "Error" }, { status: 500 });
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!coupon) {
       return NextResponse.json(
         { data: "Missing coupon in request body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -89,10 +89,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { data: "Success", id: docRef.id, coupon: couponData },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    console.error("POST /api/admin/coupons:", error);
     return NextResponse.json({ data: "Error" }, { status: 500 });
   }
 }
@@ -112,7 +111,7 @@ export async function PUT(req: NextRequest) {
     if (!coupon || !coupon.id) {
       return NextResponse.json(
         { data: "Missing coupon or coupon id in request body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -120,10 +119,7 @@ export async function PUT(req: NextRequest) {
     const existingDoc = await docRef.get();
 
     if (!existingDoc.exists) {
-      return NextResponse.json(
-        { data: "Coupon not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ data: "Coupon not found" }, { status: 404 });
     }
 
     const existing = existingDoc.data() as Coupon;
@@ -162,10 +158,9 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(
       { data: "Success", coupon: couponData },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
-    console.error("PUT /api/admin/coupons:", error);
     return NextResponse.json({ data: "Error" }, { status: 500 });
   }
 }
@@ -185,7 +180,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { data: "Missing coupon id in request body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -193,10 +188,7 @@ export async function DELETE(req: NextRequest) {
     const existingDoc = await docRef.get();
 
     if (!existingDoc.exists) {
-      return NextResponse.json(
-        { data: "Coupon not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ data: "Coupon not found" }, { status: 404 });
     }
 
     const existing = existingDoc.data() as Coupon;
@@ -205,18 +197,14 @@ export async function DELETE(req: NextRequest) {
         {
           data: "Coupon cannot be deleted after use. You may disable it instead.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     await docRef.delete();
 
-    return NextResponse.json(
-      { data: "Success" },
-      { status: 200 }
-    );
+    return NextResponse.json({ data: "Success" }, { status: 200 });
   } catch (error) {
-    console.error("DELETE /api/admin/coupons:", error);
     return NextResponse.json({ data: "Error" }, { status: 500 });
   }
 }
