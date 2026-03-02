@@ -94,24 +94,24 @@ async function EventsList({ locale }: { locale: string }) {
               }`}
             >
               <div className="flex justify-center items-center m-3">
-                <Image
-                  src={
-                    event.eventLogo?.trim()
-                      ? event.eventLogo
-                      : event.eventImage?.trim()
-                        ? event.eventImage
-                        : "/no-image.svg"
-                  }
-                  alt={event.title}
-                  width={300}
-                  height={260}
-                  priority
-                  className="w-auto h-auto max-w-[300px] max-h-[260px]"
-                  style={{
-                    objectFit: "cover",
-                    borderRadius: "0.5rem",
-                  }}
-                />
+                <div className="relative inline-block">
+                  <div className="w-[300px] h-[260px] rounded-lg bg-muted-foreground animate-pulse" />
+                  <Image
+                    src={
+                      event.eventLogo?.trim()
+                        ? event.eventLogo
+                        : event.eventImage?.trim()
+                          ? event.eventImage
+                          : "/no-image.svg"
+                    }
+                    alt={event.title}
+                    width={300}
+                    height={260}
+                    priority
+                    className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                    unoptimized={event.eventLogo?.includes("firebasestorage")}
+                  />
+                </div>
               </div>
               <CardContent
                 className={`p-4 mx-3 rounded-md ${

@@ -42,9 +42,15 @@
     "noTicketsAvailable": "No tickets available for this date",
     "PricePerTicket:": "Price per ticket:",
     "total": "Total Price",
+    "subtotal": "Subtotal",
     "buyTicket": "Continue To Checkout",
     "completed": "Event Completed",
     "price": "Price"
+  },
+  "PDF": {
+    "jacaroRules": "Jacaro Rules",
+    "balootRules": "Baloot Rules",
+    "loadingPDF": "Loading PDF..."
   },
   "Checkout": {
     "checkout": "Checkout",
@@ -76,7 +82,22 @@
     "pleaseCheckPaymentAndTryAgain": "Please check your payment details and try again, or use a different payment method.",
     "warning": "Warning",
     "somethingWentWrong": "Something went wrong!, please try again later.",
-    "allEvents": "View All Events"
+    "allEvents": "View All Events",
+    "orderFailed": "Order Failed",
+    "orderFailedDescription": "Failed to create order. Please try again."
+  },
+  "Coupon": {
+    "couponCode": "Coupon Code",
+    "enterCouponCode": "Enter coupon code",
+    "apply": "Apply",
+    "applied": "Applied",
+    "couponRemoved": "Coupon Removed",
+    "couponMinNotMet": "Tickets subtotal is below the minimum amount ",
+    "couponValidationError": "Failed to validate coupon. Please try again.",
+    "couponInvalid": "Coupon Invalid",
+    "couponDiscount": "Coupon Discount",
+    "missingRequiredFields": "Please fill in all required fields.",
+    "serverErrorDuringValidation": "Something went wrong!, please try again later."
   },
   "Confirm": {
     "confirm": "Order Confirmed!",

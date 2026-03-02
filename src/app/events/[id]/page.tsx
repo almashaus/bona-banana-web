@@ -54,6 +54,7 @@ export default function EventPage() {
   const tEvent = useTranslations("Event");
   const tPage = useTranslations("Page");
   const tHome = useTranslations("Home");
+  const tPDF = useTranslations("PDF");
   const locale = useLocale();
   const [selectedDate, setSelectedDate] = useState<EventDate>();
   const [quantity, setQuantity] = useState<number>(1);
@@ -282,6 +283,45 @@ export default function EventPage() {
                 </div>
               )}
             </div>
+            {event.id === "8reN7zxtwEHj0zj7c24p" && (
+              <div className="flex flex-row justify-center align-bottom items-end gap-2 mt-6">
+                <Button
+                  className="w-full p-6 lg:text-lg gap-2 bg-redColor text-white hover:bg-redColor/80"
+                  onClick={() => router.push("/pdf?file=jacaro-rules.pdf")}
+                >
+                  {tPDF("jacaroRules")}
+                  {locale === "en" ? (
+                    <ArrowRight
+                      className="w-4 h-4 ms-1 mt-1"
+                      strokeWidth={2.5}
+                    />
+                  ) : (
+                    <ArrowLeft
+                      className="w-4 h-4 ms-1 mt-1"
+                      strokeWidth={2.5}
+                    />
+                  )}
+                </Button>
+
+                <Button
+                  className="w-full p-6 lg:text-lg gap-2 bg-redColor text-white hover:bg-redColor/80"
+                  onClick={() => router.push("/pdf?file=baloot-rules.pdf")}
+                >
+                  {tPDF("balootRules")}
+                  {locale === "en" ? (
+                    <ArrowRight
+                      className="w-4 h-4 ms-1 mt-1"
+                      strokeWidth={2.5}
+                    />
+                  ) : (
+                    <ArrowLeft
+                      className="w-4 h-4 ms-1 mt-1"
+                      strokeWidth={2.5}
+                    />
+                  )}
+                </Button>
+              </div>
+            )}
             {event.adImage && (
               <div className="pt-4">
                 <img

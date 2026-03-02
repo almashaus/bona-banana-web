@@ -42,9 +42,15 @@
     "noTicketsAvailable": "لا توجد تذاكر متاحة لهذا التاريخ",
     "PricePerTicket:": "سعر التذكرة:",
     "total": "المبلغ الإجمالي",
+    "subtotal": "المجموع الفرعي",
     "buyTicket": "تابع للدفع",
     "completed": "انتهت الفعالية",
     "price": "السعر"
+  },
+  "PDF": {
+    "jacaroRules": "قوانين جاكارو",
+    "balootRules": "قوانين بلوت",
+    "loadingPDF": "جاري تحميل الملف..."
   },
   "Checkout": {
     "checkout": "الدفع",
@@ -76,7 +82,22 @@
     "pleaseCheckPaymentAndTryAgain": "يرجى التحقق من بيانات الدفع والمحاولة مرة أخرى أو استخدام طريقة دفع أخرى.",
     "warning": "تحذير",
     "somethingWentWrong": "حدث خطأ ما! يرجى المحاولة لاحقًا.",
-    "allEvents": "عرض جميع الفعاليات"
+    "allEvents": "عرض جميع الفعاليات",
+    "orderFailed": "فشل إنشاء الطلب",
+    "orderFailedDescription": "فشل إنشاء الطلب. يرجى المحاولة مرة أخرى."
+  },
+  "Coupon": {
+    "couponCode": "كود الخصم",
+    "enterCouponCode": "أدخل كود الخصم",
+    "apply": "تطبيق",
+    "applied": "مُطبَّق",
+    "couponRemoved": "تمت إزالة الكوبون",
+    "couponMinNotMet": "مجموع تذاكرك أقل من الحد الأدنى ",
+    "couponValidationError": "فشل التحقق من الكوبون. يرجى المحاولة مرة أخرى.",
+    "couponInvalid": "الكوبون غير صالح",
+    "couponDiscount": "خصم الكوبون",
+    "missingRequiredFields": "يرجى إدخال جميع الحقول المطلوبة.",
+    "serverErrorDuringValidation": "حدث خطأ ما أثناء التحقق من الكوبون. يرجى المحاولة مرة أخرى."
   },
   "Confirm": {
     "confirm": "تم تأكيد الطلب!",
