@@ -91,13 +91,15 @@
     "enterCouponCode": "أدخل كود الخصم",
     "apply": "تطبيق",
     "applied": "مُطبَّق",
-    "couponRemoved": "تمت إزالة الكوبون",
+    "couponRemoved": "تمت إزالة كود الخصم",
     "couponMinNotMet": "مجموع تذاكرك أقل من الحد الأدنى ",
-    "couponValidationError": "فشل التحقق من الكوبون. يرجى المحاولة مرة أخرى.",
-    "couponInvalid": "الكوبون غير صالح",
-    "couponDiscount": "خصم الكوبون",
+    "couponValidationError": "فشل التحقق من كود الخصم. يرجى المحاولة مرة أخرى.",
+    "couponInvalid": "كود الخصم غير صالح",
+    "couponInvalidOrExpired": "كود الخصم غير صالح أو منتهي الصلاحية",
+    "couponPerUserLimitReached": "تم الوصول إلى الحد المسموح به للاستخدام لكل مستخدم.",
+    "couponDiscount": "خصم الكود ",
     "missingRequiredFields": "يرجى إدخال جميع الحقول المطلوبة.",
-    "serverErrorDuringValidation": "حدث خطأ ما أثناء التحقق من الكوبون. يرجى المحاولة مرة أخرى."
+    "serverErrorDuringValidation": "حدث خطأ ما أثناء التحقق من كود الخصم. يرجى المحاولة مرة أخرى."
   },
   "Confirm": {
     "confirm": "تم تأكيد الطلب!",

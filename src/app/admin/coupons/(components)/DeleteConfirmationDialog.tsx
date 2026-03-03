@@ -30,7 +30,7 @@ export function DeleteConfirmationDialog({
 }: DeleteConfirmationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent dir="ltr" className="max-w-md">
         <DialogHeader>
           <DialogTitle>Delete Coupon</DialogTitle>
           <DialogDescription>

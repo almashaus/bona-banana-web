@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, CalendarIcon } from "lucide-react";
+import { Info, CalendarIcon, Tag, Gift, Megaphone } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -37,6 +37,8 @@ import {
 import { Event } from "@/src/models/event";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { Separator } from "@/src/components/ui/separator";
+import { price } from "@/src/lib/utils/locales";
+import { typeBadgeColor } from "@/src/lib/utils/styles";
 
 export interface CouponFormState {
   code: string;
@@ -86,7 +88,10 @@ export function CreateEditDialog({
 }: CreateEditDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-stone-50">
+      <DialogContent
+        dir="ltr"
+        className="max-w-2xl max-h-[90vh] overflow-y-auto bg-stone-50"
+      >
         <DialogHeader>
           <DialogTitle>
             {editingCoupon ? "Edit Coupon" : "Create New Coupon"}
@@ -149,9 +154,24 @@ export function CreateEditDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Discount">Discount</SelectItem>
-                  <SelectItem value="Voucher">Voucher</SelectItem>
-                  <SelectItem value="Offer">Offer</SelectItem>
+                  <SelectItem value="Discount">
+                    <div className="flex flex-row items-center gap-2 text-sky-700">
+                      <Tag className="h-4 w-4 text-sky-700" />
+                      Discount
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="Voucher">
+                    <div className="flex flex-row items-center gap-2 text-violet-700">
+                      <Gift className="h-4 w-4 text-violet-700" />
+                      Voucher
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="Offer">
+                    <div className="flex flex-row items-center gap-2 text-orange-700">
+                      <Megaphone className="h-4 w-4 text-orange-700" />
+                      Offer
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -354,13 +374,18 @@ export function CreateEditDialog({
           <Separator />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="min-ticket">Min. Ticket Value</Label>
+              <Label htmlFor="min-ticket">
+                Minimum Ticket Amount
+                <span className="text-xs text-muted-foreground font-normal ms-2">
+                  (Optional)
+                </span>
+              </Label>
               <Input
                 id="min-ticket"
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="Optional"
+                placeholder="0.00 SR"
                 value={form.minTicketValue}
                 onChange={(e) =>
                   setForm({ ...form, minTicketValue: e.target.value })
@@ -458,7 +483,12 @@ export function CreateEditDialog({
           {/* Row 5: Usage limits */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="usage-limit">Usage Limit</Label>
+              <Label htmlFor="usage-limit">
+                Usage Limit
+                <span className="text-xs text-muted-foreground font-normal ms-2">
+                  (Optional)
+                </span>
+              </Label>
               <Input
                 id="usage-limit"
                 type="number"
@@ -474,7 +504,12 @@ export function CreateEditDialog({
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="per-user-limit">Per-User Limit</Label>
+              <Label htmlFor="per-user-limit">
+                Per-User Limit
+                <span className="text-xs text-muted-foreground font-normal ms-2">
+                  (Optional)
+                </span>
+              </Label>
               <Input
                 id="per-user-limit"
                 type="number"

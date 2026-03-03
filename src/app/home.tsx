@@ -84,14 +84,10 @@ async function EventsList({ locale }: { locale: string }) {
   return (
     <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 md:grid-cols-2 lg:grid-cols-3">
       {allEvents.map((event) => {
-        const isDisabled = event.status !== EventStatus.PUBLISHED;
-
         return (
           <Link href={`/events/${event.slug}`} key={event.id}>
             <Card
-              className={`overflow-hidden transition-all shadow-none hover:scale-105 hover:rotate-3 bg-darkColor border-0 ${
-                isDisabled ? "grayscale opacity-80" : ""
-              }`}
+              className={`overflow-hidden transition-all shadow-none hover:scale-105 hover:rotate-3 bg-darkColor border-0 ${""}`}
             >
               <div className="flex justify-center items-center m-3">
                 <div className="relative inline-block">
@@ -113,13 +109,7 @@ async function EventsList({ locale }: { locale: string }) {
                   />
                 </div>
               </div>
-              <CardContent
-                className={`p-4 mx-3 rounded-md ${
-                  isDisabled
-                    ? "bg-gray-200 text-muted-foreground"
-                    : "bg-beigeColor"
-                }`}
-              >
+              <CardContent className={`p-4 mx-3 rounded-md ${"bg-beigeColor"}`}>
                 <h3 className="line-clamp-1 text-lg font-bold">
                   {locale === "en" ? event.title : event.titleAr}
                 </h3>

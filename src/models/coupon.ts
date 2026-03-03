@@ -47,3 +47,12 @@ export interface Coupon {
   /** For Buy X Get Y: number of items free (e.g. 1) */
   getQuantity?: number | null;
 }
+
+export interface CouponUsage {
+  id?: string;
+  couponId: string;
+  orderId: string;
+  userId: string;
+  discountAmount: number;
+  timestamp: string;
+}

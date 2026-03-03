@@ -95,6 +95,8 @@
     "couponMinNotMet": "Tickets subtotal is below the minimum amount ",
     "couponValidationError": "Failed to validate coupon. Please try again.",
     "couponInvalid": "Coupon Invalid",
+    "couponInvalidOrExpired": "Coupon Invalid or Expired",
+    "couponPerUserLimitReached": "Per-user usage limit reached.",
     "couponDiscount": "Coupon Discount",
     "missingRequiredFields": "Please fill in all required fields.",
     "serverErrorDuringValidation": "Something went wrong!, please try again later."

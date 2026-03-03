@@ -12,10 +12,10 @@ import {
   LockIcon,
   MapPin,
   FileText,
+  Tag,
   TicketIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Separator } from "@/src/components/ui/separator";
 import { useToast } from "@/src/components/ui/use-toast";
@@ -46,11 +46,16 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const t = useTranslations("Checkout");
   const tEvent = useTranslations("Event");
+  const tCoupon = useTranslations("Coupon");
   const locale = useLocale();
 
   const storedEvent = useCheckoutStore((state) => state.event);
   const dateId = useCheckoutStore((state) => state.eventDateId);
   const quantity = useCheckoutStore((state) => state.quantity);
+  const couponId = useCheckoutStore((state) => state.couponId);
+  const couponCode = useCheckoutStore((state) => state.couponCode);
+  const storedDiscount = useCheckoutStore((state) => state.discountAmount);
+  const discountType = useCheckoutStore((state) => state.discountType);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -69,13 +74,16 @@ export default function CheckoutPage() {
     }
   }, [storedEvent]);
 
-  // Calculate totals
+  const rawSubtotal = event?.price! * quantity;
+  const hasCoupon = couponId !== null && storedDiscount > 0;
+  const discountAmount = hasCoupon ? storedDiscount : 0;
 
-  const total =
-    event?.price! *
-    (quantity === 3 && event?.id === "nsF44tZPR5lr3jRCMRJF" ? 2 : quantity);
-  const subtotal = total - total * 0.15;
-  const fees = (total - subtotal).toFixed(2);
+  const legacyTotal =
+    quantity === 3 && event?.id === "nsF44tZPR5lr3jRCMRJF"
+      ? event?.price! * 2
+      : rawSubtotal;
+
+  const total = hasCoupon ? rawSubtotal - discountAmount : legacyTotal;
 
   useEffect(() => {
     if (total && total > 0) {
@@ -101,7 +109,6 @@ export default function CheckoutPage() {
     }
   }, [total]);
 
-  // handle payment
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
@@ -109,11 +116,9 @@ export default function CheckoutPage() {
     if (!user) {
       setIsProcessing(false);
       router.replace("/login");
-
       return;
     }
 
-    // -------------- Insert order and tickets to database ------------
     const orderId = generateIDNumber("ORDER");
 
     const ticketsIds: string[] = [];
@@ -144,15 +149,15 @@ export default function CheckoutPage() {
       orderDate: new Date(),
       status: OrderStatus.PENDING,
       totalAmount: total,
-      promoCodeId: null, // V-2.0
-      discountAmount: 0, // V-2.0
+      couponId: couponId ?? null,
+      discountAmount: discountAmount,
+      discountType: discountType ?? null,
       paymentMethod:
         paymentMethods.find((m) => m.PaymentMethodId === selectedMethod)
           ?.PaymentMethodEn || "MADA",
       tickets: ticketsIds,
     };
 
-    // ------ Insert order & tickets
     const response = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -162,47 +167,56 @@ export default function CheckoutPage() {
       }),
     });
 
-    if (response.ok) {
-      await mutate("/api/admin/events");
-      await mutate("/api/admin/orders");
-      await mutate("/api/admin/customers", undefined, { revalidate: true });
-      await mutate("/api/published-events");
+    if (!response.ok) {
+      toast({
+        title: t("orderFailed") || "Order Failed",
+        description:
+          t("orderFailedDescription") ||
+          "Failed to create order. Please try again.",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+      return;
+    }
 
-      try {
-        const payload = {
-          paymentMethodId: selectedMethod,
-          invoiceValue: total,
-          customerName: user.name,
-          customerEmail: user.email,
-          customerReference: event?.id,
-          orderId,
-        };
+    await mutate("/api/admin/events");
+    await mutate("/api/admin/orders");
+    await mutate("/api/admin/customers", undefined, { revalidate: true });
+    await mutate("/api/published-events");
 
-        // ------ execute payment
-        const res = await fetch("/api/payment/execute", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+    try {
+      const payload = {
+        paymentMethodId: selectedMethod,
+        invoiceValue: total,
+        customerName: user.name,
+        customerEmail: user.email,
+        customerReference: event?.id,
+        orderId,
+      };
 
-        const json = await res.json();
-        if (!res.ok) throw new Error("Execute error");
+      const res = await fetch("/api/payment/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-        const redirectUrl = json?.data?.Data?.PaymentURL;
+      const json = await res.json();
+      if (!res.ok) throw new Error("Execute error");
 
-        if (!redirectUrl) throw new Error("Missing redirect url from gateway");
+      const redirectUrl = json?.data?.Data?.PaymentURL;
 
-        window.location.href = redirectUrl;
-      } catch (err: any) {
-        toast({
-          title: "Payment Failed",
-          description:
-            "Something went wrong on the payment. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsProcessing(false);
-      }
+      if (!redirectUrl) throw new Error("Missing redirect url from gateway");
+
+      window.location.href = redirectUrl;
+    } catch (err: any) {
+      toast({
+        title: "Payment Failed",
+        description:
+          "Something went wrong on the payment. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -290,33 +304,31 @@ export default function CheckoutPage() {
             <Separator className="my-4" />
 
             <div className="space-y-2">
-              {/* TODO: VAT*/}
-              {/* <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {t("subtotal")}
-                </span>
-                <span>
-                  <span className="icon-saudi_riyal" />
-                  {subtotal}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {t("tax")}
-                </span>
-                <span>
-                  <span className="icon-saudi_riyal" />
-                  {fees}
-                </span>
-              </div>
-              <Separator className="my-2" /> */}
+              {hasCoupon && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {t("subtotal") || "Subtotal"}
+                    </span>
+                    <span>{price(rawSubtotal, locale)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3.5 w-3.5" />
+                      {tCoupon("couponDiscount") || "Coupon Discount"}
+                      {couponCode && (
+                        <span className="font-mono text-xs bg-green-100 px-1.5 py-0.5 rounded">
+                          {couponCode}
+                        </span>
+                      )}
+                    </span>
+                    <span>-{price(discountAmount, locale)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                </>
+              )}
               <div className="flex justify-between font-bold">
-                <span>
-                  {tEvent("total")}{" "}
-                  {/* <span className="text-xs font-light text-muted-foreground">
-                    *{t("VAT")}
-                  </span> */}
-                </span>
+                <span>{tEvent("total")}</span>
                 <span>{price(total, locale)}</span>
               </div>
             </div>

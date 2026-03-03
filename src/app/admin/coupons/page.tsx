@@ -844,7 +844,6 @@ export default function CouponsPage() {
                         <div className="flex items-center justify-center gap-2">
                           {c.code ? (
                             <>
-                              <span>{c.code}</span>
                               <button
                                 onClick={() => copyCode(c.code)}
                                 className="text-muted-foreground hover:text-foreground"
@@ -853,9 +852,10 @@ export default function CouponsPage() {
                                 {copiedCode === c.code ? (
                                   <Check className="h-3.5 w-3.5 text-green-600" />
                                 ) : (
-                                  <Copy className="h-3.5 w-3.5" />
+                                  <Copy className="h-3.5 w-3.5 text-orangeColor" />
                                 )}
                               </button>
+                              <span>{c.code}</span>
                             </>
                           ) : (
                             <Badge

@@ -9,15 +9,16 @@ export enum OrderStatus {
 }
 
 export interface Order {
-  id: string; //
-  userId: string; // foreign key to User
-  eventId: string; // foreign key to event
+  id: string;
+  userId: string;
+  eventId: string;
   invoiceId?: string | null;
   orderDate: Date;
   status: OrderStatus;
   totalAmount: number;
-  promoCodeId: string | null; // foreign key to PromoCode, nullable
+  couponId: string | null;
   discountAmount: number;
+  discountType: string | null;
   paymentMethod: string;
   tickets: string[];
 }

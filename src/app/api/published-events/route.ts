@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const eventsSnapshot = await db
       .collection("events")
-      .where("status", "in", [EventStatus.PUBLISHED, EventStatus.COMPLETED])
+      .where("status", "in", [EventStatus.PUBLISHED])
       .orderBy("updatedAt", "desc")
       .get();
 
@@ -36,22 +36,11 @@ export async function GET() {
     };
 
     events.sort((a, b) => {
-      // Keep completed events at the end
-      if (
-        a.status === EventStatus.COMPLETED &&
-        b.status !== EventStatus.COMPLETED
-      )
-        return 1;
-      if (
-        b.status === EventStatus.COMPLETED &&
-        a.status !== EventStatus.COMPLETED
-      )
-        return -1;
-
-      // Otherwise sort by nearest date to now
+      // sort by nearest date to now
       return getNearestDate(a).getTime() - getNearestDate(b).getTime();
     });
 
+    console.log(events);
     return new Response(JSON.stringify(events), {
       status: 200,
       headers: {

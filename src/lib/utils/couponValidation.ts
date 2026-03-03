@@ -43,14 +43,7 @@ function validateDiscountCoupon(
 ): CouponValidationResult {
   const status = computeStatus(coupon);
   if (status !== "Active") {
-    return { valid: false, error: `Coupon is ${status.toLowerCase()}.` };
-  }
-
-  if (ctx.cartTotal < (coupon.minTicketValue ?? 0)) {
-    return {
-      valid: false,
-      error: `Minimum order value of ${coupon.minTicketValue} required.`,
-    };
+    return { valid: false, error: "couponInvalidOrExpired" };
   }
 
   if (
@@ -58,14 +51,21 @@ function validateDiscountCoupon(
     ctx.userUsageCount != null &&
     ctx.userUsageCount >= coupon.perUserLimit
   ) {
-    return { valid: false, error: "Per-user usage limit reached." };
+    return { valid: false, error: "couponPerUserLimitReached" };
   }
 
   const applicable =
     coupon.applicableEvents.length === 0 ||
     ctx.eventIds.some((eid) => coupon.applicableEvents.includes(eid));
   if (!applicable) {
-    return { valid: false, error: "Coupon not valid for selected events." };
+    return { valid: false, error: "couponInvalidOrExpired" };
+  }
+
+  if (ctx.cartTotal < (coupon.minTicketValue ?? 0)) {
+    return {
+      valid: false,
+      error: "couponMinNotMet",
+    };
   }
 
   let discountAmount: number;
@@ -93,7 +93,7 @@ function validateVoucher(
 ): CouponValidationResult {
   const status = computeStatus(coupon);
   if (status !== "Active") {
-    return { valid: false, error: `Voucher is ${status.toLowerCase()}.` };
+    return { valid: false, error: "couponInvalidOrExpired" };
   }
 
   if (
@@ -101,14 +101,14 @@ function validateVoucher(
     ctx.userUsageCount != null &&
     ctx.userUsageCount >= coupon.perUserLimit
   ) {
-    return { valid: false, error: "Per-user usage limit reached." };
+    return { valid: false, error: "couponPerUserLimitReached" };
   }
 
   const applicable =
     coupon.applicableEvents.length === 0 ||
     ctx.eventIds.some((eid) => coupon.applicableEvents.includes(eid));
   if (!applicable) {
-    return { valid: false, error: "Voucher not valid for selected events." };
+    return { valid: false, error: "couponInvalidOrExpired" };
   }
 
   const effectiveValue =
@@ -118,7 +118,7 @@ function validateVoucher(
 
   const discountAmount = Math.min(effectiveValue, ctx.cartTotal);
   if (discountAmount <= 0) {
-    return { valid: false, error: "Voucher has no remaining balance." };
+    return { valid: false, error: "couponInvalidOrExpired" };
   }
 
   return { valid: true, discountAmount };
@@ -134,14 +134,14 @@ function validateOffer(
 ): CouponValidationResult {
   const status = computeStatus(coupon);
   if (status !== "Active") {
-    return { valid: false, error: `Promotion is ${status.toLowerCase()}.` };
+    return { valid: false, error: "couponInvalidOrExpired" };
   }
 
   const applicable =
     coupon.applicableEvents.length === 0 ||
     ctx.eventIds.some((eid) => coupon.applicableEvents.includes(eid));
   if (!applicable) {
-    return { valid: false, error: "Promotion not valid for selected events." };
+    return { valid: false, error: "couponInvalidOrExpired" };
   }
 
   if (
@@ -149,7 +149,7 @@ function validateOffer(
     ctx.userUsageCount != null &&
     ctx.userUsageCount >= coupon.perUserLimit
   ) {
-    return { valid: false, error: "Per-user usage limit reached." };
+    return { valid: false, error: "couponPerUserLimitReached" };
   }
 
   let discountAmount: number;
@@ -196,6 +196,6 @@ export function validateCoupon(
     case "Offer":
       return validateOffer(coupon, ctx);
     default:
-      return { valid: false, error: "Unknown coupon type." };
+      return { valid: false, error: "couponInvalidOrExpired" };
   }
 }

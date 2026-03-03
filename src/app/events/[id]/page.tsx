@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,9 +11,12 @@ import {
   CalendarDays,
   ClockIcon,
   InfoIcon,
+  Loader2,
   MapPin,
+  Tag,
   Ticket,
   Users,
+  X,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -30,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
@@ -47,11 +51,55 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { price } from "@/src/lib/utils/locales";
 import { useLocale, useTranslations } from "next-intl";
 
+interface AppliedCoupon {
+  id: string;
+  code: string;
+  discountAmount: number;
+  discountType: string;
+  details: {
+    type: string;
+    discountKind: string;
+    discountValue: number;
+    maxCap: number | null;
+    minTicketValue: number | null;
+    offerSubtype: string | null;
+    buyQuantity: number | null;
+    getQuantity: number | null;
+  };
+}
+
+function recalculateDiscount(
+  details: AppliedCoupon["details"],
+  subtotal: number,
+  ticketQuantity: number,
+  ticketPrice: number,
+): number {
+  if (
+    details.offerSubtype === "buyXgetY" &&
+    details.buyQuantity != null &&
+    details.getQuantity != null
+  ) {
+    const sets = Math.floor(
+      ticketQuantity / (details.buyQuantity + details.getQuantity),
+    );
+    return sets * details.getQuantity * ticketPrice;
+  }
+
+  if (details.discountKind === "percentage") {
+    let discount = (subtotal * details.discountValue) / 100;
+    if (details.maxCap != null) discount = Math.min(discount, details.maxCap);
+    return discount;
+  }
+
+  return Math.min(details.discountValue, subtotal);
+}
+
 export default function EventPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const tEvent = useTranslations("Event");
+  const tCoupon = useTranslations("Coupon");
   const tPage = useTranslations("Page");
   const tHome = useTranslations("Home");
   const tPDF = useTranslations("PDF");
@@ -60,7 +108,14 @@ export default function EventPage() {
   const [quantity, setQuantity] = useState<number>(1);
   const [event, setEvent] = useState<Event | null>(null);
 
-  // get event ID from params
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(
+    null,
+  );
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
   const params = useParams<{ id: string }>();
   const id: string = params?.id!;
 
@@ -81,13 +136,100 @@ export default function EventPage() {
     }
   }, [data]);
 
+  // Recalculate discount when quantity changes
+  useEffect(() => {
+    setCouponInput("");
+    setCouponError(null);
+
+    if (!event || !appliedCoupon) return;
+
+    const subtotal = event.price * quantity;
+    const details = appliedCoupon.details;
+
+    if (details.minTicketValue != null && subtotal < details.minTicketValue) {
+      setAppliedCoupon(null);
+      setCouponError(
+        tCoupon("couponMinNotMet") ||
+          `Minimum order value of ${details.minTicketValue} required`,
+      );
+      return;
+    }
+
+    const newDiscount = recalculateDiscount(
+      details,
+      subtotal,
+      quantity,
+      event.price,
+    );
+
+    setAppliedCoupon((prev) =>
+      prev ? { ...prev, discountAmount: newDiscount } : null,
+    );
+    setCouponError(null);
+  }, [quantity]);
+
+  const handleApplyCoupon = useCallback(async () => {
+    if (!couponInput.trim() || !event) return;
+
+    setCouponLoading(true);
+    setCouponError(null);
+
+    try {
+      const subtotal = event.price * quantity;
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          couponCode: couponInput,
+          eventId: event.id,
+          ticketQuantity: quantity,
+          cartSubtotal: subtotal,
+          userId: user?.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.valid) {
+        setAppliedCoupon({
+          id: data.couponId,
+          code: data.couponCode,
+          discountAmount: data.discountAmount,
+          discountType: data.discountType,
+          details: data.couponDetails,
+        });
+        setCouponError(null);
+      } else {
+        setCouponError(tCoupon(data.errorMessage));
+        setAppliedCoupon(null);
+      }
+    } catch {
+      setCouponError(tCoupon("serverErrorDuringValidation"));
+    } finally {
+      setCouponLoading(false);
+    }
+  }, [couponInput, event, quantity, user?.id]);
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError(null);
+  };
+
+  const subtotal = event ? event.price * quantity : 0;
+  const discount = appliedCoupon?.discountAmount ?? 0;
+  const finalTotal = appliedCoupon ? subtotal - discount : subtotal;
+
   const handleBuyTicket = () => {
-    // Set event details in the checkout store
-    useCheckoutStore.setState((state) => ({
+    useCheckoutStore.setState({
       event: event,
       eventDateId: selectedDate?.id,
       quantity: quantity,
-    }));
+      couponId: appliedCoupon?.id ?? null,
+      couponCode: appliedCoupon?.code ?? null,
+      discountAmount: appliedCoupon?.discountAmount ?? 0,
+      discountType: appliedCoupon?.discountType ?? null,
+    });
 
     if (!user) {
       router.push(`/login?redirect=${encodeURIComponent("/checkout")}`);
@@ -103,7 +245,6 @@ export default function EventPage() {
       return;
     }
 
-    // Navigate to checkout with event details
     router.push("/checkout");
   };
 
@@ -168,7 +309,7 @@ export default function EventPage() {
   return (
     <div className="px-5 py-10 md:container">
       <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-2 md:gap-6 lg:grid lg:grid-cols-3 lg:gap-6">
-        {/* Event Details */}
+        {/* Event Title and Image */}
         <div className="md:col-span-1 lg:col-span-2 lg:me-6">
           <div className="flex justify-start gap-4">
             <Button variant="outline" size="icon" onClick={() => router.back()}>
@@ -199,6 +340,7 @@ export default function EventPage() {
               }}
             />
           </div>
+          {/* Event Details */}
           <div className="space-y-4">
             <h2 className="text-xl font-bold">{tEvent("details")}</h2>
             <p className="text-muted-foreground whitespace-pre-line pb-4">
@@ -393,9 +535,16 @@ export default function EventPage() {
                     </label>
                     <Select
                       defaultValue="1"
-                      onValueChange={(value) =>
-                        setQuantity(Number.parseInt(value))
-                      }
+                      onValueChange={(value) => {
+                        if (
+                          Number.parseInt(value) === 3 &&
+                          event.id === "nsF44tZPR5lr3jRCMRJF"
+                        ) {
+                          setQuantity(2);
+                          return;
+                        }
+                        setQuantity(Number.parseInt(value));
+                      }}
                     >
                       <SelectTrigger dir={dir}>
                         <SelectValue
@@ -429,6 +578,73 @@ export default function EventPage() {
                     </Select>
                   </div>
 
+                  {/* Coupon Code Section */}
+                  {event.price > 0 && (
+                    <div className="space-y-2 pt-1">
+                      <label className="text-sm font-medium leading-none">
+                        {tCoupon("couponCode") || "Coupon Code"}
+                      </label>
+                      {!appliedCoupon ? (
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={
+                              tCoupon("enterCouponCode") || "Enter coupon code"
+                            }
+                            value={couponInput}
+                            onChange={(e) => {
+                              setCouponInput(e.target.value.toUpperCase());
+                              if (couponError) setCouponError(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleApplyCoupon();
+                              }
+                            }}
+                            disabled={couponLoading}
+                            className="flex-1"
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={handleApplyCoupon}
+                            disabled={couponLoading || !couponInput.trim()}
+                            className="shrink-0 px-4 py-5"
+                          >
+                            {couponLoading ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              tCoupon("apply") || "Apply"
+                            )}
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                          <div className="flex items-center gap-2 text-sm text-green-700">
+                            <Tag className="h-4 w-4" />
+                            <span className="font-medium">
+                              {appliedCoupon.code}
+                            </span>
+                            <span className="text-green-600">
+                              {tCoupon("applied") || "Applied"}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveCoupon}
+                            className=" p-0 text-green-700 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      {couponError && (
+                        <p className="text-sm text-red-500">{couponError}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Pricing Summary */}
                   <div className="flex items-center justify-between pt-4">
                     <div className="flex items-center gap-2">
                       <Ticket className="h-5 w-5 text-redColor" />
@@ -441,9 +657,31 @@ export default function EventPage() {
                     </span>
                   </div>
                   <Separator />
+
+                  {appliedCoupon && (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {tEvent("subtotal") || "Subtotal"}
+                        </span>
+                        <span>{price(subtotal, locale)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-green-600">
+                        <span className="flex items-center gap-1">
+                          <Tag className="h-3.5 w-3.5" />
+                          {tCoupon("couponDiscount") || "Coupon Discount"}
+                        </span>
+                        <span>-{price(discount, locale)}</span>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+
                   <div className="flex items-center justify-between font-bold">
                     <span>{tEvent("total")}</span>
-                    {quantity === 3 && event.id === "nsF44tZPR5lr3jRCMRJF" ? (
+                    {!appliedCoupon &&
+                    quantity === 3 &&
+                    event.id === "nsF44tZPR5lr3jRCMRJF" ? (
                       <div>
                         <span className="line-through mx-2">
                           {price(event.price * quantity, locale)}
@@ -453,7 +691,11 @@ export default function EventPage() {
                         </span>
                       </div>
                     ) : (
-                      <span>{price(event.price * quantity, locale)}</span>
+                      <span>
+                        {appliedCoupon
+                          ? price(finalTotal, locale)
+                          : price(subtotal, locale)}
+                      </span>
                     )}
                   </div>
                   <div className="pt-3">

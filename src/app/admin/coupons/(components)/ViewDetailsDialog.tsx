@@ -49,7 +49,10 @@ export function ViewDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-stone-100">
+      <DialogContent
+        dir="ltr"
+        className="max-w-2xl max-h-[90vh] overflow-y-auto bg-stone-100"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {coupon && typeIcon(coupon.type)}
@@ -129,9 +132,7 @@ export function ViewDetailsDialog({
                   <Label className="text-muted-foreground text-xs">
                     Partial Consumption
                   </Label>
-                  <p className="text-sm">
-                    Allowed (remaining balance tracked)
-                  </p>
+                  <p className="text-sm">Allowed (remaining balance tracked)</p>
                 </div>
               )}
               {coupon.type === "Offer" && (
@@ -173,7 +174,7 @@ export function ViewDetailsDialog({
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs">
-                  Min. Ticket Value
+                  Minimum Ticket Amount
                 </Label>
                 <p className="text-sm">
                   {coupon.minTicketValue !== null
@@ -182,9 +183,7 @@ export function ViewDetailsDialog({
                 </p>
               </div>
               <div>
-                <Label className="text-muted-foreground text-xs">
-                  Usage
-                </Label>
+                <Label className="text-muted-foreground text-xs">Usage</Label>
                 <p className="text-sm">
                   {coupon.usageCount}
                   {coupon.usageLimit !== null
@@ -211,8 +210,8 @@ export function ViewDetailsDialog({
               </Label>
               {coupon.applicableEvents.length === 0 ? (
                 <p className="text-sm flex items-center gap-1 mt-1">
-                  <Globe className="h-4 w-4 text-muted-foreground" /> All
-                  Events (Global)
+                  <Globe className="h-4 w-4 text-muted-foreground" /> All Events
+                  (Global)
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-1 mt-1">
@@ -254,10 +253,7 @@ export function ViewDetailsDialog({
                   </p>
                   <p className="text-xl font-bold">
                     {coupon.usageLimit !== null
-                      ? Math.max(
-                          0,
-                          coupon.usageLimit - coupon.usageCount,
-                        )
+                      ? Math.max(0, coupon.usageLimit - coupon.usageCount)
                       : "Unlimited"}
                   </p>
                 </CardContent>
