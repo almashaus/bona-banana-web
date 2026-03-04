@@ -4,7 +4,7 @@
     "hero2": "Join the Fun",
     "hero3": "Play Next Game",
     "heroSubtitle": "Discover board-game events packed with laughs, friendly battles, and epic wins. Pick an event, book your seat, and join the table!",
-    "title": "Discover Events",
+    "title": "Events",
     "subtitle": "Discover the most popular events happening near you",
     "allEvents": "View All Events",
     "backToHome": "Back to Main Page",
@@ -99,7 +99,12 @@
     "couponPerUserLimitReached": "Per-user usage limit reached.",
     "couponDiscount": "Coupon Discount",
     "missingRequiredFields": "Please fill in all required fields.",
-    "serverErrorDuringValidation": "Something went wrong!, please try again later."
+    "serverErrorDuringValidation": "Something went wrong!, please try again later.",
+    "offerApplied": "Offer Applied",
+    "offerDiscount": "Offer Discount",
+    "buyXGetYFree": "Buy {x} Get {y} Free",
+    "percentageOff": "{value}% Off",
+    "fixedOff": "{value} Off"
   },
   "Confirm": {
     "confirm": "Order Confirmed!",

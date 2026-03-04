@@ -52,9 +52,11 @@ export default function CheckoutPage() {
   const storedEvent = useCheckoutStore((state) => state.event);
   const dateId = useCheckoutStore((state) => state.eventDateId);
   const quantity = useCheckoutStore((state) => state.quantity);
+  const offerId = useCheckoutStore((state) => state.offerId);
+  const storedOfferDiscount = useCheckoutStore((state) => state.offerDiscount);
   const couponId = useCheckoutStore((state) => state.couponId);
   const couponCode = useCheckoutStore((state) => state.couponCode);
-  const storedDiscount = useCheckoutStore((state) => state.discountAmount);
+  const storedCouponDiscount = useCheckoutStore((state) => state.discountAmount);
   const discountType = useCheckoutStore((state) => state.discountType);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -75,15 +77,13 @@ export default function CheckoutPage() {
   }, [storedEvent]);
 
   const rawSubtotal = event?.price! * quantity;
-  const hasCoupon = couponId !== null && storedDiscount > 0;
-  const discountAmount = hasCoupon ? storedDiscount : 0;
+  const hasOffer = offerId !== null && storedOfferDiscount > 0;
+  const offerDiscountAmount = hasOffer ? storedOfferDiscount : 0;
+  const hasCoupon = couponId !== null && storedCouponDiscount > 0;
+  const couponDiscountAmount = hasCoupon ? storedCouponDiscount : 0;
+  const totalDiscount = offerDiscountAmount + couponDiscountAmount;
 
-  const legacyTotal =
-    quantity === 3 && event?.id === "nsF44tZPR5lr3jRCMRJF"
-      ? event?.price! * 2
-      : rawSubtotal;
-
-  const total = hasCoupon ? rawSubtotal - discountAmount : legacyTotal;
+  const total = rawSubtotal - totalDiscount;
 
   useEffect(() => {
     if (total && total > 0) {
@@ -149,9 +149,9 @@ export default function CheckoutPage() {
       orderDate: new Date(),
       status: OrderStatus.PENDING,
       totalAmount: total,
-      couponId: couponId ?? null,
-      discountAmount: discountAmount,
-      discountType: discountType ?? null,
+      couponId: couponId ?? offerId ?? null,
+      discountAmount: totalDiscount,
+      discountType: discountType ?? (hasOffer ? "offer" : null),
       paymentMethod:
         paymentMethods.find((m) => m.PaymentMethodId === selectedMethod)
           ?.PaymentMethodEn || "MADA",
@@ -304,7 +304,7 @@ export default function CheckoutPage() {
             <Separator className="my-4" />
 
             <div className="space-y-2">
-              {hasCoupon && (
+              {(hasOffer || hasCoupon) && (
                 <>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
@@ -312,18 +312,32 @@ export default function CheckoutPage() {
                     </span>
                     <span>{price(rawSubtotal, locale)}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span className="flex items-center gap-1">
-                      <Tag className="h-3.5 w-3.5" />
-                      {tCoupon("couponDiscount") || "Coupon Discount"}
-                      {couponCode && (
-                        <span className="font-mono text-xs bg-green-100 px-1.5 py-0.5 rounded">
-                          {couponCode}
-                        </span>
-                      )}
-                    </span>
-                    <span>-{price(discountAmount, locale)}</span>
-                  </div>
+
+                  {hasOffer && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3.5 w-3.5" />
+                        {tCoupon("offerDiscount") || "Offer Discount"}
+                      </span>
+                      <span>-{price(offerDiscountAmount, locale)}</span>
+                    </div>
+                  )}
+
+                  {hasCoupon && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3.5 w-3.5" />
+                        {tCoupon("couponDiscount") || "Coupon Discount"}
+                        {couponCode && (
+                          <span className="font-mono text-xs bg-green-100 px-1.5 py-0.5 rounded">
+                            {couponCode}
+                          </span>
+                        )}
+                      </span>
+                      <span>-{price(couponDiscountAmount, locale)}</span>
+                    </div>
+                  )}
+
                   <Separator className="my-2" />
                 </>
               )}

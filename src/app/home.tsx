@@ -38,7 +38,8 @@ export default function Home() {
           <div className="bg-lightBeigeColor w-full p-8">
             <div className="flex flex-col items-center justify-center text-center space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
-                ✨ {t("title")} ✨
+                <span className="text-xl md:text-3xl">🎲</span> {t("title")}{" "}
+                <span className="text-xl md:text-3xl">🎲</span>
               </h2>
               <p className="max-w-[900px] text-muted-foreground text-md md:text-xl">
                 {t("subtitle")}
@@ -87,7 +88,8 @@ async function EventsList({ locale }: { locale: string }) {
         return (
           <Link href={`/events/${event.slug}`} key={event.id}>
             <Card
-              className={`overflow-hidden transition-all shadow-none hover:scale-105 hover:rotate-3 bg-darkColor border-0 ${""}`}
+              className="overflow-hidden shadow-none bg-darkColor border-0 transform-gpu will-change-transform transition-transform duration-300
+  hover:scale-105 hover:rotate-3"
             >
               <div className="flex justify-center items-center m-3">
                 <div className="relative inline-block">

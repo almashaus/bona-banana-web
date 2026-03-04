@@ -13,6 +13,7 @@ import {
   InfoIcon,
   Loader2,
   MapPin,
+  Megaphone,
   Tag,
   Ticket,
   Users,
@@ -68,6 +69,19 @@ interface AppliedCoupon {
   };
 }
 
+interface ActiveOffer {
+  id: string;
+  type: string;
+  discountKind: string;
+  discountValue: number;
+  maxCap: number | null;
+  minTicketValue: number | null;
+  offerSubtype: string | null;
+  buyQuantity: number | null;
+  getQuantity: number | null;
+  description: string;
+}
+
 function recalculateDiscount(
   details: AppliedCoupon["details"],
   subtotal: number,
@@ -94,6 +108,33 @@ function recalculateDiscount(
   return Math.min(details.discountValue, subtotal);
 }
 
+function computeOfferDiscount(
+  offer: ActiveOffer | null,
+  qty: number,
+  ticketPrice: number,
+  total: number,
+): number {
+  if (!offer || ticketPrice <= 0) return 0;
+
+  if (
+    offer.offerSubtype === "buyXgetY" &&
+    offer.buyQuantity != null &&
+    offer.getQuantity != null
+  ) {
+    const bundleSize = offer.buyQuantity + offer.getQuantity;
+    if (qty % bundleSize !== 0) return 0;
+    return (qty / bundleSize) * offer.getQuantity * ticketPrice;
+  }
+
+  if (offer.discountKind === "percentage") {
+    let disc = (total * offer.discountValue) / 100;
+    if (offer.maxCap != null) disc = Math.min(disc, offer.maxCap);
+    return disc;
+  }
+
+  return Math.min(offer.discountValue, total);
+}
+
 export default function EventPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -116,6 +157,9 @@ export default function EventPage() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
 
+  // Offer state (auto-applied, no code required)
+  const [activeOffer, setActiveOffer] = useState<ActiveOffer | null>(null);
+
   const params = useParams<{ id: string }>();
   const id: string = params?.id!;
 
@@ -136,17 +180,41 @@ export default function EventPage() {
     }
   }, [data]);
 
-  // Recalculate discount when quantity changes
+  // Fetch and auto-apply active offer for this event
+  useEffect(() => {
+    if (!event || event.price <= 0) return;
+
+    fetch(`/api/coupons/offers?eventId=${event.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.offer) {
+          setActiveOffer(data.offer);
+        }
+      })
+      .catch(() => {});
+  }, [event?.id]);
+
+  // Recalculate coupon discount when quantity changes (coupon applies on offered price)
   useEffect(() => {
     setCouponInput("");
     setCouponError(null);
 
     if (!event || !appliedCoupon) return;
 
-    const subtotal = event.price * quantity;
+    const base = event.price * quantity;
+    const currentOfferDisc = computeOfferDiscount(
+      activeOffer,
+      quantity,
+      event.price,
+      base,
+    );
+    const priceAfterOffer = base - currentOfferDisc;
     const details = appliedCoupon.details;
 
-    if (details.minTicketValue != null && subtotal < details.minTicketValue) {
+    if (
+      details.minTicketValue != null &&
+      priceAfterOffer < details.minTicketValue
+    ) {
       setAppliedCoupon(null);
       setCouponError(
         tCoupon("couponMinNotMet") ||
@@ -157,7 +225,7 @@ export default function EventPage() {
 
     const newDiscount = recalculateDiscount(
       details,
-      subtotal,
+      priceAfterOffer,
       quantity,
       event.price,
     );
@@ -175,7 +243,15 @@ export default function EventPage() {
     setCouponError(null);
 
     try {
-      const subtotal = event.price * quantity;
+      const base = event.price * quantity;
+      const currentOfferDisc = computeOfferDiscount(
+        activeOffer,
+        quantity,
+        event.price,
+        base,
+      );
+      const priceAfterOffer = base - currentOfferDisc;
+
       const res = await fetch("/api/coupons/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,7 +259,7 @@ export default function EventPage() {
           couponCode: couponInput,
           eventId: event.id,
           ticketQuantity: quantity,
-          cartSubtotal: subtotal,
+          cartSubtotal: priceAfterOffer,
           userId: user?.id,
         }),
       });
@@ -217,17 +293,26 @@ export default function EventPage() {
   };
 
   const subtotal = event ? event.price * quantity : 0;
-  const discount = appliedCoupon?.discountAmount ?? 0;
-  const finalTotal = appliedCoupon ? subtotal - discount : subtotal;
+  const offerDiscount = computeOfferDiscount(
+    activeOffer,
+    quantity,
+    event?.price ?? 0,
+    subtotal,
+  );
+  const offerTotal = subtotal - offerDiscount;
+  const couponDiscount = appliedCoupon?.discountAmount ?? 0;
+  const finalTotal = offerTotal - couponDiscount;
 
   const handleBuyTicket = () => {
     useCheckoutStore.setState({
       event: event,
       eventDateId: selectedDate?.id,
       quantity: quantity,
+      offerId: offerDiscount > 0 ? activeOffer!.id : null,
+      offerDiscount: offerDiscount,
       couponId: appliedCoupon?.id ?? null,
       couponCode: appliedCoupon?.code ?? null,
-      discountAmount: appliedCoupon?.discountAmount ?? 0,
+      discountAmount: couponDiscount,
       discountType: appliedCoupon?.discountType ?? null,
     });
 
@@ -534,15 +619,8 @@ export default function EventPage() {
                       {tEvent("quantity")}
                     </label>
                     <Select
-                      defaultValue="1"
+                      value={quantity.toString()}
                       onValueChange={(value) => {
-                        if (
-                          Number.parseInt(value) === 3 &&
-                          event.id === "nsF44tZPR5lr3jRCMRJF"
-                        ) {
-                          setQuantity(2);
-                          return;
-                        }
                         setQuantity(Number.parseInt(value));
                       }}
                     >
@@ -562,21 +640,59 @@ export default function EventPage() {
                             ),
                           },
                           (_, i) => i + 1,
-                        ).map((num) => (
-                          <SelectItem key={num} value={num.toString()}>
-                            {num}{" "}
-                            {num === 1 ? tEvent("ticket") : tEvent("tickets")}
-                            {num === 3 &&
-                              event.id === "nsF44tZPR5lr3jRCMRJF" && (
+                        ).map((num) => {
+                          const isBundleQty =
+                            activeOffer?.offerSubtype === "buyXgetY" &&
+                            activeOffer.buyQuantity != null &&
+                            activeOffer.getQuantity != null &&
+                            num %
+                              (activeOffer.buyQuantity +
+                                activeOffer.getQuantity) ===
+                              0;
+
+                          return (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num}{" "}
+                              {num === 1 ? tEvent("ticket") : tEvent("tickets")}
+                              {isBundleQty && (
                                 <span className="text-sm text-green-500 mx-4">
-                                  {tEvent("free")}
+                                  {tCoupon("buyXGetYFree", {
+                                    x: activeOffer!.buyQuantity!,
+                                    y: activeOffer!.getQuantity!,
+                                  })}
                                 </span>
                               )}
-                          </SelectItem>
-                        ))}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Offer Banner (auto-applied) */}
+                  {activeOffer &&
+                    event.price > 0 &&
+                    (!appliedCoupon || appliedCoupon.code === "") && (
+                      <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2.5">
+                        <Megaphone className="h-4 w-4 text-green-600 shrink-0" />
+                        <span className="text-sm font-medium text-green-700">
+                          {activeOffer.offerSubtype === "buyXgetY" &&
+                          activeOffer.buyQuantity != null &&
+                          activeOffer.getQuantity != null
+                            ? tCoupon("buyXGetYFree", {
+                                x: activeOffer.buyQuantity,
+                                y: activeOffer.getQuantity,
+                              })
+                            : activeOffer.discountKind === "percentage"
+                              ? tCoupon("percentageOff", {
+                                  value: activeOffer.discountValue,
+                                })
+                              : tCoupon("fixedOff", {
+                                  value: activeOffer.discountValue,
+                                })}
+                        </span>
+                      </div>
+                    )}
 
                   {/* Coupon Code Section */}
                   {event.price > 0 && (
@@ -584,7 +700,27 @@ export default function EventPage() {
                       <label className="text-sm font-medium leading-none">
                         {tCoupon("couponCode") || "Coupon Code"}
                       </label>
-                      {!appliedCoupon ? (
+                      {appliedCoupon && appliedCoupon.code !== "" ? (
+                        <div className="flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                          <div className="flex items-center gap-2 text-sm text-green-700">
+                            <Tag className="h-4 w-4" />
+                            <span className="font-medium">
+                              {appliedCoupon.code}
+                            </span>
+                            <span className="text-green-600">
+                              {tCoupon("applied") || "Applied"}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveCoupon}
+                            className=" p-0 text-green-700 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
                         <div className="flex gap-2">
                           <Input
                             placeholder={
@@ -617,26 +753,6 @@ export default function EventPage() {
                             )}
                           </Button>
                         </div>
-                      ) : (
-                        <div className="flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-3 py-2">
-                          <div className="flex items-center gap-2 text-sm text-green-700">
-                            <Tag className="h-4 w-4" />
-                            <span className="font-medium">
-                              {appliedCoupon.code}
-                            </span>
-                            <span className="text-green-600">
-                              {tCoupon("applied") || "Applied"}
-                            </span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleRemoveCoupon}
-                            className=" p-0 text-green-700 hover:text-red-600 hover:bg-red-50"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
                       )}
                       {couponError && (
                         <p className="text-sm text-red-500">{couponError}</p>
@@ -658,45 +774,46 @@ export default function EventPage() {
                   </div>
                   <Separator />
 
-                  {appliedCoupon && (
+                  {(offerDiscount > 0 || appliedCoupon) && (
                     <>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
-                          {tEvent("subtotal") || "Subtotal"}
+                          {` ${tEvent("subtotal")} (${quantity} ${quantity > 1 ? tEvent("tickets") : tEvent("ticket")})`}
                         </span>
                         <span>{price(subtotal, locale)}</span>
                       </div>
-                      <div className="flex items-center justify-between text-sm text-green-600">
-                        <span className="flex items-center gap-1">
-                          <Tag className="h-3.5 w-3.5" />
-                          {tCoupon("couponDiscount") || "Coupon Discount"}
-                        </span>
-                        <span>-{price(discount, locale)}</span>
-                      </div>
+
+                      {offerDiscount > 0 && (
+                        <div className="flex items-center justify-between text-sm text-green-600">
+                          <span className="flex items-center gap-1">
+                            <Tag className="h-3.5 w-3.5" />
+                            {tCoupon("offerDiscount") || "Offer Discount"}
+                          </span>
+                          <span>-{price(offerDiscount, locale)}</span>
+                        </div>
+                      )}
+
+                      {appliedCoupon && (
+                        <div className="flex items-center justify-between text-sm text-green-600">
+                          <span className="flex items-center gap-1">
+                            <Tag className="h-3.5 w-3.5" />
+                            {tCoupon("couponDiscount") || "Coupon Discount"}
+                          </span>
+                          <span>-{price(couponDiscount, locale)}</span>
+                        </div>
+                      )}
+
                       <Separator />
                     </>
                   )}
 
                   <div className="flex items-center justify-between font-bold">
                     <span>{tEvent("total")}</span>
-                    {!appliedCoupon &&
-                    quantity === 3 &&
-                    event.id === "nsF44tZPR5lr3jRCMRJF" ? (
-                      <div>
-                        <span className="line-through mx-2">
-                          {price(event.price * quantity, locale)}
-                        </span>
-                        <span className=" text-green-500">
-                          {price(event.price * (quantity - 1), locale)}{" "}
-                        </span>
-                      </div>
-                    ) : (
-                      <span>
-                        {appliedCoupon
-                          ? price(finalTotal, locale)
-                          : price(subtotal, locale)}
-                      </span>
-                    )}
+                    <span>
+                      {offerDiscount > 0 || appliedCoupon
+                        ? price(finalTotal, locale)
+                        : price(subtotal, locale)}
+                    </span>
                   </div>
                   <div className="pt-3">
                     <Button

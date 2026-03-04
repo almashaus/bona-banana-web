@@ -8,6 +8,10 @@ interface CheckoutStore {
   setEventDateId: (id: string) => void;
   quantity: number;
   setQuantity: (quan: number) => void;
+  // Offer (auto-applied)
+  offerId: string | null;
+  offerDiscount: number;
+  // Coupon (manual code)
   couponId: string | null;
   couponCode: string | null;
   discountAmount: number;
@@ -28,6 +32,8 @@ export const useCheckoutStore = create<CheckoutStore>((set) => ({
   setEventDateId: (id: string) => set({ eventDateId: id }),
   quantity: 0,
   setQuantity: (quan: number) => set({ quantity: quan }),
+  offerId: null,
+  offerDiscount: 0,
   couponId: null,
   couponCode: null,
   discountAmount: 0,
