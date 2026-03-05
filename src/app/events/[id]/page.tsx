@@ -169,6 +169,10 @@ export default function EventPage() {
 
   useEffect(() => {
     const eventData: Event = data as Event;
+    if (eventData && eventData.status === EventStatus.DRAFT) {
+      router.replace("/");
+      return;
+    }
     if (eventData && eventData.dates && eventData.dates.length > 0) {
       setEvent(eventData);
 
@@ -178,7 +182,7 @@ export default function EventPage() {
 
       setSelectedDate(eventData.dates.find((d) => d.date === currentDate));
     }
-  }, [data]);
+  }, [data, router]);
 
   // Fetch and auto-apply active offer for this event
   useEffect(() => {
