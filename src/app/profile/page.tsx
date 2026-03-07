@@ -4,7 +4,13 @@ import type React from "react";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CalendarIcon, EditIcon, UploadIcon, User } from "lucide-react";
+import {
+  CalendarIcon,
+  Download,
+  EditIcon,
+  UploadIcon,
+  User,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -54,15 +60,21 @@ import { getAuth } from "firebase/auth";
 import useSWR, { mutate } from "swr";
 import { AppUser } from "@/src/models/user";
 import { Ticket } from "@/src/models/ticket";
-import { getTicketStatusBadgeColor } from "@/src/lib/utils/styles";
+import {
+  getTicketStatusBadgeColor,
+  getOrderStatusBadgeColor,
+} from "@/src/lib/utils/styles";
 import { Badge } from "@/src/components/ui/badge";
 import { Event } from "@/src/models/event";
+import { DigitalProduct } from "@/src/models/digitalProduct";
+import { ProductOrder } from "@/src/models/productOrder";
 import Loading from "@/src/components/ui/loading";
 import Image from "next/image";
 import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "@/src/lib/firebase/firebaseConfig";
 import { useLocale, useTranslations } from "next-intl";
+import { price } from "@/src/lib/utils/locales";
 import { useAuth } from "@/src/features/auth/auth-provider";
 
 function Profile() {
@@ -91,6 +103,10 @@ function Profile() {
       event?: Event;
       date?: Date;
       ticket: Ticket;
+    }[];
+    purchases: {
+      order: ProductOrder;
+      product: DigitalProduct | null;
     }[];
   }
 
@@ -208,9 +224,10 @@ function Profile() {
           value={activeTab}
           onValueChange={handleTabChange}
         >
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="profile">{t("profile")}</TabsTrigger>
             <TabsTrigger value="tickets">{t("myTickets")}</TabsTrigger>
+            <TabsTrigger value="purchases">{t("myPurchases")}</TabsTrigger>
             <TabsTrigger value="settings">{t("settings")}</TabsTrigger>
           </TabsList>
 
@@ -433,6 +450,102 @@ function Profile() {
                             </TableRow>
                           );
                         })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="purchases">
+            <div className="rounded-lg border p-6 shadow-sm bg-white">
+              <h2 className="text-xl font-semibold mb-4">{t("myPurchases")}</h2>
+              <div className="text-center py-3">
+                {isLoading && (
+                  <div className="flex justify-center items-center py-12">
+                    <Loading />
+                  </div>
+                )}
+                {!isLoading &&
+                  (!data?.purchases || data.purchases.length === 0) && (
+                    <div>
+                      <p className="text-muted-foreground mb-4">
+                        {t("dontHavePurchases")}
+                      </p>
+                      <Button asChild>
+                        <Link href="/">{t("browseProducts")}</Link>
+                      </Button>
+                    </div>
+                  )}
+                {!isLoading && data?.purchases && data.purchases.length > 0 && (
+                  <div className="bg-white mt-2 rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t("productTitle")}</TableHead>
+                          <TableHead>{t("orderID")}</TableHead>
+                          <TableHead>{t("orderDate")}</TableHead>
+                          <TableHead>{t("price")}</TableHead>
+                          <TableHead>{t("status")}</TableHead>
+                          <TableHead>{t("file")}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.purchases
+                          .sort(
+                            (a, b) =>
+                              new Date(b.order.orderDate).getTime() -
+                              new Date(a.order.orderDate).getTime(),
+                          )
+                          .map(({ order, product }) => (
+                            <TableRow key={order.id}>
+                              <TableCell>
+                                {product
+                                  ? locale === "ar"
+                                    ? product.titleAr
+                                    : product.title
+                                  : t("productDeleted")}
+                              </TableCell>
+                              <TableCell>{order.id}</TableCell>
+                              <TableCell>
+                                {formatDate(new Date(order.orderDate), locale)}
+                              </TableCell>
+                              <TableCell>
+                                {price(order.price, locale)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`${getOrderStatusBadgeColor(order.status)}`}
+                                >
+                                  {order.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  className="text-primary hover:text-primary"
+                                  onClick={() => {
+                                    if (product?.downloadableFile?.fileUrl) {
+                                      window.open(
+                                        product.downloadableFile.fileUrl,
+                                        "_blank",
+                                      );
+                                    } else {
+                                      toast({
+                                        title: "No file available",
+                                        description:
+                                          "The product has no file available",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <Download className="h-4 w-4 text-orangeColor" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   </div>

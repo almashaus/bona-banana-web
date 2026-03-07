@@ -6,14 +6,11 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  CalendarDays,
-  ClockIcon,
   CreditCard,
-  LockIcon,
-  MapPin,
   FileText,
+  LockIcon,
+  Package,
   Tag,
-  TicketIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
@@ -21,12 +18,10 @@ import { Separator } from "@/src/components/ui/separator";
 import { useToast } from "@/src/components/ui/use-toast";
 import { generateIDNumber } from "@/src/lib/utils/utils";
 import { useAuth } from "@/src/features/auth/auth-provider";
-import { Event } from "@/src/models/event";
-import { Order, OrderStatus } from "@/src/models/order";
-import { Ticket, TicketStatus } from "@/src/models/ticket";
-import { eventDateTimeString } from "@/src/lib/utils/formatDate";
+import { DigitalProduct } from "@/src/models/digitalProduct";
+import { ProductOrder, ProductOrderStatus } from "@/src/models/productOrder";
 import Loading from "@/src/components/ui/loading";
-import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
+import { useProductCheckoutStore } from "@/src/lib/stores/useProductCheckoutStore";
 import { mutate } from "swr";
 import { price } from "@/src/lib/utils/locales";
 import { paymentMethodsIds } from "@/src/data/appData";
@@ -40,52 +35,41 @@ type PaymentMethod = {
   ImageUrl: string;
 };
 
-export default function CheckoutPage() {
+export default function ProductCheckoutPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
   const t = useTranslations("Checkout");
-  const tEvent = useTranslations("Event");
+  const tProduct = useTranslations("Product");
   const tCoupon = useTranslations("Coupon");
+  const tHome = useTranslations("Home");
   const locale = useLocale();
 
-  const storedEvent = useCheckoutStore((state) => state.event);
-  const dateId = useCheckoutStore((state) => state.eventDateId);
-  const quantity = useCheckoutStore((state) => state.quantity);
-  const offerId = useCheckoutStore((state) => state.offerId);
-  const storedOfferDiscount = useCheckoutStore((state) => state.offerDiscount);
-  const couponId = useCheckoutStore((state) => state.couponId);
-  const couponCode = useCheckoutStore((state) => state.couponCode);
-  const storedCouponDiscount = useCheckoutStore(
+  const storedProduct = useProductCheckoutStore((state) => state.product);
+  const quantity = useProductCheckoutStore((state) => state.quantity);
+  const couponId = useProductCheckoutStore((state) => state.couponId);
+  const couponCode = useProductCheckoutStore((state) => state.couponCode);
+  const storedCouponDiscount = useProductCheckoutStore(
     (state) => state.discountAmount,
   );
-  const discountType = useCheckoutStore((state) => state.discountType);
+  const discountType = useProductCheckoutStore((state) => state.discountType);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<number>(2);
-  const [event, setEvent] = useState<Event | null>(null);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [product, setProduct] = useState<DigitalProduct | null>(null);
 
   useEffect(() => {
-    const eventData: Event = storedEvent as Event;
-    if (eventData && eventData.dates && eventData.dates.length > 0) {
-      setEvent(eventData as Event);
-
-      const sdate = eventData.dates.find((item) => item.id === dateId);
-      setSelectedDate(eventDateTimeString(sdate ?? eventData.dates[0], locale));
+    if (storedProduct) {
+      setProduct(storedProduct as DigitalProduct);
     }
-  }, [storedEvent]);
+  }, [storedProduct]);
 
-  const rawSubtotal = event?.price! * quantity;
-  const hasOffer = offerId !== null && storedOfferDiscount > 0;
-  const offerDiscountAmount = hasOffer ? storedOfferDiscount : 0;
+  const rawSubtotal = (product?.price ?? 0) * quantity;
   const hasCoupon = couponId !== null && storedCouponDiscount > 0;
   const couponDiscountAmount = hasCoupon ? storedCouponDiscount : 0;
-  const totalDiscount = offerDiscountAmount + couponDiscountAmount;
-
-  const total = rawSubtotal - totalDiscount;
+  const total = rawSubtotal - couponDiscountAmount;
 
   useEffect(() => {
     if (total && total > 0) {
@@ -117,56 +101,33 @@ export default function CheckoutPage() {
 
     if (!user) {
       setIsProcessing(false);
-      router.replace("/login");
+      router.replace(
+        `/login?redirect=${encodeURIComponent("/product-checkout")}`,
+      );
       return;
     }
 
     const orderId = generateIDNumber("ORDER");
 
-    const ticketsIds: string[] = [];
-    const tickets: Ticket[] = [];
-
-    for (let i = 0; i < quantity; i++) {
-      const ticketId = generateIDNumber("TICKET");
-
-      const ticket: Ticket = {
-        id: ticketId,
-        orderId: orderId,
-        userId: user.id,
-        eventId: event?.id!,
-        eventDateId: event?.dates.find((item) => item.id === dateId)?.id!,
-        qrCode: "",
-        status: TicketStatus.PENDING,
-        purchasePrice: event?.price || 0,
-      };
-      ticketsIds.push(ticketId);
-      tickets.push(ticket);
-    }
-
-    const order: Order = {
+    const order: ProductOrder = {
       id: orderId,
+      productId: product?.id!,
       userId: user.id,
-      eventId: event?.id!,
-      invoiceId: null,
+      price: total,
       orderDate: new Date(),
-      status: OrderStatus.PENDING,
-      totalAmount: total,
-      couponId: couponId ?? offerId ?? null,
-      discountAmount: totalDiscount,
-      discountType: discountType ?? (hasOffer ? "offer" : null),
+      status: ProductOrderStatus.PENDING,
+      couponId: couponId ?? null,
+      discountAmount: couponDiscountAmount,
+      discountType: discountType ?? null,
       paymentMethod:
         paymentMethods.find((m) => m.PaymentMethodId === selectedMethod)
           ?.PaymentMethodEn || "MADA",
-      tickets: ticketsIds,
     };
 
-    const response = await fetch("/api/checkout", {
+    const response = await fetch("/api/product-checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        order: order,
-        tickets: tickets,
-      }),
+      body: JSON.stringify({ order }),
     });
 
     if (!response.ok) {
@@ -181,10 +142,9 @@ export default function CheckoutPage() {
       return;
     }
 
-    await mutate("/api/admin/events");
-    await mutate("/api/admin/orders");
-    await mutate("/api/admin/customers", undefined, { revalidate: true });
-    await mutate("/api/published-events");
+    await mutate("/api/admin/products");
+    await mutate(`/api/admin/products/${product?.id}/orders`);
+    await mutate("/api/published-products");
 
     try {
       const payload = {
@@ -192,8 +152,9 @@ export default function CheckoutPage() {
         invoiceValue: total,
         customerName: user.name,
         customerEmail: user.email,
-        customerReference: `event-${event?.slug}`,
+        customerReference: `product-${product?.slug}`,
         orderId,
+        checkoutType: "product",
       };
 
       const res = await fetch("/api/payment/execute", {
@@ -210,7 +171,7 @@ export default function CheckoutPage() {
       if (!redirectUrl) throw new Error("Missing redirect url from gateway");
 
       window.location.href = redirectUrl;
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Payment Failed",
         description:
@@ -222,23 +183,24 @@ export default function CheckoutPage() {
     }
   };
 
-  if (!event?.id! || !dateId) {
+  if (!product?.id) {
     return (
       <div className="container pt-20 text-center">
         <h1 className="text-2xl font-bold mb-4">
           {t("invalidInfo") || "Invalid checkout information"}
         </h1>
         <p className="mb-6">
-          {t("selectEventDate") ||
-            "Please select an event and date before proceeding to checkout."}
+          {tProduct("productNotFound") ||
+            "Please select a product before proceeding to checkout."}
         </p>
         <Button asChild>
-          <a href="/">{t("allEvents")}</a>
+          <a href="/">{tHome("allProducts")}</a>
         </Button>
       </div>
     );
   }
-  if (!event) {
+
+  if (!product) {
     return (
       <div className="flex justify-center items-center py-24">
         <Loading />
@@ -268,37 +230,30 @@ export default function CheckoutPage() {
             </div>
 
             <div className="flex items-start gap-4 mb-6">
-              <div className="h-20 w-20 overflow-hidden rounded-md">
+              <div className="h-20 w-20 overflow-hidden rounded-md shrink-0">
                 <img
                   src={
-                    event.eventLogo?.trim()
-                      ? event.eventLogo
-                      : event.eventImage?.trim()
-                        ? event.eventImage
-                        : "/no-image.svg"
+                    product.coverImage?.trim()
+                      ? product.coverImage
+                      : "/images/product/Digital-Product.png"
                   }
-                  alt={event.title}
+                  alt={product.title}
                   className="h-full w-full object-cover"
                 />
               </div>
               <div>
-                <h3 className="text-lg font-medium">{event.title}</h3>
-                <div className="flex items-center text-sm text-muted-foreground mt-1">
-                  <CalendarDays className="me-1 h-4 w-4 text-redColor" />
-                  {selectedDate.split("-")[1]}
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground mt-1">
-                  <ClockIcon className="me-1 h-4 w-4 text-redColor" />
-                  {selectedDate.split("-")[2]} - {selectedDate.split("-")[3]}
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground mt-1">
-                  <MapPin className="me-1 h-4 w-4 text-redColor" />
-                  {event.city.en}
+                <h3 className="text-lg font-medium">
+                  {locale === "en" ? product.title : product.titleAr}
+                </h3>
+                <div className="flex items-center text-sm mt-1">
+                  <Package className="me-1 h-4 w-4 text-redColor" />
+                  {quantity} {quantity === 1 ? "item" : "items"}
                 </div>
                 <div className="flex items-center text-sm mt-1">
-                  <TicketIcon className="me-1 h-4 w-4 text-redColor" />
-                  {quantity}{" "}
-                  {quantity === 1 ? tEvent("ticket") : tEvent("tickets")}
+                  <FileText className="me-1 h-4 w-4 text-redColor" />
+                  {locale === "en"
+                    ? product.categoryName?.en
+                    : product.categoryName?.ar}
                 </div>
               </div>
             </div>
@@ -306,7 +261,7 @@ export default function CheckoutPage() {
             <Separator className="my-4" />
 
             <div className="space-y-2">
-              {(hasOffer || hasCoupon) && (
+              {hasCoupon && (
                 <>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
@@ -315,36 +270,24 @@ export default function CheckoutPage() {
                     <span>{price(rawSubtotal, locale)}</span>
                   </div>
 
-                  {hasOffer && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span className="flex items-center gap-1">
-                        <Tag className="h-3.5 w-3.5" />
-                        {tCoupon("offerDiscount") || "Offer Discount"}
-                      </span>
-                      <span>-{price(offerDiscountAmount, locale)}</span>
-                    </div>
-                  )}
-
-                  {hasCoupon && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span className="flex items-center gap-1">
-                        <Tag className="h-3.5 w-3.5" />
-                        {tCoupon("couponDiscount") || "Coupon Discount"}
-                        {couponCode && (
-                          <span className="font-mono text-xs bg-green-100 px-1.5 py-0.5 rounded">
-                            {couponCode}
-                          </span>
-                        )}
-                      </span>
-                      <span>-{price(couponDiscountAmount, locale)}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3.5 w-3.5" />
+                      {tCoupon("couponDiscount") || "Coupon Discount"}
+                      {couponCode && (
+                        <span className="font-mono text-xs bg-green-100 px-1.5 py-0.5 rounded">
+                          {couponCode}
+                        </span>
+                      )}
+                    </span>
+                    <span>-{price(couponDiscountAmount, locale)}</span>
+                  </div>
 
                   <Separator className="my-2" />
                 </>
               )}
               <div className="flex justify-between font-bold">
-                <span>{tEvent("total")}</span>
+                <span>{tProduct("totalPrice")}</span>
                 <span>{price(total, locale)}</span>
               </div>
             </div>

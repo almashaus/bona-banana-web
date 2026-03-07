@@ -4,6 +4,8 @@ import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
 import { Event } from "@/src/models/event";
 import { Ticket } from "@/src/models/ticket";
 import { AppUser } from "@/src/models/user";
+import { DigitalProduct } from "@/src/models/digitalProduct";
+import { ProductOrder } from "@/src/models/productOrder";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -44,9 +46,49 @@ export async function GET(
       })
     );
 
+    // Fetch product purchases (productOrders + digitalProducts)
+    const productOrdersSnapshot = await db
+      .collection("productOrders")
+      .where("userId", "==", id)
+      .get();
+
+    const purchasesData = await Promise.all(
+      productOrdersSnapshot.docs.map(async (doc) => {
+        const orderData = doc.data();
+        const order: ProductOrder = {
+          id: doc.id,
+          productId: orderData.productId,
+          userId: orderData.userId,
+          price: orderData.price ?? 0,
+          orderDate: orderData.orderDate?.toDate?.() ?? orderData.orderDate,
+          status: orderData.status,
+          paymentMethod: orderData.paymentMethod,
+          invoiceId: orderData.invoiceId,
+          couponId: orderData.couponId,
+          discountAmount: orderData.discountAmount,
+          discountType: orderData.discountType,
+        };
+
+        let product: DigitalProduct | null = null;
+        if (order.productId) {
+          const productDoc = await db
+            .collection("digitalProducts")
+            .doc(order.productId)
+            .get();
+          product = productDoc.exists ? (productDoc.data() as DigitalProduct) : null;
+        }
+
+        return { order, product };
+      })
+    );
+
     if (user) {
       return new Response(
-        JSON.stringify({ appUser: user, tickets: ticketsData }),
+        JSON.stringify({
+          appUser: user,
+          tickets: ticketsData,
+          purchases: purchasesData,
+        }),
         {
           status: 200,
           headers: { "Content-Type": "application/json" },

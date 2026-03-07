@@ -40,7 +40,6 @@ export async function GET() {
       return getNearestDate(a).getTime() - getNearestDate(b).getTime();
     });
 
-    console.log(events);
     return new Response(JSON.stringify(events), {
       status: 200,
       headers: {

@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
       customerEmail,
       customerReference,
       orderId,
+      checkoutType,
     } = body;
 
     if (!paymentMethodId || !invoiceValue || Number(invoiceValue) <= 0) {
@@ -29,9 +30,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const isProductCheckout = checkoutType === "product";
+    const resultPath = isProductCheckout ? "product-checkout/result" : "checkout/result";
+    const errorPath = isProductCheckout ? "product-checkout/error" : "checkout/error";
+
     // Callback URLs (MyFatoorah will append PaymentId)
-    const callbackUrl = `${BASE_URL}/checkout/result?orderId=${encodeURIComponent(orderId || "")}`;
-    const errorUrl = `${BASE_URL}/checkout/error?orderId=${encodeURIComponent(orderId || "")}`;
+    const callbackUrl = `${BASE_URL}/${resultPath}?orderId=${encodeURIComponent(orderId || "")}`;
+    const errorUrl = `${BASE_URL}/${errorPath}?orderId=${encodeURIComponent(orderId || "")}`;
 
     const payload = {
       PaymentMethodId: paymentMethodId,
@@ -63,8 +68,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const collectionName = isProductCheckout ? "productOrders" : "orders";
     await db
-      .collection("orders")
+      .collection(collectionName)
       .doc(orderId)
       .update({ invoiceId: data?.Data?.InvoiceId });
 

@@ -7,6 +7,9 @@
     "title": "Events",
     "subtitle": "Discover the most popular events happening near you",
     "allEvents": "View All Events",
+    "productsTitle": "Products",
+    "productsSubtitle": "Discover the digital products we offer",
+    "allProducts": "View All Products",
     "backToHome": "Back to Main Page",
     "noEvents": "There is no event currently, Come back later!",
     "error": "Something went wrong. Please try again later.",
@@ -16,6 +19,7 @@
   "Nav": {
     "profile": "Profile",
     "myTickets": "My Tickets",
+    "myPurchases": "My Purchases",
     "dashboard": "Dashboard",
     "login": "Login",
     "logout": "Log out"
@@ -109,6 +113,7 @@
   "Confirm": {
     "confirm": "Order Confirmed!",
     "purchase": "Your ticket have been successfully purchased.",
+    "orderPurchase": "Your product have been successfully purchased.",
     "orderNumber": "Order Number",
     "presentQR": "Present this QR code at the venue",
     "download": "Download",
@@ -192,9 +197,31 @@
     "send": "Send",
     "getTouch": "Get in touch"
   },
+  "Product": {
+    "productNotFound": "Product not found",
+    "backToHome": "Back to Home",
+    "format": "Format",
+    "size": "Size",
+    "pages": "Pages",
+    "language": "Language",
+    "pricing": "Product Pricing",
+    "price": "Price",
+    "couponCode": "Coupon Code",
+    "applied": "Applied",
+    "enterCouponCode": "Enter coupon code",
+    "apply": "Apply",
+    "couponDiscount": "Coupon Discount",
+    "totalPrice": "Total Price",
+    "continueToCheckout": "Continue to Checkout",
+    "invalidCouponCode": "Invalid coupon code",
+    "missingRequiredFields": "Missing required fields",
+    "couponCouldNotBeApplied": "Coupon could not be applied",
+    "failedToValidateCoupon": "Failed to validate coupon"
+  },
   "Profile": {
     "profile": "Profile",
     "myTickets": "My Tickets",
+    "myPurchases": "My Purchases",
     "settings": "Settings",
     "personalInformation": "Personal Information",
     "name": "Name",
@@ -215,6 +242,14 @@
     "QRCode": "QR Code",
     "status": "Status",
     "accountSettings": "Account Settings",
-    "logout": "Log out"
+    "logout": "Log out",
+    "dontHavePurchases": "You don't have any product purchases yet.",
+    "browseProducts": "Browse Products",
+    "productTitle": "Product",
+    "orderDate": "Order Date",
+    "orderID": "Order ID",
+    "price": "Price",
+    "file": "File",
+    "productDeleted": "Product no longer available"
   }
 }

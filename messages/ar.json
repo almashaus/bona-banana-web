@@ -7,6 +7,9 @@
     "title": "الفعاليات",
     "subtitle": "ابحث واحجز تذاكر لأفضل الفعاليات بالقرب منك",
     "allEvents": "عرض جميع الفعاليات",
+    "productsTitle": "المنتجات",
+    "productsSubtitle": "اكتشف المنتجات الرقمية المميزة التي نقدمها لك",
+    "allProducts": "عرض جميع المنتجات",
     "backToHome": "العودة للصفحة الرئيسية",
     "noEvents": "لا توجد فعالية حاليًا، عد لاحقًا!",
     "error": "حدث خطأ ما. يُرجى المحاولة لاحقًا.",
@@ -16,6 +19,7 @@
   "Nav": {
     "profile": "الملف الشخصي",
     "myTickets": "تذاكري",
+    "myPurchases": "مشترياتي",
     "dashboard": "لوحة التحكم",
     "login": "تسجيل الدخول",
     "logout": "تسجيل الخروج"
@@ -109,6 +113,7 @@
   "Confirm": {
     "confirm": "تم تأكيد الطلب!",
     "purchase": "تم شراء تذكرتك بنجاح.",
+    "orderPurchase": "تم شراء المنتج بنجاح.",
     "orderNumber": "رقم الطلب",
     "presentQR": "يرجى إظهار هذا الكود عند الفعالية",
     "download": "تحميل",
@@ -192,9 +197,31 @@
     "send": "أرسل",
     "getTouch": "ابق على تواصل"
   },
+  "Product": {
+    "productNotFound": "المنتج غير موجود",
+    "backToHome": "العودة للرئيسية",
+    "format": "الصيغة",
+    "size": "الحجم",
+    "pages": "الصفحات",
+    "language": "اللغة",
+    "pricing": "سعر المنتج",
+    "price": "السعر",
+    "couponCode": "كود الخصم",
+    "applied": "مُطبَّق",
+    "enterCouponCode": "أدخل كود الخصم",
+    "apply": "تطبيق",
+    "couponDiscount": "خصم الكود",
+    "totalPrice": "المبلغ الإجمالي",
+    "continueToCheckout": "متابعة للدفع",
+    "invalidCouponCode": "كود الخصم غير صالح",
+    "missingRequiredFields": "الحقول المطلوبة مفقودة",
+    "couponCouldNotBeApplied": "تعذر تطبيق كود الخصم",
+    "failedToValidateCoupon": "فشل التحقق من كود الخصم"
+  },
   "Profile": {
     "profile": "الملف الشخصي",
     "myTickets": "تذاكري",
+    "myPurchases": "مشترياتي",
     "settings": "الإعدادات",
     "personalInformation": "المعلومات الشخصية",
     "name": "الاسم",
@@ -215,6 +242,14 @@
     "QRCode": "رمز QR",
     "status": "الحالة",
     "accountSettings": "إعدادات الحساب",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "dontHavePurchases": "ليس لديك أي مشتريات منتجات بعد.",
+    "browseProducts": "تصفح المنتجات",
+    "productTitle": "المنتج",
+    "orderDate": "تاريخ الطلب",
+    "orderID": "رقم الطلب",
+    "price": "السعر",
+    "file": "الملف",
+    "productDeleted": "المنتج لم يعد متاحاً"
   }
 }

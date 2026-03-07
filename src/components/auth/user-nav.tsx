@@ -62,6 +62,11 @@ export function UserNav({ user }: { user: AppUser }) {
           <DropdownMenuItem onClick={() => router.push("/profile?tab=tickets")}>
             {t("myTickets")}
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => router.push("/profile?tab=purchases")}
+          >
+            {t("myPurchases")}
+          </DropdownMenuItem>
           {user.hasDashboardAccess && (
             <DropdownMenuItem
               className="text-redColor"

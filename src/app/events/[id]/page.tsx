@@ -169,9 +169,14 @@ export default function EventPage() {
 
   useEffect(() => {
     const eventData: Event = data as Event;
-    if (eventData && eventData.status === EventStatus.DRAFT) {
-      router.replace("/");
-      return;
+    if (eventData) {
+      if (
+        eventData.status !== EventStatus.PUBLISHED &&
+        eventData.status !== EventStatus.COMPLETED
+      ) {
+        router.replace("/");
+        return;
+      }
     }
     if (eventData && eventData.dates && eventData.dates.length > 0) {
       setEvent(eventData);

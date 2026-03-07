@@ -1,6 +1,7 @@
 import {
   CalendarRange,
   LayoutDashboard,
+  Package,
   ShieldCheck,
   Ticket,
   UserRound,
@@ -31,6 +32,12 @@ export const sidebarData: SidebarItem[] = [
     url: "/admin/reservations",
     icon: Ticket,
     requires: { feature: "Reservations", action: "view" },
+  },
+  {
+    title: "Products",
+    url: "/admin/products",
+    icon: Package,
+    requires: { feature: "Products", action: "view" },
   },
   {
     title: "Customers",
