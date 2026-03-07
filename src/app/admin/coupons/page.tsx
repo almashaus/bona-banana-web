@@ -669,7 +669,9 @@ export default function CouponsPage() {
                 <DollarSign className="h-4 w-4 text-orangeColor" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{price(totalRevenue)}</div>
+                <div className="text-2xl font-bold">
+                  {price(Number(totalRevenue.toFixed(2)))}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   From coupon-applied orders
                 </p>
@@ -683,7 +685,9 @@ export default function CouponsPage() {
                 <Percent className="h-4 w-4 text-orangeColor" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{price(totalDiscount)}</div>
+                <div className="text-2xl font-bold">
+                  {price(Number(totalDiscount.toFixed(2)))}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Total discount value granted
                 </p>
@@ -901,7 +905,9 @@ export default function CouponsPage() {
                           ) : (
                             <div className="flex items-center gap-1">
                               <DollarSign className="h-3.5 w-3.5 text-orangeColor" />
-                              <span>{price(c.discountValue)}</span>
+                              <span>
+                                {price(Number(c.discountValue.toFixed(2)))}
+                              </span>
                             </div>
                           )}
                           {c.type === "Voucher" &&
@@ -958,12 +964,12 @@ export default function CouponsPage() {
 
                       {/* Revenue */}
                       <TableCell className="font-medium text-center">
-                        {price(c.revenueImpact)}
+                        {price(Number(c.revenueImpact.toFixed(2)))}
                       </TableCell>
 
                       {/* Discount impact */}
                       <TableCell className="text-red-600 dark:text-red-400 text-center">
-                        -{price(c.discountImpact)}
+                        -{price(Number(c.discountImpact.toFixed(2)))}
                       </TableCell>
 
                       {/* Validity */}

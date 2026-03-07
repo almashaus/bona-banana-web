@@ -121,7 +121,7 @@ function ProductConfirmation() {
             <div className="space-y-2">
               <div className="flex justify-between font-bold">
                 <span>{tProduct("totalPrice")}</span>
-                <span>{price(order.price, locale)}</span>
+                <span>{price(Number(order.price.toFixed(2)), locale)}</span>
               </div>
             </div>
           </CardContent>

@@ -512,7 +512,7 @@ function Profile() {
                                 {formatDate(new Date(order.orderDate), locale)}
                               </TableCell>
                               <TableCell>
-                                {price(order.price, locale)}
+                                {price(Number(order.price.toFixed(2)), locale)}
                               </TableCell>
                               <TableCell>
                                 <Badge

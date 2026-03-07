@@ -321,7 +321,9 @@ export default function CheckoutPage() {
                         <Tag className="h-3.5 w-3.5" />
                         {tCoupon("offerDiscount") || "Offer Discount"}
                       </span>
-                      <span>-{price(offerDiscountAmount, locale)}</span>
+                      <span>
+                        -{price(Number(offerDiscountAmount.toFixed(2)), locale)}
+                      </span>
                     </div>
                   )}
 
@@ -336,7 +338,10 @@ export default function CheckoutPage() {
                           </span>
                         )}
                       </span>
-                      <span>-{price(couponDiscountAmount, locale)}</span>
+                      <span>
+                        -
+                        {price(Number(couponDiscountAmount.toFixed(2)), locale)}
+                      </span>
                     </div>
                   )}
 
@@ -345,7 +350,7 @@ export default function CheckoutPage() {
               )}
               <div className="flex justify-between font-bold">
                 <span>{tEvent("total")}</span>
-                <span>{price(total, locale)}</span>
+                <span>{price(Number(total.toFixed(2)), locale)}</span>
               </div>
             </div>
           </div>
@@ -429,7 +434,7 @@ export default function CheckoutPage() {
                       </span>
                     ) : (
                       <span>
-                        {t("pay")} {price(total, locale)}
+                        {t("pay")} {price(Number(total.toFixed(2)), locale)}
                       </span>
                     )}
                   </Button>

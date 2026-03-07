@@ -820,8 +820,8 @@ export default function EventPage() {
                     <span>{tEvent("total")}</span>
                     <span>
                       {offerDiscount > 0 || appliedCoupon
-                        ? price(finalTotal, locale)
-                        : price(subtotal, locale)}
+                        ? price(Number(finalTotal.toFixed(2)), locale)
+                        : price(Number(subtotal.toFixed(2)), locale)}
                     </span>
                   </div>
                   <div className="pt-3">

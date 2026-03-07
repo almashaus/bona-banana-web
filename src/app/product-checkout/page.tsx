@@ -267,7 +267,7 @@ export default function ProductCheckoutPage() {
                     <span className="text-muted-foreground">
                       {t("subtotal") || "Subtotal"}
                     </span>
-                    <span>{price(rawSubtotal, locale)}</span>
+                    <span>{price(Number(total.toFixed(2)), locale)}</span>
                   </div>
 
                   <div className="flex justify-between text-sm text-green-600">
@@ -280,7 +280,9 @@ export default function ProductCheckoutPage() {
                         </span>
                       )}
                     </span>
-                    <span>-{price(couponDiscountAmount, locale)}</span>
+                    <span>
+                      -{price(Number(couponDiscountAmount.toFixed(2)), locale)}
+                    </span>
                   </div>
 
                   <Separator className="my-2" />
@@ -288,7 +290,7 @@ export default function ProductCheckoutPage() {
               )}
               <div className="flex justify-between font-bold">
                 <span>{tProduct("totalPrice")}</span>
-                <span>{price(total, locale)}</span>
+                <span>{price(Number(total.toFixed(2)), locale)}</span>
               </div>
             </div>
           </div>
@@ -372,7 +374,7 @@ export default function ProductCheckoutPage() {
                       </span>
                     ) : (
                       <span>
-                        {t("pay")} {price(total, locale)}
+                        {t("pay")} {price(Number(total.toFixed(2)), locale)}
                       </span>
                     )}
                   </Button>

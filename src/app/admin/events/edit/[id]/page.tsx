@@ -441,7 +441,7 @@ export default function EditEventPage() {
 
                           const numberValue = Number(value);
                           if (!isNaN(numberValue)) {
-                            setPrice(value);
+                            setPrice(numberValue.toFixed(2));
                           }
                         }}
                         placeholder="25"

@@ -265,7 +265,7 @@ export default function ProductPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">{t("price")}</span>
                   <span className="text-2xl font-bold">
-                    {price(product.price, locale)}
+                    {price(Number(product.price.toFixed(2)), locale)}
                   </span>
                 </div>
 
@@ -335,7 +335,11 @@ export default function ProductPage() {
                     <div className="flex items-center justify-between text-sm text-green-600">
                       <span>{t("couponDiscount")}</span>
                       <span>
-                        -{price(appliedCoupon.discountAmount, locale)}
+                        -
+                        {price(
+                          Number(appliedCoupon.discountAmount.toFixed(2)),
+                          locale,
+                        )}
                       </span>
                     </div>
                   </>

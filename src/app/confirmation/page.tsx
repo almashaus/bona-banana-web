@@ -48,7 +48,7 @@ function Confirmation() {
   }
 
   const { data, error, isLoading } = useSWR<Response>(
-    `/api/order?orderNumber=${orderNumber}`
+    `/api/order?orderNumber=${orderNumber}`,
   );
 
   useEffect(() => {
@@ -61,7 +61,7 @@ function Confirmation() {
         setEvent(eventData as Event);
 
         const sDate = eventData.dates.find(
-          (item) => item.id === data.tickets[0].eventDateId
+          (item) => item.id === data.tickets[0].eventDateId,
         )?.date!;
         setDate(sDate);
       }
@@ -195,7 +195,7 @@ function Confirmation() {
                     tEvent("tickets").slice(1)}
                 </span>
                 <span>
-                  {quantity} × {price(event.price, locale)}
+                  {quantity} × {price(Number(event.price.toFixed(2)), locale)}
                 </span>
               </div>
               {/* TODO: VAT*/}
@@ -225,7 +225,7 @@ function Confirmation() {
                     *{tCheckout("VAT")}
                   </span> */}
                 </span>
-                <span>{price(total, locale)}</span>
+                <span>{price(Number(total.toFixed(2)), locale)}</span>
               </div>
             </div>
           </CardContent>
