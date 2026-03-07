@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { EmblaOptionsType, EmblaCarouselType } from "embla-carousel";
 import {
   DotButton,
@@ -13,6 +13,7 @@ import {
   usePrevNextButtons,
 } from "@/src/components/ui/EmblaCarouselArrowButtons";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 
 type PropType = {
   slides?: number[];
@@ -34,7 +35,12 @@ const EmblaCarousel: React.FC<PropType> = (props) => {
       : undefined,
   );
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    setImageLoading(true);
+  }, [selectedImage]);
 
   const { selectedIndex, scrollSnaps, onDotButtonClick } =
     useDotButton(emblaApi);
@@ -102,13 +108,20 @@ const EmblaCarousel: React.FC<PropType> = (props) => {
       >
         <DialogTitle></DialogTitle>
         <DialogContent className="max-w-screen-lg max-h-[70vh] p-0 gap-0 overflow-hidden border-0 bg-black/25 [&>button]:text-white [&>button]:hover:text-white/90">
-          <div className="flex items-center justify-center min-h-[70vh] overflow-auto p-4">
+          <div className="relative flex items-center justify-center min-h-[200px] min-w-[280px] max-h-[70vh] overflow-auto p-4">
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-10">
+                <Loader2 className="h-10 w-10 animate-spin text-white" />
+              </div>
+            )}
             {selectedImage !== null && (
               <img
                 src={images?.[selectedImage] ?? "/no-image.svg"}
                 alt={`Product image ${selectedImage + 1}`}
-                className="max-w-full object-contain transition-transform duration-150 select-none scale-100 md:scale-150"
+                className={`max-w-full max-h-[calc(70vh-2rem)] w-auto h-auto object-contain select-none ${imageLoading ? "opacity-0" : "opacity-100"} transition-opacity`}
                 draggable={false}
+                onLoad={() => setImageLoading(false)}
+                onError={() => setImageLoading(false)}
               />
             )}
           </div>

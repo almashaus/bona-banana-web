@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpenText,
   FileCog,
   FileText,
   HardDrive,
@@ -209,7 +210,7 @@ export default function ProductPage() {
                     <div className="flex flex-col items-center gap-3 text-xs md:text-sm ">
                       <div className="flex flex-row items-center gap-1 text-orangeColor">
                         <FileCog className="h-4 w-4  shrink-0" />
-                        <span className="">{t("format")}</span>
+                        <span className="hidden sm:inline">{t("format")}</span>
                       </div>
                       <span>{product.downloadableFile?.fileFormat}</span>
                     </div>
@@ -220,7 +221,7 @@ export default function ProductPage() {
                       <div className="flex flex-col items-center gap-3 text-xs md:text-sm">
                         <div className="flex flex-row items-center gap-1 text-orangeColor">
                           <HardDrive className="h-4 w-4  shrink-0" />
-                          <span className="">{t("size")}</span>
+                          <span className="hidden sm:inline">{t("size")}</span>
                         </div>
                         <span>
                           {formatFileSize(product.downloadableFile?.fileSize)}
@@ -233,8 +234,8 @@ export default function ProductPage() {
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col items-center gap-3 text-xs md:text-sm">
                         <div className="flex flex-row items-center gap-1 text-orangeColor">
-                          <FileText className="h-4 w-4  shrink-0" />
-                          <span className="">{t("pages")}</span>
+                          <BookOpenText className="h-4 w-4  shrink-0" />
+                          <span className="hidden sm:inline">{t("pages")}</span>
                         </div>
                         <span>{product.downloadableFile?.filePageCount}</span>
                       </div>
@@ -246,7 +247,9 @@ export default function ProductPage() {
                       <div className="flex flex-col items-center gap-3 text-xs md:text-sm">
                         <div className="flex flex-row items-center gap-1 text-orangeColor">
                           <Languages className="h-4 w-4  shrink-0" />
-                          <span className="">{t("language")}</span>
+                          <span className="hidden sm:inline">
+                            {t("language")}
+                          </span>
                         </div>
                         <span>{product.downloadableFile?.language}</span>
                       </div>

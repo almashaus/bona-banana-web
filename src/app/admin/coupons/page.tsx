@@ -685,8 +685,8 @@ export default function CouponsPage() {
                 <Percent className="h-4 w-4 text-orangeColor" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {price(Number(totalDiscount.toFixed(2)))}
+                <div className="text-2xl font-bold text-red-600">
+                  -{price(Number(totalDiscount.toFixed(2)))}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Total discount value granted

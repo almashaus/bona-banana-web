@@ -717,21 +717,13 @@ export default function ProductsManagementPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]"></TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Category
-                    </TableHead>
+                    <TableHead className="">Title</TableHead>
+                    <TableHead className="">Category</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      Sales
-                    </TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      Orders
-                    </TableHead>
-                    <TableHead className="hidden xl:table-cell">
-                      Updated
-                    </TableHead>
+                    <TableHead className="">Sales</TableHead>
+                    <TableHead className="">Orders</TableHead>
+                    <TableHead className="">Updated</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -756,12 +748,14 @@ export default function ProductsManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-left">
-                        <div className="font-medium">{product.title}</div>
+                        <div className="font-medium w-[100px]">
+                          {product.title}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {product.slug}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      <TableCell className="">
                         {product.categoryName?.en}
                       </TableCell>
                       <TableCell>
@@ -781,17 +775,25 @@ export default function ProductsManagementPage() {
                           {product.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">
+                      <TableCell className="">
                         <div className="flex items-center justify-center gap-1">
                           <span className="icon-saudi_riyal text-xs" />
                           {product.totalSales?.toFixed(2) ?? "0.00"}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {product.purchaseCount ?? 0}
+                      <TableCell className="text-orangeColor">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setOrdersProduct(product)}
+                        >
+                          {product.purchaseCount ?? 0}
+                          <ShoppingCart className="mr-2 h-4 w-4 " />
+                        </Button>
                       </TableCell>
 
-                      <TableCell className="hidden xl:table-cell text-muted-foreground text-xs">
+                      <TableCell className=" text-muted-foreground text-xs">
                         {formatDate(product.updatedAt)}
                       </TableCell>
                       <TableCell>
