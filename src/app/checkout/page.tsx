@@ -29,6 +29,7 @@ import Loading from "@/src/components/ui/loading";
 import { useCheckoutStore } from "@/src/lib/stores/useCheckoutStore";
 import { mutate } from "swr";
 import { price } from "@/src/lib/utils/locales";
+import { roundMoney } from "@/src/lib/utils/utils";
 import { paymentMethodsIds } from "@/src/data/appData";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -78,14 +79,14 @@ export default function CheckoutPage() {
     }
   }, [storedEvent]);
 
-  const rawSubtotal = event?.price! * quantity;
+  const rawSubtotal = roundMoney(event?.price! * quantity);
   const hasOffer = offerId !== null && storedOfferDiscount > 0;
-  const offerDiscountAmount = hasOffer ? storedOfferDiscount : 0;
+  const offerDiscountAmount = hasOffer ? roundMoney(storedOfferDiscount) : 0;
   const hasCoupon = couponId !== null && storedCouponDiscount > 0;
-  const couponDiscountAmount = hasCoupon ? storedCouponDiscount : 0;
-  const totalDiscount = offerDiscountAmount + couponDiscountAmount;
+  const couponDiscountAmount = hasCoupon ? roundMoney(storedCouponDiscount) : 0;
+  const totalDiscount = roundMoney(offerDiscountAmount + couponDiscountAmount);
 
-  const total = rawSubtotal - totalDiscount;
+  const total = roundMoney(rawSubtotal - totalDiscount);
 
   useEffect(() => {
     if (total && total > 0) {
@@ -322,7 +323,7 @@ export default function CheckoutPage() {
                         {tCoupon("offerDiscount") || "Offer Discount"}
                       </span>
                       <span>
-                        -{price(Number(offerDiscountAmount.toFixed(2)), locale)}
+                        -{price(offerDiscountAmount, locale)}
                       </span>
                     </div>
                   )}
@@ -340,7 +341,7 @@ export default function CheckoutPage() {
                       </span>
                       <span>
                         -
-                        {price(Number(couponDiscountAmount.toFixed(2)), locale)}
+                        {price(couponDiscountAmount, locale)}
                       </span>
                     </div>
                   )}
@@ -350,7 +351,7 @@ export default function CheckoutPage() {
               )}
               <div className="flex justify-between font-bold">
                 <span>{tEvent("total")}</span>
-                <span>{price(Number(total.toFixed(2)), locale)}</span>
+                <span>{price(total, locale)}</span>
               </div>
             </div>
           </div>
@@ -434,7 +435,7 @@ export default function CheckoutPage() {
                       </span>
                     ) : (
                       <span>
-                        {t("pay")} {price(Number(total.toFixed(2)), locale)}
+                        {t("pay")} {price(total, locale)}
                       </span>
                     )}
                   </Button>

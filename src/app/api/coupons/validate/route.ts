@@ -4,6 +4,7 @@ import {
   validateCoupon,
   CouponValidationContext,
 } from "@/src/lib/utils/couponValidation";
+import { roundMoney } from "@/src/lib/utils/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const discountAmount = result.discountAmount ?? 0;
+    const discountAmount = roundMoney(result.discountAmount ?? 0);
     const isBuyXGetY =
       coupon.type === "Offer" && coupon.offerSubtype === "buyXgetY";
 
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
       couponCode: coupon.code,
       discountAmount,
       discountType: isBuyXGetY ? "buyXgetY" : coupon.discountKind,
-      updatedCartTotal: cartSubtotal - discountAmount,
+      updatedCartTotal: roundMoney(cartSubtotal - discountAmount),
       couponDetails: {
         type: coupon.type,
         discountKind: coupon.discountKind,

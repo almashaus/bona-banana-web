@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { mutate } from "swr";
@@ -25,6 +25,7 @@ function ProductCheckoutResult() {
 
   const [polling, setPolling] = useState(true);
   const [attempts, setAttempts] = useState(0);
+  const hasUpdatedOrderRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{
@@ -88,23 +89,27 @@ function ProductCheckoutResult() {
         const result = await fetchStatus();
 
         if (result?.data?.Data?.InvoiceStatus === "Paid" && user?.email) {
-          const updateResponse = await fetch("/api/product-checkout", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: orderId,
-              email: user.email,
-            }),
-          });
+          if (!hasUpdatedOrderRef.current) {
+            hasUpdatedOrderRef.current = true;
+            const updateResponse = await fetch("/api/product-checkout", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId: orderId,
+                email: user.email,
+              }),
+            });
 
-          if (!updateResponse.ok) {
-            throw new Error("Error in updating order");
+            if (!updateResponse.ok) {
+              hasUpdatedOrderRef.current = false;
+              throw new Error("Error in updating order");
+            }
+
+            await mutate("/api/admin/products");
+            await mutate("/api/published-products");
+
+            router.replace(`/product-confirmation?orderNumber=${orderId}`);
           }
-
-          await mutate("/api/admin/products");
-          await mutate("/api/published-products");
-
-          router.replace(`/product-confirmation?orderNumber=${orderId}`);
         }
         if (result?.data?.Data?.InvoiceStatus === "Pending" && !polling) {
           setLoading(false);

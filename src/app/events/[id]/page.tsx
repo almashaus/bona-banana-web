@@ -47,6 +47,7 @@ import {
   findFirstTodayOrAfter,
   isBeforeToday,
   isSafeImageUrl,
+  roundMoney,
 } from "@/src/lib/utils/utils";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { price } from "@/src/lib/utils/locales";
@@ -102,10 +103,10 @@ function recalculateDiscount(
   if (details.discountKind === "percentage") {
     let discount = (subtotal * details.discountValue) / 100;
     if (details.maxCap != null) discount = Math.min(discount, details.maxCap);
-    return discount;
+    return roundMoney(discount);
   }
 
-  return Math.min(details.discountValue, subtotal);
+  return roundMoney(Math.min(details.discountValue, subtotal));
 }
 
 function computeOfferDiscount(
@@ -123,16 +124,16 @@ function computeOfferDiscount(
   ) {
     const bundleSize = offer.buyQuantity + offer.getQuantity;
     if (qty % bundleSize !== 0) return 0;
-    return (qty / bundleSize) * offer.getQuantity * ticketPrice;
+    return roundMoney((qty / bundleSize) * offer.getQuantity * ticketPrice);
   }
 
   if (offer.discountKind === "percentage") {
     let disc = (total * offer.discountValue) / 100;
     if (offer.maxCap != null) disc = Math.min(disc, offer.maxCap);
-    return disc;
+    return roundMoney(disc);
   }
 
-  return Math.min(offer.discountValue, total);
+  return roundMoney(Math.min(offer.discountValue, total));
 }
 
 export default function EventPage() {
@@ -301,16 +302,16 @@ export default function EventPage() {
     setCouponError(null);
   };
 
-  const subtotal = event ? event.price * quantity : 0;
+  const subtotal = event ? roundMoney(event.price * quantity) : 0;
   const offerDiscount = computeOfferDiscount(
     activeOffer,
     quantity,
     event?.price ?? 0,
     subtotal,
   );
-  const offerTotal = subtotal - offerDiscount;
-  const couponDiscount = appliedCoupon?.discountAmount ?? 0;
-  const finalTotal = offerTotal - couponDiscount;
+  const offerTotal = roundMoney(subtotal - offerDiscount);
+  const couponDiscount = roundMoney(appliedCoupon?.discountAmount ?? 0);
+  const finalTotal = roundMoney(offerTotal - couponDiscount);
 
   const handleBuyTicket = () => {
     useCheckoutStore.setState({
@@ -820,8 +821,8 @@ export default function EventPage() {
                     <span>{tEvent("total")}</span>
                     <span>
                       {offerDiscount > 0 || appliedCoupon
-                        ? price(Number(finalTotal.toFixed(2)), locale)
-                        : price(Number(subtotal.toFixed(2)), locale)}
+                        ? price(finalTotal, locale)
+                        : price(subtotal, locale)}
                     </span>
                   </div>
                   <div className="pt-3">

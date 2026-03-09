@@ -13,6 +13,10 @@ import { ProductOrder } from "@/src/models/productOrder";
 import Loading from "@/src/components/ui/loading";
 import { price } from "@/src/lib/utils/locales";
 import { useLocale, useTranslations } from "next-intl";
+import { getDownloadURL, ref } from "firebase/storage";
+import { storage } from "@/src/lib/firebase/firebaseConfig";
+import { getAuth } from "firebase/auth";
+import { useToast } from "@/src/components/ui/use-toast";
 
 interface ProductOrderResponse {
   order: ProductOrder;
@@ -22,7 +26,9 @@ interface ProductOrderResponse {
 function ProductConfirmation() {
   const [product, setProduct] = useState<DigitalProduct | null>(null);
   const [order, setOrder] = useState<ProductOrder | null>(null);
-
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
+  const { toast } = useToast();
   const router = useRouter();
   const t = useTranslations("Confirm");
   const tProduct = useTranslations("Product");
@@ -72,10 +78,34 @@ function ProductConfirmation() {
 
   const hasDownload = product.downloadableFile?.fileUrl;
 
+  const handleDownload = async () => {
+    const idToken = await authUser.getIdToken();
+    const response = await fetch(
+      `/api/product-order/download?productId=${product.id}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } else {
+      toast({
+        title: "Failed to download the file",
+        description: "Failed to download the file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container py-10">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
+      <div className="max-w-2xl mx-auto text-center">
+        <div className="mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600 mb-4">
             <CheckCircle className="h-10 w-10" />
           </div>
@@ -121,23 +151,27 @@ function ProductConfirmation() {
             <div className="space-y-2">
               <div className="flex justify-between font-bold">
                 <span>{tProduct("totalPrice")}</span>
-                <span>{price(Number(order.price.toFixed(2)), locale)}</span>
+                <span>{price(order.price, locale)}</span>
               </div>
             </div>
           </CardContent>
         </Card>
+        <Button
+          variant="link"
+          className="text-center text-sm hover:text-muted-foreground mb-6 underline"
+          asChild
+        >
+          <Link href="/profile?tab=purchases">{t("accessPurchases")}</Link>
+        </Button>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {hasDownload && (
-            <Button asChild className="flex items-center gap-2">
-              <a
-                href={product.downloadableFile!.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Download className="h-4 w-4" />
-                {t("download")} {product.downloadableFile!.fileName || "File"}
-              </a>
+            <Button
+              className="flex items-center gap-2"
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4" />
+              {t("download")} {product.downloadableFile!.fileName || "File"}
             </Button>
           )}
           <Button variant="outline" asChild>

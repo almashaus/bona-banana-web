@@ -40,13 +40,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/src/components/ui/dialog";
+import { Dialog, DialogContent } from "@/src/components/ui/dialog";
 import { useToast } from "@/src/components/ui/use-toast";
 import {
   Avatar,
@@ -200,6 +194,30 @@ function Profile() {
   const handleViewQR = (qr: string) => {
     setSelectedQR(qr);
     setIsDialogOpen(true);
+  };
+
+  const handleDownload = async (productId: string) => {
+    const idToken = await authUser.getIdToken();
+    const response = await fetch(
+      `/api/product-order/download?productId=${productId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } else {
+      toast({
+        title: "Failed to download the file",
+        description: "Failed to download the file. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -512,7 +530,7 @@ function Profile() {
                                 {formatDate(new Date(order.orderDate), locale)}
                               </TableCell>
                               <TableCell>
-                                {price(Number(order.price.toFixed(2)), locale)}
+                                {price(order.price, locale)}
                               </TableCell>
                               <TableCell>
                                 <Badge
@@ -522,27 +540,19 @@ function Profile() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                <Button
-                                  variant="outline"
-                                  className="text-primary hover:text-primary"
-                                  onClick={() => {
-                                    if (product?.downloadableFile?.fileUrl) {
-                                      window.open(
-                                        product.downloadableFile.fileUrl,
-                                        "_blank",
-                                      );
-                                    } else {
-                                      toast({
-                                        title: "No file available",
-                                        description:
-                                          "The product has no file available",
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <Download className="h-4 w-4 text-orangeColor" />
-                                </Button>
+                                {product?.downloadableFile ? (
+                                  <Button
+                                    variant="outline"
+                                    className="text-primary hover:text-primary"
+                                    onClick={() => handleDownload(product.id)}
+                                  >
+                                    <Download className="h-4 w-4 text-orangeColor" />
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    No File Available
+                                  </span>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}

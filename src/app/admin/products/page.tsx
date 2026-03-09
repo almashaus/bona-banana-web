@@ -93,7 +93,7 @@ import {
   DigitalProductStatus,
 } from "@/src/models/digitalProduct";
 import type { ProductOrderBuyer } from "@/src/models/productOrder";
-import { cn, compressImage } from "@/src/lib/utils/utils";
+import { cn, compressImage, roundMoney } from "@/src/lib/utils/utils";
 import { getAuth } from "firebase/auth";
 import useSWR, { mutate } from "swr";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
@@ -778,7 +778,7 @@ export default function ProductsManagementPage() {
                       <TableCell className="">
                         <div className="flex items-center justify-center gap-1">
                           <span className="icon-saudi_riyal text-xs" />
-                          {product.totalSales?.toFixed(2) ?? "0.00"}
+                          {roundMoney(product.totalSales ?? 0).toFixed(2)}
                         </div>
                       </TableCell>
                       <TableCell className="text-orangeColor">
@@ -1021,7 +1021,7 @@ export default function ProductsManagementPage() {
 
                       <TableCell>
                         <span className="icon-saudi_riyal text-xs" />
-                        {order.price.toFixed(2)}
+                        {roundMoney(order.price).toFixed(2)}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -1764,10 +1764,9 @@ function DigitalFileUpload({
       },
       async () => {
         try {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
           onFileChange({
             fileName,
-            fileUrl: downloadUrl,
+            fileUrl: storagePath,
             fileFormat: ext,
             fileSize,
           });

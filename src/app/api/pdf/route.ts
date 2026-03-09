@@ -12,15 +12,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(firebaseUrl);
+    if (!response.ok) {
+      return NextResponse.json({ error: "PDF not found" }, { status: 404 });
+    }
     const pdfBuffer = await response.arrayBuffer();
 
     return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'inline; file="' + file + '"',
+        "Content-Disposition": `inline; file="${file}"`,
       },
+      status: 200,
     });
   } catch (error) {
-    return NextResponse.json({ error: "PDF not found" }, { status: 404 });
+    return NextResponse.json({ error: "Failed to fetch PDF" }, { status: 500 });
   }
 }

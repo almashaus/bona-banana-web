@@ -1,4 +1,5 @@
 import { Coupon, CouponStatus } from "@/src/models/coupon";
+import { roundMoney } from "./utils";
 
 /**
  * Validates whether a coupon can be applied to a given cart/order context.
@@ -78,7 +79,7 @@ function validateDiscountCoupon(
     discountAmount = Math.min(coupon.discountValue, ctx.cartTotal);
   }
 
-  return { valid: true, discountAmount };
+  return { valid: true, discountAmount: roundMoney(discountAmount) };
 }
 
 /**
@@ -121,7 +122,7 @@ function validateVoucher(
     return { valid: false, error: "couponInvalidOrExpired" };
   }
 
-  return { valid: true, discountAmount };
+  return { valid: true, discountAmount: roundMoney(discountAmount) };
 }
 
 /**
@@ -177,7 +178,7 @@ function validateOffer(
     discountAmount = Math.min(coupon.discountValue, ctx.cartTotal);
   }
 
-  return { valid: true, discountAmount };
+  return { valid: true, discountAmount: roundMoney(discountAmount) };
 }
 
 /**

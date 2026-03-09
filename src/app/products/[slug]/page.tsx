@@ -26,6 +26,7 @@ import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import { DigitalProduct } from "@/src/models/digitalProduct";
 import { price } from "@/src/lib/utils/locales";
+import { roundMoney } from "@/src/lib/utils/utils";
 import { useLocale, useTranslations } from "next-intl";
 import EmblaCarousel from "@/src/app/(components)/emblaCarousel";
 import useSWR from "swr";
@@ -136,7 +137,7 @@ export default function ProductPage() {
   };
 
   const finalPrice = product
-    ? product.price - (appliedCoupon?.discountAmount ?? 0)
+    ? roundMoney(product.price - (appliedCoupon?.discountAmount ?? 0))
     : 0;
 
   const productImages: string[] = product?.images?.length
@@ -268,7 +269,7 @@ export default function ProductPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">{t("price")}</span>
                   <span className="text-2xl font-bold">
-                    {price(Number(product.price.toFixed(2)), locale)}
+                    {price(product.price, locale)}
                   </span>
                 </div>
 
@@ -339,10 +340,7 @@ export default function ProductPage() {
                       <span>{t("couponDiscount")}</span>
                       <span>
                         -
-                        {price(
-                          Number(appliedCoupon.discountAmount.toFixed(2)),
-                          locale,
-                        )}
+                        {price(appliedCoupon.discountAmount, locale)}
                       </span>
                     </div>
                   </>
@@ -352,7 +350,7 @@ export default function ProductPage() {
 
                 <div className="flex items-center justify-between font-bold text-lg">
                   <span>{t("totalPrice")}</span>
-                  <span>{price(Number(finalPrice.toFixed(2)), locale)}</span>
+                  <span>{price(finalPrice, locale)}</span>
                 </div>
 
                 <Button

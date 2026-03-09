@@ -96,12 +96,23 @@ export async function PUT(req: NextRequest) {
 
     // Update digitalProduct totalSales and purchaseCount
     const productId = orderData?.productId;
+    const userId = orderData?.userId;
     if (productId) {
       const productRef = db.collection("digitalProducts").doc(productId);
       await productRef.update({
         totalSales: FieldValue.increment(orderData?.price ?? 0),
         purchaseCount: FieldValue.increment(1),
       });
+    }
+
+    // Insert purchase record in users/{userId}/purchases/{productId}
+    if (userId && productId) {
+      await db
+        .collection("users")
+        .doc(userId)
+        .collection("purchases")
+        .doc(productId)
+        .set({ orderId }, { merge: true });
     }
 
     // TODO: Send product order confirmation email when implemented

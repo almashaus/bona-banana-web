@@ -7,6 +7,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Rounds a monetary amount to 2 decimal places.
+ * Use for all price, total, and discount calculations to avoid floating-point precision issues.
+ */
+export function roundMoney(amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
+
 // generate ticket number
 export function generateIDNumber(type: string): string {
   const timestamp = Date.now();

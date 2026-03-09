@@ -500,16 +500,54 @@ export default function CouponsPage() {
   };
 
   // ── Toggle enable/disable ───────────────────────────────────────────
-  const toggleEnabled = (c: Coupon) => {
+  const toggleEnabled = async (c: Coupon) => {
     const newStatus = c.status === "Disabled" ? "Active" : "Disabled";
-    setCoupons((prev) =>
-      prev.map((x) => (x.id === c.id ? { ...x, status: newStatus } : x)),
-    );
     const displayName = c.code || c.description || "Offer";
-    toast({
-      title: newStatus === "Disabled" ? "Coupon Disabled" : "Coupon Enabled",
-      description: `${c.code ? `"${c.code}"` : displayName} has been ${newStatus === "Disabled" ? "disabled" : "enabled"}.`,
-    });
+
+    try {
+      const auth = getAuth();
+      const authUser = auth.currentUser;
+      if (!authUser) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to update a coupon.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const idToken = await authUser.getIdToken();
+      const response = await fetch("/api/admin/coupons", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ coupon: { ...c, status: newStatus } }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.data ?? "Failed to update coupon status");
+      }
+
+      setCoupons((prev) =>
+        prev.map((x) => (x.id === c.id ? { ...x, status: newStatus } : x)),
+      );
+      await mutate("/api/admin/coupons");
+      toast({
+        title: newStatus === "Disabled" ? "Coupon Disabled" : "Coupon Enabled",
+        description: `${c.code ? `"${c.code}"` : displayName} has been ${newStatus === "Disabled" ? "disabled" : "enabled"}.`,
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to update coupon status",
+        variant: "destructive",
+      });
+    }
   };
 
   // ── Delete ──────────────────────────────────────────────────────────
@@ -670,7 +708,7 @@ export default function CouponsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {price(Number(totalRevenue.toFixed(2)))}
+                  {price(totalRevenue)}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   From coupon-applied orders
@@ -686,7 +724,7 @@ export default function CouponsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  -{price(Number(totalDiscount.toFixed(2)))}
+                  -{price(totalDiscount)}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Total discount value granted
@@ -906,7 +944,7 @@ export default function CouponsPage() {
                             <div className="flex items-center gap-1">
                               <DollarSign className="h-3.5 w-3.5 text-orangeColor" />
                               <span>
-                                {price(Number(c.discountValue.toFixed(2)))}
+                                {price(c.discountValue)}
                               </span>
                             </div>
                           )}
@@ -964,12 +1002,12 @@ export default function CouponsPage() {
 
                       {/* Revenue */}
                       <TableCell className="font-medium text-center">
-                        {price(Number(c.revenueImpact.toFixed(2)))}
+                        {price(c.revenueImpact)}
                       </TableCell>
 
                       {/* Discount impact */}
                       <TableCell className="text-red-600 dark:text-red-400 text-center">
-                        -{price(Number(c.discountImpact.toFixed(2)))}
+                        -{price(c.discountImpact)}
                       </TableCell>
 
                       {/* Validity */}

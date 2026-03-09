@@ -1,18 +1,20 @@
 import React from "react";
+import { roundMoney } from "./utils";
 
-export const price = (price: number, language: string = "en") => {
+export const price = (amount: number, language: string = "en") => {
+  const formatted = roundMoney(amount).toFixed(2);
   switch (language) {
     case "en":
       return (
         <>
           <span className="icon-saudi_riyal" />
-          {price}
+          {formatted}
         </>
       );
     case "ar":
       return (
         <>
-          {price}
+          {formatted}
           <span className="icon-saudi_riyal" />
         </>
       );
@@ -20,7 +22,7 @@ export const price = (price: number, language: string = "en") => {
       return (
         <>
           <span className="icon-saudi_riyal" />
-          {price}
+          {formatted}
         </>
       );
   }

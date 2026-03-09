@@ -116,14 +116,14 @@ export function ViewDetailsDialog({
                       <span>{coupon.discountValue}%</span>
                       {coupon.maxCap !== null && (
                         <span className="text-sm text-muted-foreground ms-2">
-                          (max {price(Number(coupon.maxCap.toFixed(2)))})
+                          (max {price(coupon.maxCap)})
                         </span>
                       )}
                     </>
                   ) : (
                     <>
                       <span>
-                        {price(Number(coupon.discountValue.toFixed(2)))}
+                        {price(coupon.discountValue)}
                       </span>
                     </>
                   )}
@@ -180,7 +180,7 @@ export function ViewDetailsDialog({
                 </Label>
                 <p className="text-sm">
                   {coupon.minTicketValue !== null
-                    ? price(Number(coupon.minTicketValue.toFixed(2)))
+                    ? price(coupon.minTicketValue)
                     : "None"}
                 </p>
               </div>
@@ -234,7 +234,7 @@ export function ViewDetailsDialog({
                     Revenue Impact
                   </p>
                   <p className="text-xl font-bold">
-                    {price(Number(coupon.revenueImpact.toFixed(2)))}
+                    {price(coupon.revenueImpact)}
                   </p>
                 </CardContent>
               </Card>
@@ -244,7 +244,7 @@ export function ViewDetailsDialog({
                     Discount Granted
                   </p>
                   <p className="text-xl font-bold text-red-600 dark:text-red-400">
-                    -{price(Number(coupon.discountImpact.toFixed(2)))}
+                    -{price(coupon.discountImpact)}
                   </p>
                 </CardContent>
               </Card>

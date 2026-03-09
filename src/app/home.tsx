@@ -147,7 +147,7 @@ async function EventsList({ locale, t }: { locale: string; t: any }) {
                   </span>
                 </div>
                 <div className="bg-yellowColor py-3 rounded-md font-medium text-center">
-                  {price(Number(event.price.toFixed(2)), locale)}
+                  {price(event.price, locale)}
                 </div>
               </CardFooter>
             </Card>
@@ -236,7 +236,7 @@ function ProductsList({
                   </span>
                 </div>
                 <div className="bg-yellowColor py-3 rounded-md font-medium text-center">
-                  {price(Number(product.price.toFixed(2)), locale)}
+                  {price(product.price, locale)}
                 </div>
               </CardFooter>
             </Card>

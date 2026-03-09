@@ -195,7 +195,7 @@ function Confirmation() {
                     tEvent("tickets").slice(1)}
                 </span>
                 <span>
-                  {quantity} × {price(Number(event.price.toFixed(2)), locale)}
+                  {quantity} × {price(event.price, locale)}
                 </span>
               </div>
               {/* TODO: VAT*/}
@@ -225,7 +225,7 @@ function Confirmation() {
                     *{tCheckout("VAT")}
                   </span> */}
                 </span>
-                <span>{price(Number(total.toFixed(2)), locale)}</span>
+                <span>{price(total, locale)}</span>
               </div>
             </div>
           </CardContent>

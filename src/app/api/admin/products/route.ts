@@ -96,21 +96,20 @@ export async function POST(req: NextRequest) {
       productData.images = updatedImages;
     }
 
-    if (productData.downloadableFile?.fileUrl) {
-      const fileName = getFileName(productData.downloadableFile.fileUrl);
-      if (fileName) {
-        await renameFile(
-          `products/${productData.slug}/${fileName}`,
-          `products/${docRef.id}/${fileName}`,
-        );
-        productData.downloadableFile = {
-          ...productData.downloadableFile,
-          fileUrl: productData.downloadableFile.fileUrl.replace(
-            productData.slug,
-            docRef.id,
-          ),
-        };
-      }
+    if (productData.downloadableFile?.fileName) {
+      const fileName = productData.downloadableFile.fileName;
+
+      await renameFile(
+        `products/${productData.slug}/${fileName}`,
+        `products/${docRef.id}/${fileName}`,
+      );
+      productData.downloadableFile = {
+        ...productData.downloadableFile,
+        fileUrl: productData.downloadableFile.fileUrl.replace(
+          productData.slug,
+          docRef.id,
+        ),
+      };
     }
 
     await docRef.set({ ...productData, id: docRef.id });
