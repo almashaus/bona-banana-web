@@ -1,3 +1,4 @@
+import { Readable } from "stream";
 import { db, storage } from "@/src/lib/firebase/firebaseAdminConfig";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
 import { DigitalProduct } from "@/src/models/digitalProduct";
@@ -41,12 +42,17 @@ export async function GET(req: Request) {
 
   const bucket = storage.bucket();
   const file = bucket.file(productData.downloadableFile?.fileUrl ?? "");
-  const [buffer] = await file.download();
+  const [metadata] = await file.getMetadata();
+  const contentLength = Number(metadata.size ?? 0);
 
-  return new Response(Buffer.from(buffer), {
+  const nodeStream = file.createReadStream();
+  const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
+
+  return new Response(webStream, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename=${productData.downloadableFile?.fileName}`,
+      "Content-Length": contentLength.toString(),
     },
     status: 200,
   });

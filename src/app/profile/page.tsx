@@ -88,6 +88,10 @@ function Profile() {
   const [activeTab, setActiveTab] = useState(tabParam || "profile");
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [downloadingProductId, setDownloadingProductId] = useState<
+    string | null
+  >(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const t = useTranslations("Profile");
   const locale = useLocale();
 
@@ -197,26 +201,65 @@ function Profile() {
   };
 
   const handleDownload = async (productId: string) => {
+    setDownloadingProductId(productId);
+    setDownloadProgress(0);
+
     const idToken = await authUser.getIdToken();
-    const response = await fetch(
-      `/api/product-order/download?productId=${productId}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
+    try {
+      const response = await fetch(
+        `/api/product-order/download?productId=${productId}`,
+        {
+          headers: { Authorization: `Bearer ${idToken}` },
         },
-      },
-    );
-    if (response.ok) {
-      const blob = await response.blob();
+      );
+
+      if (!response.ok) {
+        throw new Error("Download failed");
+      }
+
+      const contentLength = response.headers.get("Content-Length");
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const chunks: Uint8Array[] = [];
+      let loaded = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+        if (total > 0) {
+          setDownloadProgress(Math.round((loaded / total) * 100));
+        } else {
+          setDownloadProgress((prev) => Math.min(prev + 15, 90));
+        }
+      }
+
+      setDownloadProgress(100);
+      const blob = new Blob(chunks as BlobPart[], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-    } else {
+      const disposition = response.headers.get("Content-Disposition");
+      const filename =
+        disposition?.split("filename=")[1]?.trim().replace(/^["']|["']$/g, "") ||
+        "download.pdf";
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
       toast({
         title: "Failed to download the file",
         description: "Failed to download the file. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setDownloadingProductId(null);
+      setDownloadProgress(0);
     }
   };
 
@@ -541,13 +584,21 @@ function Profile() {
                               </TableCell>
                               <TableCell>
                                 {product?.downloadableFile ? (
-                                  <Button
-                                    variant="outline"
-                                    className="text-primary hover:text-primary"
-                                    onClick={() => handleDownload(product.id)}
-                                  >
-                                    <Download className="h-4 w-4 text-orangeColor" />
-                                  </Button>
+                                  downloadingProductId === product.id ? (
+                                    <span className="text-primary font-medium">
+                                      %{downloadProgress}
+                                    </span>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      className="text-primary hover:text-primary"
+                                      onClick={() =>
+                                        handleDownload(product.id)
+                                      }
+                                    >
+                                      <Download className="h-4 w-4 text-orangeColor" />
+                                    </Button>
+                                  )
                                 ) : (
                                   <span className="text-muted-foreground">
                                     No File Available

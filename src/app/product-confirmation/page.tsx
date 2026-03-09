@@ -36,6 +36,8 @@ function ProductConfirmation() {
   const locale = useLocale();
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("orderNumber");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   useEffect(() => {
     if (!orderNumber) {
@@ -79,26 +81,69 @@ function ProductConfirmation() {
   const hasDownload = product.downloadableFile?.fileUrl;
 
   const handleDownload = async () => {
-    const idToken = await authUser.getIdToken();
-    const response = await fetch(
-      `/api/product-order/download?productId=${product.id}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
+    setIsDownloading(true);
+    setDownloadProgress(0);
+
+    try {
+      const idToken = await authUser.getIdToken();
+      const response = await fetch(
+        `/api/product-order/download?productId=${product.id}`,
+        {
+          headers: { Authorization: `Bearer ${idToken}` },
         },
-      },
-    );
-    if (response.ok) {
-      const blob = await response.blob();
+      );
+
+      if (!response.ok) {
+        throw new Error("Download failed");
+      }
+
+      const contentLength = response.headers.get("Content-Length");
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const chunks: Uint8Array[] = [];
+      let loaded = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+        if (total > 0) {
+          setDownloadProgress(Math.round((loaded / total) * 100));
+        } else {
+          setDownloadProgress((prev) => Math.min(prev + 15, 90));
+        }
+      }
+
+      setDownloadProgress(100);
+      const blob = new Blob(chunks as BlobPart[], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-    } else {
+      const disposition = response.headers.get("Content-Disposition");
+      const filename =
+        disposition
+          ?.split("filename=")[1]
+          ?.trim()
+          .replace(/^["']|["']$/g, "") ||
+        product.downloadableFile?.fileName ||
+        "download.pdf";
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
       toast({
         title: "Failed to download the file",
         description: "Failed to download the file. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(0);
     }
   };
 
@@ -165,15 +210,20 @@ function ProductConfirmation() {
         </Button>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {hasDownload && (
-            <Button
-              className="flex items-center gap-2"
-              onClick={handleDownload}
-            >
-              <Download className="h-4 w-4" />
-              {t("download")} {product.downloadableFile!.fileName || "File"}
-            </Button>
-          )}
+          {hasDownload &&
+            (isDownloading ? (
+              <Button className="flex items-center gap-2" disabled>
+                <span className="font-medium">%{downloadProgress}</span>
+              </Button>
+            ) : (
+              <Button
+                className="flex items-center gap-2"
+                onClick={handleDownload}
+              >
+                <Download className="h-4 w-4" />
+                {t("download")} {product.downloadableFile!.fileName || "File"}
+              </Button>
+            ))}
           <Button variant="outline" asChild>
             <Link href="/">{tHome("backToHome")}</Link>
           </Button>
