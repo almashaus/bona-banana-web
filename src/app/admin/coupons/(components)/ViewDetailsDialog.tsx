@@ -1,6 +1,7 @@
 "use client";
 
-import { Tag, Gift, Megaphone, Globe } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Tag, Gift, Megaphone, Globe, Users } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { Label } from "@/src/components/ui/label";
 import {
@@ -11,12 +12,22 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
 import { Coupon, CouponType } from "@/src/models/coupon";
 import { Event } from "@/src/models/event";
 import { price } from "@/src/lib/utils/locales";
 import { formatDateShort } from "@/src/lib/utils/formatDate";
 import { statusColor, typeBadgeColor } from "@/src/lib/utils/styles";
 import { computeStatus } from "@/src/lib/utils/couponValidation";
+import { getAuth } from "firebase/auth";
+import type { CouponUsageRow } from "@/src/app/api/admin/coupons/[id]/usages/route";
 
 function typeIcon(t: CouponType) {
   switch (t) {
@@ -44,8 +55,46 @@ export function ViewDetailsDialog({
   coupon,
   events,
 }: ViewDetailsDialogProps) {
+  const [usages, setUsages] = useState<CouponUsageRow[]>([]);
+  const [usagesLoading, setUsagesLoading] = useState(false);
+
   const eventName = (id: string) =>
     events.find((e) => e.id === id)?.title ?? id;
+
+  useEffect(() => {
+    if (!open || !coupon?.id) {
+      setUsages([]);
+      setUsagesLoading(false);
+      return;
+    }
+    const auth = getAuth();
+    const authUser = auth.currentUser;
+    if (!authUser) {
+      setUsages([]);
+      setUsagesLoading(false);
+      return;
+    }
+    const fetchUsages = async () => {
+      setUsagesLoading(true);
+      try {
+        const idToken = await authUser.getIdToken();
+        const res = await fetch(`/api/admin/coupons/${coupon.id}/usages`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUsages(data.usages ?? []);
+        } else {
+          setUsages([]);
+        }
+      } catch {
+        setUsages([]);
+      } finally {
+        setUsagesLoading(false);
+      }
+    };
+    fetchUsages();
+  }, [open, coupon?.id]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,9 +171,7 @@ export function ViewDetailsDialog({
                     </>
                   ) : (
                     <>
-                      <span>
-                        {price(coupon.discountValue)}
-                      </span>
+                      <span>{price(coupon.discountValue)}</span>
                     </>
                   )}
                 </p>
@@ -271,6 +318,42 @@ export function ViewDetailsDialog({
                 <p className="text-sm mt-1">{coupon.description}</p>
               </div>
             )}
+
+            {/* Usage history */}
+            <div className="bg-white border border-border rounded-lg p-3">
+              {usagesLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : usages.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No usage recorded yet.
+                </p>
+              ) : (
+                <Table className="border border-border rounded-lg">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Discount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {usages.map((u, i) => (
+                      <TableRow key={`${u.orderId}-${i}`}>
+                        <TableCell className="text-left">{u.name}</TableCell>
+                        <TableCell className="text-left">{u.email}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {u.orderId}
+                        </TableCell>
+                        <TableCell className="text-red-600 dark:text-red-400 font-medium">
+                          -{price(u.discountAmount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
           </div>
         )}
       </DialogContent>

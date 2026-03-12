@@ -55,9 +55,17 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    await orderRef.update({ status: ProductOrderStatus.PAID });
-
     const orderData = orderDoc.data();
+
+    // Idempotency: skip if already paid (prevents duplicate coupon usage/impact)
+    if (orderData?.status === ProductOrderStatus.PAID) {
+      return NextResponse.json(
+        { success: true },
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    await orderRef.update({ status: ProductOrderStatus.PAID });
 
     // Redeem coupon on successful payment
     if (orderData?.couponId) {

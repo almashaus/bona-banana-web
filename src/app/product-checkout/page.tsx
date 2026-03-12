@@ -108,7 +108,7 @@ export default function ProductCheckoutPage() {
       return;
     }
 
-    const orderId = generateIDNumber("ORDER");
+    const orderId = generateIDNumber("PRODUCT-ORDER");
 
     const order: ProductOrder = {
       id: orderId,
@@ -281,9 +281,7 @@ export default function ProductCheckoutPage() {
                         </span>
                       )}
                     </span>
-                    <span>
-                      -{price(couponDiscountAmount, locale)}
-                    </span>
+                    <span>-{price(couponDiscountAmount, locale)}</span>
                   </div>
 
                   <Separator className="my-2" />
