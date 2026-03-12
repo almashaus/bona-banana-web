@@ -83,10 +83,15 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        "pulse-gray": {
+          "0%, 100%": { backgroundColor: "#9ca3af" },
+          "50%": { backgroundColor: "#e5e7eb" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-gray": "pulse-gray 1.5s ease-in-out infinite",
       },
     },
   },

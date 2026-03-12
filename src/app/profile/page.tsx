@@ -212,6 +212,7 @@ function Profile() {
           headers: { Authorization: `Bearer ${idToken}` },
         },
       );
+      console.log("response :>> ", response);
 
       if (!response.ok) {
         throw new Error("Download failed");
@@ -242,8 +243,10 @@ function Profile() {
       const url = URL.createObjectURL(blob);
       const disposition = response.headers.get("Content-Disposition");
       const filename =
-        disposition?.split("filename=")[1]?.trim().replace(/^["']|["']$/g, "") ||
-        "download.pdf";
+        disposition
+          ?.split("filename=")[1]
+          ?.trim()
+          .replace(/^["']|["']$/g, "") || "download.pdf";
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -251,10 +254,10 @@ function Profile() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch {
+    } catch (error) {
       toast({
         title: "Failed to download the file",
-        description: "Failed to download the file. Please try again.",
+        description: error instanceof Error ? error.message : `${error}`,
         variant: "destructive",
       });
     } finally {
@@ -585,16 +588,20 @@ function Profile() {
                               <TableCell>
                                 {product?.downloadableFile ? (
                                   downloadingProductId === product.id ? (
-                                    <span className="text-primary font-medium">
-                                      %{downloadProgress}
-                                    </span>
+                                    <div className="flex flex-col items-center gap-1">
+                                      <span className="text-primary font-medium">
+                                        %{downloadProgress}
+                                      </span>
+                                      <span
+                                        className="h-1.5 w-1.5 rounded-full bg-gray-400 animate-pulse-gray"
+                                        aria-hidden
+                                      />
+                                    </div>
                                   ) : (
                                     <Button
                                       variant="outline"
                                       className="text-primary hover:text-primary"
-                                      onClick={() =>
-                                        handleDownload(product.id)
-                                      }
+                                      onClick={() => handleDownload(product.id)}
                                     >
                                       <Download className="h-4 w-4 text-orangeColor" />
                                     </Button>
