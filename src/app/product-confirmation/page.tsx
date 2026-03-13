@@ -94,7 +94,10 @@ function ProductConfirmation() {
       );
 
       if (!response.ok) {
-        throw new Error("Download failed");
+        const errBody = await response.json().catch(() => ({}));
+        const message =
+          (errBody as { error?: string })?.error ?? "Download failed";
+        throw new Error(message);
       }
 
       const contentLength = response.headers.get("Content-Length");
@@ -110,6 +113,7 @@ function ProductConfirmation() {
         if (done) break;
         chunks.push(value);
         loaded += value.length;
+
         if (total > 0) {
           setDownloadProgress(Math.round((loaded / total) * 100));
         } else {
@@ -128,6 +132,7 @@ function ProductConfirmation() {
           .replace(/^["']|["']$/g, "") ||
         product.downloadableFile?.fileName ||
         "download.pdf";
+
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -135,10 +140,14 @@ function ProductConfirmation() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch {
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to download the file. Please try later.";
       toast({
-        title: "Failed to download the file",
-        description: "Failed to download the file. Please try again.",
+        title: "Download failed",
+        description: message,
         variant: "destructive",
       });
     } finally {
