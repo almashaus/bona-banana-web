@@ -1,7 +1,9 @@
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
+import { getFileName } from "@/src/lib/utils/utils";
 import { DigitalProduct } from "@/src/models/digitalProduct";
 import { NextRequest, NextResponse } from "next/server";
+import { renameFile } from "../route";
 
 export async function GET(
   request: NextRequest,
@@ -42,6 +44,53 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     const { product } = body;
+
+    if (product.coverImage) {
+      const fileName = getFileName(product.coverImage);
+      if (fileName) {
+        await renameFile(
+          `products/${product.slug}/images/${fileName}`,
+          `products/${product.id}/images/${fileName}`,
+        );
+        product.coverImage = product.coverImage.replace(
+          product.slug,
+          product.id,
+        );
+      }
+    }
+
+    if (product.images && product.images.length > 0) {
+      const updatedImages: string[] = [];
+      for (const imageUrl of product.images) {
+        const fileName = getFileName(imageUrl);
+        if (fileName) {
+          await renameFile(
+            `products/${product.slug}/images/${fileName}`,
+            `products/${product.id}/images/${fileName}`,
+          );
+          updatedImages.push(imageUrl.replace(product.slug, product.id));
+        } else {
+          updatedImages.push(imageUrl);
+        }
+      }
+      product.images = updatedImages;
+    }
+
+    if (product.downloadableFile?.fileName) {
+      const fileName = product.downloadableFile.fileName;
+
+      await renameFile(
+        `products/${product.slug}/${fileName}`,
+        `products/${product.id}/${fileName}`,
+      );
+      product.downloadableFile = {
+        ...product.downloadableFile,
+        filePath: product.downloadableFile.filePath.replace(
+          product.slug,
+          product.id,
+        ),
+      };
+    }
 
     await db
       .collection("digitalProducts")

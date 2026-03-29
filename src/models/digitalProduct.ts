@@ -21,7 +21,7 @@ export interface DigitalProduct {
   images?: string[];
   downloadableFile?: {
     fileName: string;
-    fileUrl: string;
+    filePath: string;
     fileFormat: string;
     fileSize: number;
     filePageCount?: number;
@@ -46,7 +46,7 @@ export interface DigitalProductFile {
   id: string;
   productId: string;
   fileName: string;
-  fileUrl: string;
+  filePath: string;
   fileFormat: string;
   fileType: string;
   fileSize: number;

@@ -9,7 +9,6 @@ export async function setLocale(locale: Locale) {
   (await cookies()).set("locale", locale, {
     path: "/",
     sameSite: "lax",
-    // Optional:
     httpOnly: true,
     // secure: true,
     // maxAge: 60 * 60 * 24 * 365

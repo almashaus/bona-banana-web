@@ -73,7 +73,7 @@ function Hero() {
           </div>
           <div className="flex flex-row gap-3">
             <Button size="lg" className="gap-4">
-              Discover Events
+              {t("discoverEvents")}
             </Button>
 
             <Popover>
@@ -84,7 +84,7 @@ function Hero() {
                   variant="outline"
                   onClick={() => setisDown(!isDown)}
                 >
-                  Contact Us{" "}
+                  {t("contactUs")}{" "}
                   {isDown ? (
                     <ChevronDown className="w-4 h-4" />
                   ) : (

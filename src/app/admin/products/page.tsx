@@ -222,6 +222,7 @@ export default function ProductsManagementPage() {
   );
   const ordersBuyers = ordersData?.buyers ?? [];
 
+  const [id, setId] = useState("");
   const [title, setTitle] = useState("");
   const [titleAr, setTitleAr] = useState("");
   const [slug, setSlug] = useState("");
@@ -236,7 +237,7 @@ export default function ProductsManagementPage() {
   );
   const [downloadableFileData, setDownloadableFileData] = useState<{
     fileName: string;
-    fileUrl: string;
+    filePath: string;
     fileFormat: string;
     fileSize: number;
   } | null>(null);
@@ -298,6 +299,7 @@ export default function ProductsManagementPage() {
   };
 
   const resetForm = () => {
+    setId("");
     setTitle("");
     setTitleAr("");
     setSlug("");
@@ -323,6 +325,7 @@ export default function ProductsManagementPage() {
 
   const openEditForm = (product: DigitalProduct) => {
     setEditingProduct(product);
+    setId(product.id);
     setTitle(product.title);
     setTitleAr(product.titleAr);
     setSlug(product.slug);
@@ -337,7 +340,7 @@ export default function ProductsManagementPage() {
     if (product.downloadableFile) {
       setDownloadableFileData({
         fileName: product.downloadableFile.fileName,
-        fileUrl: product.downloadableFile.fileUrl,
+        filePath: product.downloadableFile.filePath,
         fileFormat: product.downloadableFile.fileFormat,
         fileSize: product.downloadableFile.fileSize,
       });
@@ -372,6 +375,7 @@ export default function ProductsManagementPage() {
     const idToken = await authUser.getIdToken();
 
     const productData = {
+      id,
       title,
       titleAr,
       slug,
@@ -387,7 +391,7 @@ export default function ProductsManagementPage() {
       downloadableFile: downloadableFileData
         ? {
             fileName: downloadableFileData.fileName,
-            fileUrl: downloadableFileData.fileUrl,
+            filePath: downloadableFileData.filePath,
             fileFormat: downloadableFileData.fileFormat,
             fileSize: downloadableFileData.fileSize,
             filePageCount: filePageCount ? parseInt(filePageCount) : undefined,
@@ -828,6 +832,7 @@ export default function ProductsManagementPage() {
                             {canEdit &&
                               product.status === DigitalProductStatus.DRAFT && (
                                 <DropdownMenuItem
+                                  className="text-green-600"
                                   onClick={() =>
                                     handleStatusChange(
                                       product.id,
@@ -835,7 +840,7 @@ export default function ProductsManagementPage() {
                                     )
                                   }
                                 >
-                                  <EyeIcon className="mr-2 h-4 w-4 text-green-600" />
+                                  <EyeIcon className="mr-2 h-4 w-4" />
                                   Publish
                                 </DropdownMenuItem>
                               )}
@@ -843,6 +848,7 @@ export default function ProductsManagementPage() {
                               product.status ===
                                 DigitalProductStatus.PUBLISHED && (
                                 <DropdownMenuItem
+                                  className="text-gray-500"
                                   onClick={() =>
                                     handleStatusChange(
                                       product.id,
@@ -850,7 +856,7 @@ export default function ProductsManagementPage() {
                                     )
                                   }
                                 >
-                                  <EyeOff className="mr-2 h-4 w-4 text-gray-600" />
+                                  <EyeOff className="mr-2 h-4 w-4" />
                                   Unpublish
                                 </DropdownMenuItem>
                               )}
@@ -860,6 +866,7 @@ export default function ProductsManagementPage() {
                               product.status !==
                                 DigitalProductStatus.DELETED && (
                                 <DropdownMenuItem
+                                  className="text-yellow-600"
                                   onClick={() =>
                                     handleStatusChange(
                                       product.id,
@@ -867,7 +874,7 @@ export default function ProductsManagementPage() {
                                     )
                                   }
                                 >
-                                  <Archive className="mr-2 h-4 w-4 text-yellow-600" />
+                                  <Archive className="mr-2 h-4 w-4" />
                                   Archive
                                 </DropdownMenuItem>
                               )}
@@ -1720,14 +1727,14 @@ function DigitalFileUpload({
 }: {
   file: {
     fileName: string;
-    fileUrl: string;
+    filePath: string;
     fileFormat: string;
     fileSize: number;
   } | null;
   onFileChange: (
     file: {
       fileName: string;
-      fileUrl: string;
+      filePath: string;
       fileFormat: string;
       fileSize: number;
     } | null,
@@ -1735,12 +1742,14 @@ function DigitalFileUpload({
   slug: string;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [replacing, setReplacing] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
     setUploading(true);
+    setReplacing(true);
 
     const fileName = selectedFile.name;
     const ext = fileName.split(".").pop()?.toUpperCase() || "";
@@ -1760,18 +1769,20 @@ function DigitalFileUpload({
       },
       () => {
         setUploading(false);
+        setReplacing(false);
         setProgress(null);
       },
       async () => {
         try {
           onFileChange({
             fileName,
-            fileUrl: storagePath,
+            filePath: storagePath,
             fileFormat: ext,
             fileSize,
           });
         } finally {
           setUploading(false);
+          setReplacing(false);
           setProgress(null);
         }
       },
@@ -1789,27 +1800,39 @@ function DigitalFileUpload({
               <FileText className="h-5 w-5 text-orangeColor" />
             </div>
             <div className="min-w-0">
-              <p className="font-medium text-sm truncate">{file.fileName}</p>
+              <p
+                className={`font-medium text-sm truncate ${
+                  replacing ? "text-muted-foreground animate-pulse" : ""
+                }`}
+              >
+                {file.fileName}
+              </p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                <Badge variant="outline" className="text-xs px-1.5 py-0">
+                <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                   {file.fileFormat}
                 </Badge>
                 <span>{formatFileSize(file.fileSize)}</span>
               </div>
             </div>
           </div>
-          <div className="flex gap-1 shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                document.getElementById("digital-file-replace")?.click()
-              }
-            >
-              <RefreshCcw className="h-3.5 w-3.5 me-1" />
-              Replace
-            </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            {replacing ? (
+              <div className="text-sm text-muted-foreground">
+                Uploading... {progress}%
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  document.getElementById("digital-file-replace")?.click()
+                }
+              >
+                <RefreshCcw className="h-3.5 w-3.5 me-1" />
+                Replace
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"

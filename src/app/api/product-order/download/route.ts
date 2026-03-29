@@ -138,8 +138,8 @@ export async function GET(req: Request) {
       );
     }
 
-    const fileUrl = productData.downloadableFile?.fileUrl;
-    const sanitizedPath = sanitizeStoragePath(fileUrl ?? "");
+    const filePath = productData.downloadableFile?.filePath;
+    const sanitizedPath = sanitizeStoragePath(filePath ?? "");
 
     if (!sanitizedPath) {
       return new Response(

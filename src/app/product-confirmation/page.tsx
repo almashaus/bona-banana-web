@@ -78,7 +78,7 @@ function ProductConfirmation() {
     );
   }
 
-  const hasDownload = product.downloadableFile?.fileUrl;
+  const hasDownload = product.downloadableFile?.filePath;
 
   const handleDownload = async () => {
     setIsDownloading(true);

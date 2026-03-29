@@ -7,7 +7,7 @@ import {
 import { getFileName } from "@/src/lib/utils/utils";
 import { NextRequest, NextResponse } from "next/server";
 
-async function renameFile(oldPath: string, newPath: string) {
+export async function renameFile(oldPath: string, newPath: string) {
   const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
   const bucket = storage.bucket(bucketName);
   const file = bucket.file(oldPath);
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       );
       productData.downloadableFile = {
         ...productData.downloadableFile,
-        fileUrl: productData.downloadableFile.fileUrl.replace(
+        filePath: productData.downloadableFile.filePath.replace(
           productData.slug,
           docRef.id,
         ),

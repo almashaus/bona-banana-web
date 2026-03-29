@@ -12,7 +12,7 @@ export default getRequestConfig(async () => {
   const store = await cookies();
   const cookieLocale = store.get("locale")?.value;
 
-  const locale: Locale = isLocale(cookieLocale) ? cookieLocale : "en";
+  const locale: Locale = isLocale(cookieLocale) ? cookieLocale : "ar";
 
   return {
     locale,
