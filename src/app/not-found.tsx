@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { Button } from "../components/ui/button";
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 
-export default function GlobalNotFound() {
+export default async function GlobalNotFound() {
+  const t = await getTranslations("NotFound");
+
   return (
     <div className="flex flex-col justify-center items-center gap-4 min-h-screen min-w-full">
       <Image
@@ -11,12 +14,12 @@ export default function GlobalNotFound() {
         width={300}
         height={300}
       />
-      <h1 className="text-3xl font-bold">Page Not Found</h1>
+      <h1 className="text-3xl font-bold">{t("title")}</h1>
       <div className="text-center text-muted-foreground">
-        <p>We couldn't find the page that you were looking for.</p>
+        <p>{t("description")}</p>
       </div>
       <Button asChild>
-        <Link href="/">Home Page</Link>
+        <Link href="/">{t("homePage")}</Link>
       </Button>
     </div>
   );

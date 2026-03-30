@@ -23,6 +23,10 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  webpack(config) {
+    config.module.noParse = [/next-intl\/dist\/esm\/production\/extractor/];
+    return config;
+  },
 };
 
 mergeConfig(nextConfig, userConfig);

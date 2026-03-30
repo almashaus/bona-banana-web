@@ -11,6 +11,10 @@ import {
   Check,
   CheckCircle,
   ChevronDown,
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   CircleAlertIcon,
   Copy,
@@ -20,6 +24,13 @@ import {
   TicketIcon,
   Trash,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import {
   Collapsible,
   CollapsibleContent,
@@ -92,6 +103,9 @@ export default function EventsPage() {
     null,
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [eventPaginationState, setEventPaginationState] = useState<
+    Record<string, { currentPage: number; pageSize: number }>
+  >({});
 
   interface Response {
     event: Event;
@@ -107,8 +121,44 @@ export default function EventsPage() {
     if (data) {
       setResponseData(data);
       setOpenCollapsibleIds(new Set([data[0].event.id]));
+      // Initialize pagination state for each event
+      const paginationState: Record<
+        string,
+        { currentPage: number; pageSize: number }
+      > = {};
+      data.forEach((response) => {
+        paginationState[response.event.id] = { currentPage: 1, pageSize: 5 };
+      });
+      setEventPaginationState(paginationState);
     }
   }, [data]);
+
+  const handlePageChange = (eventId: string, newPage: number) => {
+    setEventPaginationState((prev) => ({
+      ...prev,
+      [eventId]: { ...prev[eventId], currentPage: newPage },
+    }));
+  };
+
+  const handlePageSizeChange = (eventId: string, newSize: number) => {
+    setEventPaginationState((prev) => ({
+      ...prev,
+      [eventId]: { currentPage: 1, pageSize: newSize },
+    }));
+  };
+
+  const getPaginatedDates = (dates: EventDate[], eventId: string) => {
+    const pagination = eventPaginationState[eventId] || {
+      currentPage: 1,
+      pageSize: 5,
+    };
+    const sortedDates = [...dates].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+    const startIndex = (pagination.currentPage - 1) * pagination.pageSize;
+    const endIndex = startIndex + pagination.pageSize;
+    return sortedDates.slice(startIndex, endIndex);
+  };
 
   const deleteEvent = async (eventId: string) => {
     try {
@@ -380,7 +430,7 @@ export default function EventsPage() {
                         <span> Dates & Tickets</span>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <div className="mt-2 rounded-md border">
+                        <div className="mt-2 rounded-t-md border">
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -393,57 +443,208 @@ export default function EventsPage() {
                             </TableHeader>
 
                             <TableBody>
-                              {response.event.dates
-                                .sort(
-                                  (a, b) =>
-                                    new Date(b.date).getTime() -
-                                    new Date(a.date).getTime(),
-                                )
-                                ?.map((date) => (
-                                  <TableRow key={date.id}>
-                                    <TableCell className="flex justify-center">
-                                      {isBeforeToday(date.date) ? (
-                                        <CalendarCheck2 className="w-5 h-5 mt-3 text-green-500" />
-                                      ) : (
-                                        <CalendarClock className="w-5 h-5 mt-3 text-muted-foreground" />
-                                      )}
-                                    </TableCell>
+                              {getPaginatedDates(
+                                response.event.dates,
+                                response.event.id,
+                              )?.map((date) => (
+                                <TableRow key={date.id}>
+                                  <TableCell className="flex justify-center">
+                                    {isBeforeToday(date.date) ? (
+                                      <CalendarCheck2 className="w-5 h-5 mt-3 text-green-500" />
+                                    ) : (
+                                      <CalendarClock className="w-5 h-5 mt-3 text-muted-foreground" />
+                                    )}
+                                  </TableCell>
 
-                                    <TableCell className="font-medium">
-                                      <div>{formatDate(date.date)}</div>
-                                      <div className="text-muted-foreground">
-                                        {formatTime(date.startTime)} -{" "}
-                                        {formatTime(date.endTime)}
-                                      </div>
-                                    </TableCell>
+                                  <TableCell className="font-medium">
+                                    <div
+                                      className={`${isBeforeToday(date.date) ? "text-muted-foreground/70" : ""}`}
+                                    >
+                                      {formatDate(date.date)}
+                                    </div>
+                                    <div
+                                      className={`${isBeforeToday(date.date) ? "text-muted-foreground/50" : "text-muted-foreground"}`}
+                                    >
+                                      {formatTime(date.startTime)} -{" "}
+                                      {formatTime(date.endTime)}
+                                    </div>
+                                  </TableCell>
 
-                                    <TableCell>
-                                      <Badge
-                                        className={`${
-                                          date.availableTickets < 5
-                                            ? "bg-orange-100 text-orange-600"
-                                            : "bg-green-100 text-green-700"
-                                        } pb-1`}
-                                      >
-                                        {date.availableTickets}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                      {date.capacity - date.availableTickets}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handleViewDetails(date)}
-                                      >
-                                        <TicketIcon className="h-3 w-3" />{" "}
-                                        Tickets
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
+                                  <TableCell>
+                                    <Badge
+                                      className={`${
+                                        date.availableTickets < 5
+                                          ? "bg-orange-100 text-orange-600"
+                                          : "bg-green-100 text-green-700"
+                                      } pb-1`}
+                                    >
+                                      {date.availableTickets}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {date.capacity - date.availableTickets}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleViewDetails(date)}
+                                    >
+                                      <TicketIcon className="h-3 w-3" /> Tickets
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
                             </TableBody>
                           </Table>
+                        </div>
+                        {/* pagination */}
+                        <div className="bg-muted px-5 py-2.5 flex flex-col space-y-3 md:space-y-0 md:flex-row items-center justify-between border-x border-b rounded-b-md">
+                          {(() => {
+                            const pagination = eventPaginationState[
+                              response.event.id
+                            ] || {
+                              currentPage: 1,
+                              pageSize: 5,
+                            };
+                            const totalDates = response.event.dates.length;
+                            const totalPages = Math.ceil(
+                              totalDates / pagination.pageSize,
+                            );
+                            const startItem =
+                              (pagination.currentPage - 1) *
+                                pagination.pageSize +
+                              1;
+                            const endItem = Math.min(
+                              pagination.currentPage * pagination.pageSize,
+                              totalDates,
+                            );
+
+                            return (
+                              <>
+                                <div className="flex items-center gap-4">
+                                  <div className="w-full">
+                                    <span className="text-xs text-gray-500">
+                                      {startItem} - {endItem} of {totalDates}
+                                    </span>
+                                  </div>
+
+                                  <Select
+                                    value={pagination.pageSize.toString()}
+                                    onValueChange={(value) =>
+                                      handlePageSizeChange(
+                                        response.event.id,
+                                        Number(value),
+                                      )
+                                    }
+                                  >
+                                    <SelectTrigger className="text-xs">
+                                      <SelectValue
+                                        placeholder={pagination.pageSize}
+                                      />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem
+                                        key={"5"}
+                                        value={"5"}
+                                        className="text-xs"
+                                      >
+                                        5 per page
+                                      </SelectItem>
+                                      <SelectItem
+                                        key={"10"}
+                                        value={"10"}
+                                        className="text-xs"
+                                      >
+                                        10 per page
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() =>
+                                      handlePageChange(response.event.id, 1)
+                                    }
+                                    disabled={pagination.currentPage === 1}
+                                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                                  >
+                                    <ChevronFirst className="w-4 h-4" />
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      handlePageChange(
+                                        response.event.id,
+                                        pagination.currentPage - 1,
+                                      )
+                                    }
+                                    disabled={pagination.currentPage === 1}
+                                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                                  >
+                                    <ChevronLeft className="w-4 h-4" />
+                                  </button>
+
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: totalPages }).map(
+                                      (_, index) => {
+                                        const pageNumber = index + 1;
+                                        return (
+                                          <button
+                                            key={pageNumber}
+                                            onClick={() =>
+                                              handlePageChange(
+                                                response.event.id,
+                                                pageNumber,
+                                              )
+                                            }
+                                            className={`px-3 py-1 bg-white border rounded-md text-sm ${
+                                              pagination.currentPage ===
+                                              pageNumber
+                                                ? "bg-orangeColor text-orangeColor border-orangeColor"
+                                                : "border-gray-300 hover:bg-gray-100"
+                                            }`}
+                                          >
+                                            {pageNumber}
+                                          </button>
+                                        );
+                                      },
+                                    )}
+                                  </div>
+
+                                  <button
+                                    onClick={() =>
+                                      handlePageChange(
+                                        response.event.id,
+                                        pagination.currentPage + 1,
+                                      )
+                                    }
+                                    disabled={
+                                      pagination.currentPage === totalPages
+                                    }
+                                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                                  >
+                                    <ChevronRight className="w-4 h-4" />
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      handlePageChange(
+                                        response.event.id,
+                                        totalPages,
+                                      )
+                                    }
+                                    disabled={
+                                      pagination.currentPage === totalPages
+                                    }
+                                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                                  >
+                                    <ChevronLast className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       </CollapsibleContent>
                     </Collapsible>

@@ -254,5 +254,10 @@
     "price": "Price",
     "file": "File",
     "productDeleted": "Product no longer available"
+  },
+  "NotFound": {
+    "title": "Page Not Found",
+    "description": "We couldn't find the page that you were looking for.",
+    "homePage": "Home Page"
   }
 }
