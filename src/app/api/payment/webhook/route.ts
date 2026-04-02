@@ -49,9 +49,16 @@ export async function POST(req: NextRequest) {
     return new NextResponse("Invalid webhook signature", { status: 403 });
   }
 
-  await updateOrder(payload?.Data?.Invoice.Id);
+  const invoiceStatus = payload?.Data?.Invoice?.Status;
+  const invoiceId = payload?.Data?.Invoice?.Id;
 
-  console.log("Webhook success");
+  if (invoiceStatus === "Paid") {
+    await markOrderPaid(invoiceId);
+  } else {
+    await cancelOrder(invoiceId);
+  }
+
+  console.log("Webhook success:", invoiceStatus);
   return new NextResponse("OK", { status: 200 });
 }
 
@@ -83,25 +90,23 @@ function safeCompare(a: string, b: string) {
   }
 }
 
-async function updateOrder(invoiceId: string) {
+async function markOrderPaid(invoiceId: string) {
   try {
     const orderSnapshot = await db
       .collection("orders")
       .where("invoiceId", "==", invoiceId)
       .get();
 
-    // Collect all ticket queries
     const ticketPromises = orderSnapshot.docs.map((doc) =>
-      db.collection("tickets").where("orderId", "==", doc.ref).get(),
+      db.collection("tickets").where("orderId", "==", doc.id).get(),
     );
 
     const ticketSnapshots = await Promise.all(ticketPromises);
 
-    // Single batch for everything
     const batch = db.batch();
 
     orderSnapshot.docs.forEach((doc) => {
-      batch.update(doc.ref, { orderStatus: OrderStatus.PAID });
+      batch.update(doc.ref, { status: OrderStatus.PAID });
     });
 
     ticketSnapshots.forEach((snapshot) => {
@@ -111,8 +116,40 @@ async function updateOrder(invoiceId: string) {
     });
 
     await batch.commit();
-    console.log("Update");
+    console.log("Order marked paid");
   } catch (error) {
-    console.log("error :>> ", error);
+    console.log("markOrderPaid error :>> ", error);
+  }
+}
+
+async function cancelOrder(invoiceId: string) {
+  try {
+    const orderSnapshot = await db
+      .collection("orders")
+      .where("invoiceId", "==", invoiceId)
+      .get();
+
+    const ticketPromises = orderSnapshot.docs.map((doc) =>
+      db.collection("tickets").where("orderId", "==", doc.id).get(),
+    );
+
+    const ticketSnapshots = await Promise.all(ticketPromises);
+
+    const batch = db.batch();
+
+    orderSnapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, { status: OrderStatus.CANCELED });
+    });
+
+    ticketSnapshots.forEach((snapshot) => {
+      snapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, { status: TicketStatus.CANCELED });
+      });
+    });
+
+    await batch.commit();
+    console.log("Order canceled");
+  } catch (error) {
+    console.log("cancelOrder error :>> ", error);
   }
 }

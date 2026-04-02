@@ -36,6 +36,41 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const { orderId } = await req.json();
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Idempotent: if already paid or canceled, do nothing
+    if (orderDoc.data()?.status !== OrderStatus.PENDING) {
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
+    const ticketsSnapshot = await db
+      .collection("tickets")
+      .where("orderId", "==", orderId)
+      .get();
+
+    const batch = db.batch();
+    batch.update(orderRef, { status: OrderStatus.CANCELED });
+    ticketsSnapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, { status: TicketStatus.CANCELED });
+    });
+    await batch.commit();
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error("Checkout PATCH error:", error);
+    return NextResponse.json({ error: "Error" }, { status: 500 });
+  }
+}
+
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();

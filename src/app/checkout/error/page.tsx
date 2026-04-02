@@ -10,11 +10,20 @@ import { useTranslations } from "next-intl";
 function CheckoutError() {
   const search = useSearchParams();
   const paymentId = search?.get("paymentId");
+  const orderId = search?.get("orderId");
   const t = useTranslations("Checkout");
   const tHome = useTranslations("Home");
 
-  const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!orderId) return;
+    fetch("/api/checkout", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId }),
+    }).catch(() => {});
+  }, [orderId]);
 
   useEffect(() => {
     if (!paymentId) return;
@@ -26,10 +35,7 @@ function CheckoutError() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ paymentId }),
         });
-        const json = await res.json();
-
         if (!res.ok) throw new Error("Status fetch failed");
-        setStatus(json);
       } catch (err) {
       } finally {
         setLoading(false);

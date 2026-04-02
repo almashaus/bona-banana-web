@@ -428,6 +428,46 @@ export const addActivityLog = async (
 };
 
 /*
+  [ 10 ]
+  Scheduled function: Cancel orders that have been Pending for more than 15 minutes.
+  Runs every 5 minutes. Canceling tickets triggers onTicketCanceled which restores availableTickets.
+*/
+export const cancelStalePendingOrders = functions.pubsub
+  .schedule("every 5 minutes")
+  .onRun(async () => {
+    const cutoff = new Date(Date.now() - 15 * 60 * 1000);
+
+    const snapshot = await db
+      .collection("orders")
+      .where("status", "==", "Pending")
+      .where("orderDate", "<=", cutoff)
+      .get();
+
+    if (snapshot.empty) return null;
+
+    const ticketPromises = snapshot.docs.map((doc) =>
+      db.collection("tickets").where("orderId", "==", doc.id).get()
+    );
+    const ticketSnapshots = await Promise.all(ticketPromises);
+
+    const batch = db.batch();
+
+    snapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, { status: "Canceled" });
+    });
+
+    ticketSnapshots.forEach((snap) => {
+      snap.docs.forEach((doc) => {
+        batch.update(doc.ref, { status: "Canceled" });
+      });
+    });
+
+    await batch.commit();
+    console.log(`Canceled ${snapshot.size} stale pending order(s)`);
+    return null;
+  });
+
+/*
 Deploy the functions command:
 `firebase deploy --only functions`
 */
