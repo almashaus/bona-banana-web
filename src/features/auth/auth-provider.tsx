@@ -33,7 +33,12 @@ type AuthContextType = {
   loading: boolean;
   initialLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    phone: string,
+  ) => Promise<void>;
   logout: () => void;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -111,7 +116,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (name: string, email: string, password: string) => {
+    async (
+      name: string,
+      email: string,
+      password: string,
+      phone: string,
+    ) => {
       setLoading(true);
       try {
         const result = await createUserWithEmailAndPassword(
@@ -134,7 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             displayName: name || email?.split("@")[0],
           });
 
-          const appUser = mapFirebaseUserToAppUser(fbUser);
+          const appUser: AppUser = {
+            ...mapFirebaseUserToAppUser(fbUser),
+            phone: phone.trim(),
+          };
           setUser(appUser);
           await addDocToCollection("users", appUser, appUser.id);
         }

@@ -8,6 +8,17 @@ export const SignupFormSchema = z.object({
 
   email: z.string().email({ message: "Please enter a valid email" }).trim(),
 
+  phone: z
+    .string()
+    .transform((s) => s.replace(/\D/g, ""))
+    .pipe(
+      z
+        .string()
+        .regex(/^\d{9,10}$/, {
+          message: "Phone must be 9–10 digits",
+        }),
+    ),
+
   password: z
     .string()
     .min(6, { message: "Be at least 6 characters long" })
@@ -32,6 +43,7 @@ export type FormState =
       errors?: {
         name?: string[];
         email?: string[];
+        phone?: string[];
         password?: string[];
       };
       message?: string;

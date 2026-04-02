@@ -90,7 +90,14 @@
     "somethingWentWrong": "حدث خطأ ما! يرجى المحاولة لاحقًا.",
     "allEvents": "عرض جميع الفعاليات",
     "orderFailed": "فشل إنشاء الطلب",
-    "orderFailedDescription": "فشل إنشاء الطلب. يرجى المحاولة مرة أخرى."
+    "orderFailedDescription": "فشل إنشاء الطلب. يرجى المحاولة مرة أخرى.",
+    "phoneRequiredTitle": "رقم الجوال مطلوب",
+    "phoneRequiredDescription": "نحتاج رقم جوالك لإتمام الدفع وسهولة التواصل معك. يرجى إدخاله أدناه",
+    "phoneLabel": "رقم الجوال",
+    "phoneInvalid": "أدخل من 9 إلى 10 أرقام فقط",
+    "continueToPay": "متابعة للدفع",
+    "phoneSaveFailed": "تعذّر حفظ رقم الجوال. يرجى المحاولة مرة أخرى.",
+    "cancel": "إلغاء"
   },
   "Coupon": {
     "couponCode": "كود الخصم",
@@ -174,6 +181,8 @@
     "enterInfoToCreateAccount": "أدخل معلوماتك لإنشاء حساب",
     "name": "الاسم",
     "namePlaceholder": "أحمد علي",
+    "phone": "رقم الجوال",
+    "phonePopover": "نحتاج رقم جوالك لإتمام الدفع وسهولة التواصل معك",
     "confirmPassword": "تأكيد كلمة المرور",
     "creatingAccount": "جاري إنشاء الحساب...",
     "alreadyHaveAccount": "لديك حساب بالفعل؟",

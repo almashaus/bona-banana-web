@@ -16,11 +16,22 @@ import {
   TicketIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Separator } from "@/src/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { useToast } from "@/src/components/ui/use-toast";
 import { generateIDNumber } from "@/src/lib/utils/utils";
 import { useAuth } from "@/src/features/auth/auth-provider";
+import { useAuthStore } from "@/src/lib/stores/useAuthStore";
+import { auth } from "@/src/lib/firebase/firebaseConfig";
 import { Event } from "@/src/models/event";
 import { Order, OrderStatus } from "@/src/models/order";
 import { Ticket, TicketStatus } from "@/src/models/ticket";
@@ -41,10 +52,13 @@ type PaymentMethod = {
   ImageUrl: string;
 };
 
+const validatePhone = (phone: string) => /^\d{9,10}$/.test(phone);
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  const setUser = useAuthStore((state) => state.setUser);
   const t = useTranslations("Checkout");
   const tEvent = useTranslations("Event");
   const tCoupon = useTranslations("Coupon");
@@ -63,6 +77,10 @@ export default function CheckoutPage() {
   const discountType = useCheckoutStore((state) => state.discountType);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<number>(2);
@@ -112,12 +130,9 @@ export default function CheckoutPage() {
     }
   }, [total]);
 
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
-
-    if (!user) {
-      setIsProcessing(false);
+  const processCheckout = async () => {
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
       router.replace("/login");
       return;
     }
@@ -133,7 +148,7 @@ export default function CheckoutPage() {
       const ticket: Ticket = {
         id: ticketId,
         orderId: orderId,
-        userId: user.id,
+        userId: currentUser.id,
         eventId: event?.id!,
         eventDateId: event?.dates.find((item) => item.id === dateId)?.id!,
         qrCode: "",
@@ -146,7 +161,7 @@ export default function CheckoutPage() {
 
     const order: Order = {
       id: orderId,
-      userId: user.id,
+      userId: currentUser.id,
       eventId: event?.id!,
       invoiceId: null,
       orderDate: new Date(),
@@ -178,7 +193,6 @@ export default function CheckoutPage() {
           "Failed to create order. Please try again.",
         variant: "destructive",
       });
-      setIsProcessing(false);
       return;
     }
 
@@ -191,8 +205,8 @@ export default function CheckoutPage() {
       const payload = {
         paymentMethodId: selectedMethod,
         invoiceValue: total,
-        customerName: user.name,
-        customerEmail: user.email,
+        customerName: currentUser.name,
+        customerEmail: currentUser.email,
         customerReference: `event-${event?.slug}`,
         orderId,
       };
@@ -218,6 +232,76 @@ export default function CheckoutPage() {
           "Something went wrong on the payment. Please try again later.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleSavePhoneAndContinue = async () => {
+    if (!user) return;
+    if (!validatePhone(phoneInput)) {
+      setPhoneError(t("phoneInvalid"));
+      return;
+    }
+    setPhoneError(null);
+    const fbUser = auth.currentUser;
+    if (!fbUser) {
+      router.replace("/login");
+      return;
+    }
+
+    setIsSavingPhone(true);
+    try {
+      const idToken = await fbUser.getIdToken();
+      const response = await fetch(`/api/profile/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ id: user.id, data: { phone: phoneInput } }),
+      });
+
+      if (!response.ok) {
+        throw new Error("save failed");
+      }
+
+      setUser({ ...user, phone: phoneInput });
+      await mutate(`/api/profile/${user.id}`);
+      setPhoneDialogOpen(false);
+      setPhoneInput("");
+      setIsProcessing(true);
+      try {
+        await processCheckout();
+      } finally {
+        setIsProcessing(false);
+      }
+    } catch {
+      toast({
+        title: t("phoneSaveFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!user.phone?.trim()) {
+      setPhoneInput("");
+      setPhoneError(null);
+      setPhoneDialogOpen(true);
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await processCheckout();
     } finally {
       setIsProcessing(false);
     }
@@ -225,7 +309,7 @@ export default function CheckoutPage() {
 
   if (!event?.id! || !dateId) {
     return (
-      <div className="container pt-20 text-center">
+      <div className="container py-20 text-center">
         <h1 className="text-2xl font-bold mb-4">
           {t("invalidInfo") || "Invalid checkout information"}
         </h1>
@@ -322,9 +406,7 @@ export default function CheckoutPage() {
                         <Tag className="h-3.5 w-3.5" />
                         {tCoupon("offerDiscount") || "Offer Discount"}
                       </span>
-                      <span>
-                        -{price(offerDiscountAmount, locale)}
-                      </span>
+                      <span>-{price(offerDiscountAmount, locale)}</span>
                     </div>
                   )}
 
@@ -339,10 +421,7 @@ export default function CheckoutPage() {
                           </span>
                         )}
                       </span>
-                      <span>
-                        -
-                        {price(couponDiscountAmount, locale)}
-                      </span>
+                      <span>-{price(couponDiscountAmount, locale)}</span>
                     </div>
                   )}
 
@@ -453,6 +532,61 @@ export default function CheckoutPage() {
           </form>
         </div>
       </div>
+
+      <Dialog
+        open={phoneDialogOpen}
+        onOpenChange={(open) => {
+          setPhoneDialogOpen(open);
+          if (!open) {
+            setPhoneError(null);
+            setPhoneInput("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md max-w-xs" dir="ltr">
+          <DialogHeader>
+            <DialogTitle>{t("phoneRequiredTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("phoneRequiredDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="checkout-phone">{t("phoneLabel")}</Label>
+            <Input
+              id="checkout-phone"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              placeholder="05XXXXXXXX"
+              value={phoneInput}
+              onChange={(e) => {
+                setPhoneInput(e.target.value.replace(/\D/g, ""));
+                setPhoneError(null);
+              }}
+            />
+            {phoneError && (
+              <p className="text-sm text-destructive">{phoneError}</p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPhoneDialogOpen(false)}
+              disabled={isSavingPhone}
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSavePhoneAndContinue}
+              disabled={isSavingPhone}
+            >
+              {isSavingPhone ? t("processing") : t("continueToPay")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

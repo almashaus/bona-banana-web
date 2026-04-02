@@ -11,12 +11,18 @@ import { useToast } from "@/src/components/ui/use-toast";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useLocale, useTranslations } from "next-intl";
 import { SignupFormSchema, FormState } from "@/src/lib/auth/validation";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { Info } from "lucide-react";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [validation, setValidation] = useState<FormState>();
   const [isLoading, setIsLoading] = useState(false);
   const { register, signInWithGoogle } = useAuth();
@@ -28,18 +34,11 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password !== confirmPassword) {
-      toast({
-        title: t("passwordsDoNotMatch"),
-        description: t("passwordsDoNotMatchDesc"),
-        variant: "destructive",
-      });
-      return;
-    }
     // Validate form fields
     const validatedFields = SignupFormSchema.safeParse({
       name: name,
       email: email,
+      phone: phone,
       password: password,
     });
 
@@ -52,8 +51,15 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
+    const {
+      name: parsedName,
+      email: parsedEmail,
+      password: parsedPassword,
+      phone: phoneDigits,
+    } = validatedFields.data;
+
     try {
-      await register(name, email, password);
+      await register(parsedName, parsedEmail, parsedPassword, phoneDigits);
       toast({
         title: t("registrationSuccess"),
         description: t("registrationSuccessDesc"),
@@ -145,6 +151,39 @@ export default function RegisterPage() {
                 )}
               </div>
               <div className="grid gap-3">
+                <div>
+                  <Label htmlFor="phone">{t("phone")}</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Info className="w-4 h-4 inline-block ms-1 text-stone-300 cursor-pointer" />
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="center"
+                      side="top"
+                      className="bg-muted"
+                    >
+                      <p className="text-xs">{t("phonePopover")}</p>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <Input
+                  id="phone"
+                  placeholder="05XXXXXXXX"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  dir="ltr"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                  required
+                />
+                {validation?.errors?.phone && (
+                  <p className="text-xs text-red-500">
+                    {validation.errors.phone}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-3">
                 <Label htmlFor="password">{t("password")}</Label>
                 <Input
                   id="password"
@@ -152,24 +191,6 @@ export default function RegisterPage() {
                   dir="ltr"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                {validation?.errors?.password && (
-                  <p className="text-xs text-red-500">
-                    {validation.errors.password.map((error) => (
-                      <div key={error}>- {error}</div>
-                    ))}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-3">
-                <Label htmlFor="confirm-password">{t("confirmPassword")}</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  dir="ltr"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
                 {validation?.errors?.password && (

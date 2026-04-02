@@ -90,7 +90,14 @@
     "somethingWentWrong": "Something went wrong!, please try again later.",
     "allEvents": "View All Events",
     "orderFailed": "Order Failed",
-    "orderFailedDescription": "Failed to create order. Please try again."
+    "orderFailedDescription": "Failed to create order. Please try again.",
+    "phoneRequiredTitle": "Phone number required",
+    "phoneRequiredDescription": "We need your phone number to complete this payment and to make it easier to contact you. Please enter it below.",
+    "phoneLabel": "Phone number",
+    "phoneInvalid": "Enter 9–10 digits only",
+    "continueToPay": "Continue to payment",
+    "phoneSaveFailed": "Could not save your phone number. Please try again.",
+    "cancel": "Cancel"
   },
   "Coupon": {
     "couponCode": "Coupon Code",
@@ -174,6 +181,8 @@
     "enterInfoToCreateAccount": "Enter your information to create an account",
     "name": "Name",
     "namePlaceholder": "Ahmad Ali",
+    "phone": "Phone number",
+    "phonePopover": "We need your phone number to complete payment and to make it easier to contact you",
     "confirmPassword": "Confirm Password",
     "creatingAccount": "Creating account...",
     "alreadyHaveAccount": "Already have an account?",
