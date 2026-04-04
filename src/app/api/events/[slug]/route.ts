@@ -4,10 +4,10 @@ import { NextRequest } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
-    const slug = (await params).id;
+    const slug = (await params).slug;
 
     const event: Event = (await getDocumentByKey(
       "events",

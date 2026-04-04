@@ -136,7 +136,7 @@ function computeOfferDiscount(
   return roundMoney(Math.min(offer.discountValue, total));
 }
 
-export default function EventPage() {
+export default function EventPageClient() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -161,10 +161,10 @@ export default function EventPage() {
   // Offer state (auto-applied, no code required)
   const [activeOffer, setActiveOffer] = useState<ActiveOffer | null>(null);
 
-  const params = useParams<{ id: string }>();
-  const id: string = params?.id!;
+  const params = useParams<{ slug: string }>();
+  const slug: string = params?.slug!;
 
-  const { data, error, isLoading } = useSWR<Event>(`/api/events/${id}`);
+  const { data, error, isLoading } = useSWR<Event>(`/api/events/${slug}`);
 
   const dir = locale === "en" ? "ltr" : "rtl";
 
@@ -343,7 +343,7 @@ export default function EventPage() {
     router.push("/checkout");
   };
 
-  if (error || !id || typeof id !== "string") {
+  if (error || !slug || typeof slug !== "string") {
     return (
       <div className="container py-10 text-center">
         <h1 className="text-2xl font-bold mb-4">
@@ -402,7 +402,7 @@ export default function EventPage() {
   }
 
   return (
-    <div className="px-5 py-10 md:container">
+    <article className="px-5 py-10 md:container">
       <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-2 md:gap-6 lg:grid lg:grid-cols-3 lg:gap-6">
         {/* Event Title and Image */}
         <div className="md:col-span-1 lg:col-span-2 lg:me-6">
@@ -843,6 +843,6 @@ export default function EventPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

@@ -1,14 +1,7 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
-import { Button } from "@/src/components/ui/button";
-import { Event, EventStatus } from "@/src/models/event";
-import {
-  CalendarDays,
-  ClockIcon,
-  Package,
-  DollarSign,
-  TriangleAlert,
-} from "lucide-react";
+import { Event } from "@/src/models/event";
+import { CalendarDays, ClockIcon, TriangleAlert } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/src/components/ui/card";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
 import { useLocale, useTranslations } from "next-intl";

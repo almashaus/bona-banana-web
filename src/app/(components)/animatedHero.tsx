@@ -67,9 +67,9 @@ function Hero() {
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl leading-relaxed text-muted-foreground max-w-lg md:max-w-2xl text-center">
+            <h2 className="text-lg md:text-xl leading-relaxed text-muted-foreground max-w-lg md:max-w-2xl text-center">
               {t("heroSubtitle")}
-            </p>
+            </h2>
           </div>
           <div className="flex flex-row gap-3">
             <Button size="lg" className="gap-4">

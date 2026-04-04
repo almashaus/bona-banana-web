@@ -65,7 +65,7 @@ const AnimatedImages = () => {
               <img
                 className="size-full object-cover object-center"
                 src={image}
-                alt=""
+                alt={`Bona Banana event gallery image ${index + 1}`}
                 loading="lazy"
                 decoding="async"
               />
@@ -75,11 +75,11 @@ const AnimatedImages = () => {
           </BentoCell>
         ))}
         <ContainerScale className="absolute top-1/4 md:top-1/2 left-1/2 z-0 text-center mt-12 md:mt-4 mb-8 w-full md:w-fit space-y-3">
-          <h1 className="w-full text-4xl md:text-5xl font-bold tracking-tighter">
+          <h2 className="w-full text-4xl md:text-5xl font-bold tracking-tighter">
             {locale === "ar" && t("gallery")}
             <span className="text-yellowColor mx-3">Bona Banana</span>
             {locale === "en" && t("gallery")}
-          </h1>
+          </h2>
           <p className="text-md md:text-xl text-muted-foreground">
             {t("gallerySubtitle")}
           </p>

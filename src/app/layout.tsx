@@ -17,8 +17,57 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import { ThemeProvider } from "../components/theme/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Bona Banana",
-  description: "Book tickets for your favorite game event",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
+  title: {
+    default: "Bona Banana Tickets | تذاكر بونا بنانا",
+    template: "%s | Bona Banana Tickets | تذاكر بونا بنانا",
+  },
+  description:
+    "Explore, book, and join epic board game events near you - احجز فعاليات ألعاب لوحية رائعة بالقرب منك",
+  keywords: [
+    "events",
+    "tickets",
+    "gaming",
+    "board game",
+    "Saudi Arabia",
+    "Riyadh",
+    "بونا بنانا",
+    "فعاليات",
+    "ألعاب ورق",
+    "ألعاب طاولة",
+    "ألعاب",
+  ],
+  authors: [{ name: "Bona Banana Tickets" }],
+  creator: "Bona Banana Tickets",
+  openGraph: {
+    type: "website",
+    locale: "ar_SA",
+    alternateLocale: "en_US",
+    url: process.env.NEXT_PUBLIC_BASE_URL,
+    siteName: "Bona Banana Tickets",
+    title: "Bona Banana Tickets | تذاكر بونا بنانا",
+    description:
+      "Explore, book, and join epic board game events near you - احجز فعاليات ألعاب لوحية رائعة بالقرب منك",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Bona Banana — Gaming Event Tickets",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bona Banana | بونا بنانا",
+    description:
+      "Explore, book, and join epic board game events near you - احجز فعاليات ألعاب لوحية رائعة بالقرب منك",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },

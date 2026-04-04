@@ -64,7 +64,7 @@ export default function contactUsPage() {
               <div className="flex justify-center">
                 <EmailButton
                   href={`mailto:{BONA_EMAIL}?subject=${encodeURIComponent(
-                    subject
+                    subject,
                   )}&body=${encodeURIComponent(content)}`}
                   className="px-4 py-2 rounded-lg bg-orangeColor text-white"
                 >
@@ -89,7 +89,7 @@ export default function contactUsPage() {
                   >
                     <div className="rounded-full bg-orangeColor p-2">
                       <img
-                        src="/icons/whatsapp.svg"
+                        src="/icons/socials/whatsapp.svg"
                         alt="Whatsapp"
                         className="h-6"
                       />
@@ -123,7 +123,7 @@ export default function contactUsPage() {
                   >
                     <div className="rounded-full bg-orangeColor p-2">
                       <img
-                        src="/icons/instagram.svg"
+                        src="/icons/socials/instagram.svg"
                         alt="Instagram"
                         className="h-6"
                       />
