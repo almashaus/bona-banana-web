@@ -30,18 +30,6 @@ export function LanguageToggle() {
           disabled={isPending}
           onClick={() =>
             startTransition(async () => {
-              await setLocale("en");
-              router.refresh();
-            })
-          }
-        >
-          <span>🇬🇧 {"English"}</span>
-          {locale === "en" && <Check className="ml-2 h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={isPending}
-          onClick={() =>
-            startTransition(async () => {
               await setLocale("ar");
               router.refresh();
             })
@@ -49,6 +37,18 @@ export function LanguageToggle() {
         >
           <span>🇸🇦 {"عربي"}</span>
           {locale === "ar" && <Check className="ml-2 h-4 w-4" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={isPending}
+          onClick={() =>
+            startTransition(async () => {
+              await setLocale("en");
+              router.refresh();
+            })
+          }
+        >
+          <span>🇬🇧 {"English"}</span>
+          {locale === "en" && <Check className="ml-2 h-4 w-4" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

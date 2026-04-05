@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import Link from "next/link";
 
 const BONA_PHONE = process.env.NEXT_PUBLIC_BONA_PHONE;
 const BONA_EMAIL = process.env.NEXT_PUBLIC_BONA_EMAIL;
@@ -72,8 +73,8 @@ function Hero() {
             </h2>
           </div>
           <div className="flex flex-row gap-3">
-            <Button size="lg" className="gap-4">
-              {t("discoverEvents")}
+            <Button size="lg" className="gap-4" asChild>
+              <Link href="/events">{t("discoverEvents")}</Link>
             </Button>
 
             <Popover>

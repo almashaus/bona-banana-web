@@ -1,17 +1,17 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { Event } from "@/src/models/event";
-import { CalendarDays, ClockIcon, TriangleAlert } from "lucide-react";
-import { Card, CardContent, CardFooter } from "@/src/components/ui/card";
-import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
+import { TriangleAlert } from "lucide-react";
+import { Card, CardFooter } from "@/src/components/ui/card";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import { price } from "../lib/utils/locales";
 import { AnimatedImages } from "./(components)/animatedImages";
 import { Hero } from "./(components)/animatedHero";
 import LoadingEvents from "./(components)/loadingEvents";
-import { findFirstTodayOrAfter } from "../lib/utils/utils";
 import { DigitalProduct } from "../models/digitalProduct";
+import { EventCard } from "./(components)/eventCard";
+import { Button } from "../components/ui/button";
 
 const baseURL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -50,9 +50,9 @@ export default function Home() {
                 <EventsList locale={locale} t={t} />
               </Suspense>
 
-              {/* <Button asChild>
-                <Link href="/"> {t("allEvents")}</Link>
-              </Button> */}
+              <Button asChild>
+                <Link href="/events"> {t("allEvents")}</Link>
+              </Button>
             </div>
           </div>
 
@@ -90,62 +90,7 @@ async function EventsList({ locale, t }: { locale: string; t: any }) {
   return (
     <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 md:grid-cols-2 lg:grid-cols-3">
       {allEvents.map((event) => {
-        return (
-          <Link href={`/events/${event.slug}`} key={event.id}>
-            <Card
-              className="overflow-hidden shadow-none bg-darkColor border-0 transform-gpu will-change-transform transition-transform duration-300
-  hover:scale-105 hover:rotate-3"
-            >
-              <div className="flex justify-center items-center m-3">
-                <div className="relative inline-block">
-                  <div className="w-[300px] h-[260px] rounded-lg bg-muted-foreground animate-pulse" />
-                  <Image
-                    src={
-                      event.eventLogo?.trim()
-                        ? event.eventLogo
-                        : event.eventImage?.trim()
-                          ? event.eventImage
-                          : "/no-image.svg"
-                    }
-                    alt={event.title}
-                    width={300}
-                    height={260}
-                    priority
-                    className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                    unoptimized={event.eventLogo?.includes("firebasestorage")}
-                  />
-                </div>
-              </div>
-              <CardContent className={`p-4 mx-3 rounded-md ${"bg-beigeColor"}`}>
-                <h3 className="line-clamp-1 text-lg font-bold">
-                  {locale === "en" ? event.title : event.titleAr}
-                </h3>
-                <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                  <CalendarDays className="me-1 h-4 w-4 text-redColor" />
-                  {`${formatDate(findFirstTodayOrAfter(event.dates.map((d) => d.date)) ?? event.dates[0].date, locale)}`}
-                </div>
-                <div className="mt-1 flex items-center text-sm text-muted-foreground">
-                  <ClockIcon className="me-1 h-4 w-4 text-redColor" />
-                  {`${formatTime(findFirstTodayOrAfter(event.dates.map((d) => d.startTime)) ?? event.dates[0].startTime, locale)} - ${formatTime(
-                    findFirstTodayOrAfter(event.dates.map((d) => d.endTime)) ??
-                      event.dates[0].endTime,
-                    locale,
-                  )}`}
-                </div>
-              </CardContent>
-              <CardFooter className="p-3 grid grid-cols-2 gap-3 justify-between items-center bg-dark-color">
-                <div className=" bg-redColor py-3 rounded-md text-white text-center">
-                  <span className="">
-                    {locale === "en" ? event.city.en : event.city.ar}
-                  </span>
-                </div>
-                <div className="bg-yellowColor py-3 rounded-md font-medium text-center">
-                  {price(event.price, locale)}
-                </div>
-              </CardFooter>
-            </Card>
-          </Link>
-        );
+        return <EventCard key={event.id} event={event} locale={locale} t={t} />;
       })}
     </div>
   );

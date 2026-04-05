@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
 import { nowDateInRiyadh } from "./formatDate";
+import { Event } from "@/src/models/event";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -164,4 +165,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     console.error("Copy failed:", err);
     return false;
   }
+}
+
+export function isSoldOut(event: Event): boolean {
+  return event.dates.every((d) => (d.availableTickets ?? 0) === 0);
 }

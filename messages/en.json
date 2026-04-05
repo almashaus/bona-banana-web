@@ -264,6 +264,26 @@
     "file": "File",
     "productDeleted": "Product no longer available"
   },
+  "EventsPage": {
+    "title": "All Events",
+    "subtitle": "Discover the latest board game events happening near you",
+    "searchPlaceholder": "Search events...",
+    "allCities": "All Cities",
+    "dateAll": "All Dates",
+    "dateThisWeek": "This Week",
+    "dateThisMonth": "This Month",
+    "freeOnly": "Free",
+    "sortSoonest": "Soonest First",
+    "sortLatest": "Latest First",
+    "sortPriceAsc": "Price: Low to High",
+    "sortPriceDesc": "Price: High to Low",
+    "clearFilters": "Clear Filters",
+    "showing": "Showing {count} of {total} events",
+    "noResults": "No events match your filters",
+    "noResultsSubtitle": "Try adjusting your search or clearing the filters",
+    "soldOut": "Sold Out",
+    "free": "Free"
+  },
   "NotFound": {
     "title": "Page Not Found",
     "description": "We couldn't find the page that you were looking for.",

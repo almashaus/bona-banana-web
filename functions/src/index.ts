@@ -433,9 +433,9 @@ export const addActivityLog = async (
   Runs every 5 minutes. Canceling tickets triggers onTicketCanceled which restores availableTickets.
 */
 export const cancelStalePendingOrders = functions.pubsub
-  .schedule("every 5 minutes")
+  .schedule("every 15 minutes")
   .onRun(async () => {
-    const cutoff = new Date(Date.now() - 15 * 60 * 1000);
+    const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
     const snapshot = await db
       .collection("orders")

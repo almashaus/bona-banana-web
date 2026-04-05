@@ -264,6 +264,26 @@
     "file": "الملف",
     "productDeleted": "المنتج لم يعد متاحاً"
   },
+  "EventsPage": {
+    "title": "جميع الفعاليات",
+    "subtitle": "اكتشف أحدث فعاليات ألعاب الطاولة في منطقتك",
+    "searchPlaceholder": "ابحث عن فعالية...",
+    "allCities": "كل المدن",
+    "dateAll": "كل التواريخ",
+    "dateThisWeek": "هذا الأسبوع",
+    "dateThisMonth": "هذا الشهر",
+    "freeOnly": "مجاني",
+    "sortSoonest": "الأقرب أولاً",
+    "sortLatest": "الأبعد أولاً",
+    "sortPriceAsc": "السعر: من الأقل",
+    "sortPriceDesc": "السعر: من الأعلى",
+    "clearFilters": "مسح الفلاتر",
+    "showing": "عرض {count} من {total} فعاليات",
+    "noResults": "لا توجد فعاليات تطابق بحثك",
+    "noResultsSubtitle": "حاول تعديل البحث أو مسح الفلاتر",
+    "soldOut": "نفدت التذاكر",
+    "free": "مجاني"
+  },
   "NotFound": {
     "title": "الصفحة غير موجودة",
     "description": "لم نتمكن من العثور على الصفحة التي تبحث عنها.",
