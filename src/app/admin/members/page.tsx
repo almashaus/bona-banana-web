@@ -267,7 +267,7 @@ export default function membersPage() {
   return (
     <div className="p-4 md:p-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Team Members Management</h1>
           <p className="text-muted-foreground">
@@ -314,7 +314,10 @@ export default function membersPage() {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Emails" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  className="max-h-[min(22rem,60vh)] overflow-y-auto"
+                  position="popper"
+                >
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.email}>
                       {user.email}
@@ -324,7 +327,7 @@ export default function membersPage() {
               </Select>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-1">
             <Button onClick={handleConvertUserToMember} disabled={isConverting}>
               {isConverting ? "Converting..." : "Convert"}
             </Button>

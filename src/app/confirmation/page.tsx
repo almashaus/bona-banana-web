@@ -170,7 +170,7 @@ function Confirmation() {
                       {ticket.id}
                     </span>
                     <div className="flex justify-center bg-white p-2 rounded-lg  mb-2 w-40 h-40 md:w-full md:h-full">
-                      <Image
+                      <img
                         src={
                           generateQRCode(ticket.token || ticket.id) ||
                           "/no-image.svg"
@@ -178,7 +178,6 @@ function Confirmation() {
                         alt={"QR code"}
                         width={150}
                         height={150}
-                        priority
                       />
                     </div>
                   </div>

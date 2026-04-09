@@ -706,7 +706,7 @@ export default function ReservationsPage() {
                               {ticket.id}
                             </span>
                             <div className="w-32 h-32 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                              <Image
+                              <img
                                 src={
                                   generateQRCode(ticket.token || ticket.id) ||
                                   "/no-image.svg"
@@ -714,7 +714,6 @@ export default function ReservationsPage() {
                                 alt="qr code"
                                 width={100}
                                 height={100}
-                                priority
                               />
                             </div>
                             <p className="font-mono text-sm">{ticket.qrCode}</p>

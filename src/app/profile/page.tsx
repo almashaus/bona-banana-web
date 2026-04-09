@@ -498,7 +498,7 @@ function Profile() {
 
                               <TableCell>
                                 <div className="flex justify-center bg-white p-2 rounded-lg  mb-2 w-20 h-20 md:w-full md:h-full">
-                                  <Image
+                                  <img
                                     src={
                                       generateQRCode(
                                         ticketData.ticket.token ||
@@ -508,7 +508,6 @@ function Profile() {
                                     alt={"QR code"}
                                     width={80}
                                     height={80}
-                                    priority
                                   />
                                 </div>
                               </TableCell>
@@ -661,12 +660,11 @@ function Profile() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent dir="ltr" className="bg-stone-100">
             <div className="flex justify-center bg-white m-2 p-4 rounded-lg ">
-              <Image
+              <img
                 src={generateQRCode(selectedQR!) || "/no-image.svg"}
                 alt={"QR code"}
                 width={150}
                 height={150}
-                priority
               />
             </div>
           </DialogContent>

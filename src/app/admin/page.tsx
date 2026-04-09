@@ -400,7 +400,7 @@ export default function AdminPage() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex justify-center bg-white p-2 rounded-lg  mb-2 w-20 h-20 md:w-full md:h-full">
-                                  <Image
+                                  <img
                                     src={
                                       generateQRCode(
                                         ticket.token || ticket.id,
@@ -409,7 +409,6 @@ export default function AdminPage() {
                                     alt={"QR code"}
                                     width={80}
                                     height={80}
-                                    priority
                                   />
                                 </div>
                               </TableCell>
