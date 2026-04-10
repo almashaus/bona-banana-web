@@ -22,6 +22,8 @@ import { usePermissionStore } from "@/src/lib/stores/usePermissionStore";
 function makeCan(rolePermissions: RolePermissions | null, role?: MemberRole) {
   return (feature: string, action: PermissionAction) => {
     if (!rolePermissions || !role) return false;
+    // Admin has full access to all features
+    if (role === MemberRole.ADMIN) return true;
     const perms = rolePermissions[role];
     const featurePerm = perms?.find((p) => p.feature === feature);
     return !!featurePerm?.[action];

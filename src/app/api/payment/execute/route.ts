@@ -26,22 +26,31 @@ export async function POST(req: NextRequest) {
     if (!paymentMethodId || !invoiceValue || Number(invoiceValue) <= 0) {
       return NextResponse.json(
         { data: { error: "Invalid payload" } },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const isProductCheckout = checkoutType === "product";
-    const resultPath = isProductCheckout ? "product-checkout/result" : "checkout/result";
-    const errorPath = isProductCheckout ? "product-checkout/error" : "checkout/error";
+    const isCampaignCheckout = checkoutType === "campaign";
+    const resultPath = isCampaignCheckout
+      ? "dnd/checkout/result"
+      : isProductCheckout
+        ? "product-checkout/result"
+        : "checkout/result";
+    const errorPath = isCampaignCheckout
+      ? "dnd/checkout/result"
+      : isProductCheckout
+        ? "product-checkout/error"
+        : "checkout/error";
 
     // Callback URLs (MyFatoorah will append PaymentId)
     const callbackUrl = `${BASE_URL}/${resultPath}?orderId=${encodeURIComponent(orderId || "")}`;
     const errorUrl = `${BASE_URL}/${errorPath}?orderId=${encodeURIComponent(orderId || "")}`;
-
+    console.log("callbackUrl :>> ", callbackUrl);
     const payload = {
       PaymentMethodId: paymentMethodId,
       InvoiceValue: invoiceValue,
-      CurrencyIso: "SAR",
+      CurrencyIso: "KWD", // TODO: "SAR"
       CustomerName: customerName,
       CustomerEmail: customerEmail,
       CustomerReference: customerReference,
@@ -64,11 +73,15 @@ export async function POST(req: NextRequest) {
       console.error("ExecutePayment error", data);
       return NextResponse.json(
         { data: { error: "Payment gateway error" } },
-        { status: 502 }
+        { status: 502 },
       );
     }
 
-    const collectionName = isProductCheckout ? "productOrders" : "orders";
+    const collectionName = isCampaignCheckout
+      ? "campaignOrders"
+      : isProductCheckout
+        ? "productOrders"
+        : "orders";
     await db
       .collection(collectionName)
       .doc(orderId)
@@ -79,7 +92,7 @@ export async function POST(req: NextRequest) {
     console.error("ExecutePayment handler error", err);
     return NextResponse.json(
       { data: { error: "Server error" } },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

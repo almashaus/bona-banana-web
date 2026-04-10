@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Package,
   ShieldCheck,
+  Swords,
   Ticket,
   UserRound,
   UserRoundCog,
@@ -38,6 +39,12 @@ export const sidebarData: SidebarItem[] = [
     url: "/admin/products",
     icon: Package,
     requires: { feature: "Products", action: "view" },
+  },
+  {
+    title: "DnD Management",
+    url: "/admin/dnd",
+    icon: Swords,
+    requires: { feature: "DnD Management", action: "view" },
   },
   {
     title: "Customers",

@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { TicketStatus } from "@/src/models/ticket";
 import { OrderStatus } from "@/src/models/order";
+import { BookingStatus } from "@/src/models/campaign/campaign";
 
 const MF_WEBHOOK_SECRET = process.env.MF_WEBHOOK_SECRET!;
 
@@ -92,31 +93,79 @@ function safeCompare(a: string, b: string) {
 
 async function markOrderPaid(invoiceId: string) {
   try {
+    // Check regular orders first
     const orderSnapshot = await db
       .collection("orders")
       .where("invoiceId", "==", invoiceId)
       .get();
 
-    const ticketPromises = orderSnapshot.docs.map((doc) =>
-      db.collection("tickets").where("orderId", "==", doc.id).get(),
-    );
+    if (!orderSnapshot.empty) {
+      const ticketPromises = orderSnapshot.docs.map((doc) =>
+        db.collection("tickets").where("orderId", "==", doc.id).get(),
+      );
 
-    const ticketSnapshots = await Promise.all(ticketPromises);
+      const ticketSnapshots = await Promise.all(ticketPromises);
 
-    const batch = db.batch();
+      const batch = db.batch();
 
-    orderSnapshot.docs.forEach((doc) => {
-      batch.update(doc.ref, { status: OrderStatus.PAID });
-    });
-
-    ticketSnapshots.forEach((snapshot) => {
-      snapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, { status: TicketStatus.VALID });
+      orderSnapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, { status: OrderStatus.PAID });
       });
-    });
 
-    await batch.commit();
-    console.log("Order marked paid");
+      ticketSnapshots.forEach((snapshot) => {
+        snapshot.docs.forEach((doc) => {
+          batch.update(doc.ref, { status: TicketStatus.VALID });
+        });
+      });
+
+      await batch.commit();
+      console.log("Order marked paid");
+      return;
+    }
+
+    // Check campaign orders
+    const campaignOrderSnap = await db
+      .collection("campaignOrders")
+      .where("invoiceId", "==", invoiceId)
+      .get();
+
+    if (!campaignOrderSnap.empty) {
+      const batch = db.batch();
+
+      for (const orderDoc of campaignOrderSnap.docs) {
+        batch.update(orderDoc.ref, { status: OrderStatus.PAID });
+
+        const orderData = orderDoc.data();
+        const { campaignId, sessionIds } = orderData;
+
+        // Update bookings to paid
+        const bookingsSnap = await db
+          .collection("campaigns")
+          .doc(campaignId)
+          .collection("bookings")
+          .where("orderId", "==", orderDoc.id)
+          .get();
+
+        const playerIds = new Set<string>();
+        bookingsSnap.docs.forEach((bDoc) => {
+          batch.update(bDoc.ref, { status: BookingStatus.PAID });
+          if (bDoc.data().playerId) playerIds.add(bDoc.data().playerId);
+        });
+
+        // Assign user to player slots
+        for (const playerId of playerIds) {
+          const playerRef = db
+            .collection("campaigns")
+            .doc(campaignId)
+            .collection("players")
+            .doc(playerId);
+          batch.update(playerRef, { assignedUserId: orderData.userId });
+        }
+      }
+
+      await batch.commit();
+      console.log("Campaign order marked paid");
+    }
   } catch (error) {
     console.log("markOrderPaid error :>> ", error);
   }
@@ -124,31 +173,66 @@ async function markOrderPaid(invoiceId: string) {
 
 async function cancelOrder(invoiceId: string) {
   try {
+    // Check regular orders first
     const orderSnapshot = await db
       .collection("orders")
       .where("invoiceId", "==", invoiceId)
       .get();
 
-    const ticketPromises = orderSnapshot.docs.map((doc) =>
-      db.collection("tickets").where("orderId", "==", doc.id).get(),
-    );
+    if (!orderSnapshot.empty) {
+      const ticketPromises = orderSnapshot.docs.map((doc) =>
+        db.collection("tickets").where("orderId", "==", doc.id).get(),
+      );
 
-    const ticketSnapshots = await Promise.all(ticketPromises);
+      const ticketSnapshots = await Promise.all(ticketPromises);
 
-    const batch = db.batch();
+      const batch = db.batch();
 
-    orderSnapshot.docs.forEach((doc) => {
-      batch.update(doc.ref, { status: OrderStatus.CANCELED });
-    });
-
-    ticketSnapshots.forEach((snapshot) => {
-      snapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, { status: TicketStatus.CANCELED });
+      orderSnapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, { status: OrderStatus.CANCELED });
       });
-    });
 
-    await batch.commit();
-    console.log("Order canceled");
+      ticketSnapshots.forEach((snapshot) => {
+        snapshot.docs.forEach((doc) => {
+          batch.update(doc.ref, { status: TicketStatus.CANCELED });
+        });
+      });
+
+      await batch.commit();
+      console.log("Order canceled");
+      return;
+    }
+
+    // Check campaign orders
+    const campaignOrderSnap = await db
+      .collection("campaignOrders")
+      .where("invoiceId", "==", invoiceId)
+      .get();
+
+    if (!campaignOrderSnap.empty) {
+      const batch = db.batch();
+
+      for (const orderDoc of campaignOrderSnap.docs) {
+        batch.update(orderDoc.ref, { status: OrderStatus.CANCELED });
+
+        const orderData = orderDoc.data();
+
+        // Delete pending bookings
+        const bookingsSnap = await db
+          .collection("campaigns")
+          .doc(orderData.campaignId)
+          .collection("bookings")
+          .where("orderId", "==", orderDoc.id)
+          .get();
+
+        bookingsSnap.docs.forEach((bDoc) => {
+          batch.delete(bDoc.ref);
+        });
+      }
+
+      await batch.commit();
+      console.log("Campaign order canceled");
+    }
   } catch (error) {
     console.log("cancelOrder error :>> ", error);
   }
