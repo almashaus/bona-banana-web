@@ -110,6 +110,8 @@ const blankForm: CouponFormState = {
   description: "",
   // Voucher-specific
   allowPartialConsumption: false,
+  voucherKind: "fixedAmount",
+  assignedUserId: "",
   // Offer-specific
   autoApply: false,
   offerSubtype: "discount" as OfferSubtype,
@@ -264,6 +266,8 @@ export default function CouponsPage() {
       endDate: c.endDate,
       description: c.description,
       allowPartialConsumption: c.allowPartialConsumption ?? false,
+      voucherKind: c.voucherKind ?? "fixedAmount",
+      assignedUserId: c.assignedUserId ?? "",
       autoApply: c.autoApply ?? false,
       offerSubtype: c.offerSubtype ?? "discount",
       buyQuantity: c.buyQuantity != null ? String(c.buyQuantity) : "",
@@ -377,6 +381,8 @@ export default function CouponsPage() {
       createdAt: editingCoupon?.createdAt ?? new Date().toISOString(),
       ...(form.type === "Voucher" && {
         allowPartialConsumption: form.allowPartialConsumption,
+        voucherKind: form.voucherKind,
+        assignedUserId: form.assignedUserId.trim() || null,
       }),
       ...(form.type === "Offer" && {
         autoApply: form.autoApply,

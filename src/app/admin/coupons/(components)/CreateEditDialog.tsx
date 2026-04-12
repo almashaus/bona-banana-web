@@ -59,6 +59,9 @@ export interface CouponFormState {
   offerSubtype: OfferSubtype;
   buyQuantity: string;
   getQuantity: string;
+  // Voucher-specific
+  voucherKind: "fixedAmount" | "freeTicket";
+  assignedUserId: string;
 }
 
 interface CreateEditDialogProps {
@@ -273,102 +276,227 @@ export function CreateEditDialog({
             </div>
           )}
 
-          {/* Row 2: Discount kind & value (hidden for Buy X Get Y) */}
-          {!(form.type === "Offer" && form.offerSubtype === "buyXgetY") && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="discount-kind">
-                  Discount Type <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={form.discountKind}
-                  onValueChange={(v) =>
-                    setForm({ ...form, discountKind: v as DiscountKind })
-                  }
-                  disabled={
-                    form.type === "Voucher" ||
-                    (!!editingCoupon && editingCoupon.usageCount > 0)
-                  }
-                >
-                  <SelectTrigger id="discount-kind">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Percentage (%)</SelectItem>
-                    <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {formErrors.discountKind && (
-                  <p className="text-xs text-red-500">
-                    {formErrors.discountKind}
-                  </p>
-                )}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="discount-value">
-                  Value <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="discount-value"
-                  type="number"
-                  min="0"
-                  step={form.discountKind === "percentage" ? "1" : "0.01"}
-                  placeholder={
-                    form.discountKind === "percentage" ? "25" : "50.00"
-                  }
-                  value={form.discountValue}
-                  onChange={(e) =>
-                    setForm({ ...form, discountValue: e.target.value })
-                  }
-                />
-                {formErrors.discountValue && (
-                  <p className="text-xs text-red-500">
-                    {formErrors.discountValue}
-                  </p>
-                )}
-              </div>
-              {form.discountKind === "percentage" && (
+          {/* Voucher-specific fields */}
+          {form.type === "Voucher" && (
+            <div className="grid gap-4">
+              {/* Voucher Kind */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="max-cap">Max Discount Cap</Label>
-                  <Input
-                    id="max-cap"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="50.00"
-                    value={form.maxCap}
-                    onChange={(e) =>
-                      setForm({ ...form, maxCap: e.target.value })
+                  <Label htmlFor="voucher-kind">
+                    Voucher Kind <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={form.voucherKind}
+                    onValueChange={(v) =>
+                      setForm({
+                        ...form,
+                        voucherKind: v as "fixedAmount" | "freeTicket",
+                        allowPartialConsumption:
+                          v === "freeTicket"
+                            ? false
+                            : form.allowPartialConsumption,
+                      })
                     }
-                  />
-                  {formErrors.maxCap && (
-                    <p className="text-xs text-red-500">{formErrors.maxCap}</p>
+                    disabled={!!editingCoupon && editingCoupon.usageCount > 0}
+                  >
+                    <SelectTrigger id="voucher-kind">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fixedAmount">Fixed Amount</SelectItem>
+                      <SelectItem value="freeTicket">Free Ticket(s)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formErrors.voucherKind && (
+                    <p className="text-xs text-red-500">
+                      {formErrors.voucherKind}
+                    </p>
                   )}
                 </div>
+              </div>
+
+              {/* Fixed Amount fields */}
+              {form.voucherKind === "fixedAmount" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="discount-value">
+                      Amount (SAR) <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="discount-value"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="50.00"
+                      value={form.discountValue}
+                      onChange={(e) =>
+                        setForm({ ...form, discountValue: e.target.value })
+                      }
+                    />
+                    {formErrors.discountValue && (
+                      <p className="text-xs text-red-500">
+                        {formErrors.discountValue}
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
+
+              {/* Free Ticket fields */}
+              {form.voucherKind === "freeTicket" && (
+                <div className="rounded-md border border-violet-200 bg-violet-50 p-3 text-sm text-violet-800">
+                  This voucher will cover the full cart amount when redeemed
+                  (free ticket). Set the discount value to match the ticket
+                  price.
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="discount-value-free">
+                        Ticket Price (SAR){" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="discount-value-free"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={form.discountValue}
+                        onChange={(e) =>
+                          setForm({ ...form, discountValue: e.target.value })
+                        }
+                        className="bg-white"
+                      />
+                      {formErrors.discountValue && (
+                        <p className="text-xs text-red-500">
+                          {formErrors.discountValue}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Partial consumption — only for fixedAmount */}
+              {form.voucherKind === "fixedAmount" && (
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="allow-partial"
+                    checked={form.allowPartialConsumption}
+                    onCheckedChange={(checked) =>
+                      setForm({ ...form, allowPartialConsumption: checked })
+                    }
+                  />
+                  <Label
+                    htmlFor="allow-partial"
+                    className="cursor-pointer font-normal"
+                  >
+                    Allow partial consumption (remaining balance tracked per
+                    redemption)
+                  </Label>
+                </div>
+              )}
+
+              {/* Assign to user */}
+              <div className="grid gap-2">
+                <Label htmlFor="assigned-user">
+                  Assign to User (User ID)
+                  <span className="text-xs text-muted-foreground font-normal ms-2">
+                    (Optional — leave blank for any user)
+                  </span>
+                </Label>
+                <Input
+                  id="assigned-user"
+                  placeholder="User ID"
+                  value={form.assignedUserId}
+                  onChange={(e) =>
+                    setForm({ ...form, assignedUserId: e.target.value.trim() })
+                  }
+                />
+                {formErrors.assignedUserId && (
+                  <p className="text-xs text-red-500">
+                    {formErrors.assignedUserId}
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Voucher: Allow partial consumption */}
-          {form.type === "Voucher" && (
-            <div className="flex items-center gap-3">
-              <Switch
-                id="allow-partial"
-                checked={form.allowPartialConsumption}
-                onCheckedChange={(checked) =>
-                  setForm({ ...form, allowPartialConsumption: checked })
-                }
-              />
-              <Label
-                htmlFor="allow-partial"
-                className="cursor-pointer font-normal"
-              >
-                Allow partial consumption (remaining balance tracked per
-                redemption)
-              </Label>
-            </div>
-          )}
+          {/* Row 2: Discount kind & value (hidden for Voucher and Buy X Get Y) */}
+          {form.type !== "Voucher" &&
+            !(form.type === "Offer" && form.offerSubtype === "buyXgetY") && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="discount-kind">
+                    Discount Type <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={form.discountKind}
+                    onValueChange={(v) =>
+                      setForm({ ...form, discountKind: v as DiscountKind })
+                    }
+                    disabled={!!editingCoupon && editingCoupon.usageCount > 0}
+                  >
+                    <SelectTrigger id="discount-kind">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {formErrors.discountKind && (
+                    <p className="text-xs text-red-500">
+                      {formErrors.discountKind}
+                    </p>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="discount-value">
+                    Value <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="discount-value"
+                    type="number"
+                    min="0"
+                    step={form.discountKind === "percentage" ? "1" : "0.01"}
+                    placeholder={
+                      form.discountKind === "percentage" ? "25" : "50.00"
+                    }
+                    value={form.discountValue}
+                    onChange={(e) =>
+                      setForm({ ...form, discountValue: e.target.value })
+                    }
+                  />
+                  {formErrors.discountValue && (
+                    <p className="text-xs text-red-500">
+                      {formErrors.discountValue}
+                    </p>
+                  )}
+                </div>
+                {form.discountKind === "percentage" && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="max-cap">Max Discount Cap</Label>
+                    <Input
+                      id="max-cap"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="50.00"
+                      value={form.maxCap}
+                      onChange={(e) =>
+                        setForm({ ...form, maxCap: e.target.value })
+                      }
+                    />
+                    {formErrors.maxCap && (
+                      <p className="text-xs text-red-500">
+                        {formErrors.maxCap}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
           {/* Row 3: Min ticket value */}
           <Separator />

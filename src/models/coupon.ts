@@ -36,6 +36,10 @@ export interface Coupon {
   // ── Voucher-specific ───────────────────────────────────────────────
   /** If true, voucher can be partially consumed; remaining balance tracked per redemption */
   allowPartialConsumption?: boolean;
+  /** "fixedAmount" (monetary credit) | "freeTicket" (full ticket price covered) */
+  voucherKind?: "fixedAmount" | "freeTicket";
+  /** If set, only this user can redeem this voucher */
+  assignedUserId?: string | null;
 
   // ── Offer-specific ───────────────────────────────────────────
   /** If true, applied automatically at checkout; no code required */
@@ -46,6 +50,14 @@ export interface Coupon {
   buyQuantity?: number | null;
   /** For Buy X Get Y: number of items free (e.g. 1) */
   getQuantity?: number | null;
+}
+
+export interface VoucherBalance {
+  id: string;
+  couponId: string;
+  userId: string;
+  remainingBalance: number;
+  updatedAt: string;
 }
 
 export interface CouponUsage {

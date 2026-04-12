@@ -9,13 +9,18 @@ import {
   ArrowRight,
   Building,
   CalendarDays,
+  CalendarIcon,
+  Check,
   ClockIcon,
+  Copy,
+  Gift,
   InfoIcon,
   Loader2,
   MapPin,
   Megaphone,
   Tag,
   Ticket,
+  TicketIcon,
   Users,
   X,
 } from "lucide-react";
@@ -34,9 +39,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
-import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
+import {
+  formatDate,
+  formatDateShort,
+  formatTime,
+} from "@/src/lib/utils/formatDate";
 import { Event, EventDate, EventStatus } from "@/src/models/event";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useToast } from "@/src/components/ui/use-toast";
@@ -52,6 +67,9 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { price } from "@/src/lib/utils/locales";
 import { useLocale, useTranslations } from "next-intl";
+import { Coupon } from "@/src/models/coupon";
+import { computeStatus } from "@/src/lib/utils/couponValidation";
+import { getAuth } from "firebase/auth";
 
 interface AppliedCoupon {
   id: string;
@@ -138,6 +156,8 @@ function computeOfferDiscount(
 
 export default function EventPageClient() {
   const { user } = useAuth();
+  const auth = getAuth();
+  const authUser = auth.currentUser!;
   const router = useRouter();
   const { toast } = useToast();
   const tEvent = useTranslations("Event");
@@ -158,6 +178,13 @@ export default function EventPageClient() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
 
+  // Voucher state
+  const [copiedVoucherCode, setCopiedVoucherCode] = useState("");
+  const [isVouchersDialogOpen, setIsVouchersDialogOpen] = useState(false);
+  const [voucherSearchCode, setVoucherSearchCode] = useState("");
+  const [isSavingVoucher, setIsSavingVoucher] = useState(false);
+  const [voucherSaveError, setVoucherSaveError] = useState<string | null>(null);
+
   // Offer state (auto-applied, no code required)
   const [activeOffer, setActiveOffer] = useState<ActiveOffer | null>(null);
 
@@ -165,6 +192,30 @@ export default function EventPageClient() {
   const slug: string = params?.slug!;
 
   const { data, error, isLoading } = useSWR<Event>(`/api/events/${slug}`);
+
+  interface VouchersResponse {
+    vouchers: {
+      coupon: Coupon;
+      remainingBalance?: number;
+      userUsageCount?: number;
+      applicableEventNames: {
+        en: string;
+        ar: string;
+        id: string;
+      }[];
+    }[];
+  }
+  const { data: vouchersData, isLoading: isVouchersLoading } =
+    useSWR<VouchersResponse>(
+      user && isVouchersDialogOpen ? `/api/profile/${user.id}/vouchers` : null,
+      async (url: string) => {
+        const idToken = await authUser.getIdToken();
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return res.json();
+      },
+    );
 
   const dir = locale === "en" ? "ltr" : "rtl";
 
@@ -767,6 +818,18 @@ export default function EventPageClient() {
                       {couponError && (
                         <p className="text-sm text-red-500">{couponError}</p>
                       )}
+                      <div>
+                        <Button
+                          variant="link"
+                          className="shrink-0 gap-2 border-orangeColor text-orangeColor"
+                          onClick={() => setIsVouchersDialogOpen(true)}
+                        >
+                          <Gift className="h-4 w-4" />
+                          <span className="text-sm">
+                            {tCoupon("myVouchers")}
+                          </span>
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -841,6 +904,242 @@ export default function EventPageClient() {
               )}
             </CardContent>
           </Card>
+          {/* Voucher Dialog */}
+          <Dialog
+            open={isVouchersDialogOpen}
+            onOpenChange={(open) => {
+              setIsVouchersDialogOpen(open);
+              if (!open) setVoucherSearchCode("");
+            }}
+          >
+            <DialogContent
+              dir={locale === "ar" ? "rtl" : "ltr"}
+              className="max-w-2xl max-h-[85vh] overflow-y-auto  "
+            >
+              {/* Header */}
+
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-lg mt-4">
+                  <Gift className="h-5 w-5 text-amber-500" />
+                  {tCoupon("myVouchers")}
+                </DialogTitle>
+              </DialogHeader>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-5">
+                {isVouchersLoading && (
+                  <div className="flex justify-center items-center py-16">
+                    <Loading />
+                  </div>
+                )}
+
+                {!isVouchersLoading &&
+                  (!vouchersData?.vouchers ||
+                    vouchersData.vouchers.length === 0) && (
+                    <div className="text-center py-14 flex flex-col items-center gap-3">
+                      <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center">
+                        <Gift className="h-8 w-8 text-amber-300" />
+                      </div>
+                      <p className="text-muted-foreground text-sm">
+                        {tCoupon("noVouchers")}
+                      </p>
+                    </div>
+                  )}
+
+                {!isVouchersLoading &&
+                  vouchersData?.vouchers &&
+                  vouchersData.vouchers
+                    .filter(
+                      ({ coupon }) =>
+                        !voucherSearchCode ||
+                        coupon.code
+                          .toUpperCase()
+                          .includes(voucherSearchCode.toUpperCase()),
+                    )
+                    .map(
+                      ({ coupon, remainingBalance, userUsageCount, applicableEventNames }) => {
+                        const baseStatus = computeStatus(coupon);
+                        const isPerUserLimitReached =
+                          coupon.perUserLimit != null &&
+                          userUsageCount != null &&
+                          userUsageCount >= coupon.perUserLimit;
+                        const status =
+                          isPerUserLimitReached ||
+                          (coupon.allowPartialConsumption &&
+                            remainingBalance === 0)
+                            ? "Fully Redeemed"
+                            : baseStatus;
+                        const isCopied = copiedVoucherCode === coupon.code;
+                        const isActive = status === "Active";
+                        const isExpired =
+                          status === "Expired" || status === "Fully Redeemed";
+
+                        const valueLabel =
+                          coupon.voucherKind === "freeTicket"
+                            ? tCoupon("voucherKindFree")
+                            : coupon.allowPartialConsumption &&
+                                remainingBalance !== undefined
+                              ? price(remainingBalance, locale)
+                              : price(coupon.discountValue, locale);
+
+                        const accentColor = isExpired
+                          ? {
+                              bg: "bg-stone-400",
+                              text: "text-stone-400",
+                              light: "bg-stone-50",
+                            }
+                          : {
+                              bg: "bg-orangeColor",
+                              text: "text-amber-500",
+                              light: "bg-amber-50",
+                            };
+
+                        return (
+                          <div
+                            key={coupon.id}
+                            className={`relative flex rounded-xl overflow-hidden ${accentColor.bg} transition-all ${isActive ? "hover:shadow-md" : "opacity-70"}`}
+                          >
+                            {/* ── Left stub ─────────────────────────────── */}
+                            <div
+                              className={`${accentColor.bg} p-3 relative w-14 flex-shrink-0 flex items-center justify-center`}
+                            >
+                              {/* Rotated label */}
+                              <span className="text-white text-sm font-black tracking-[0.25em] uppercase rotate-[-90deg] whitespace-nowrap select-none">
+                                {coupon.voucherKind === "freeTicket"
+                                  ? "FREE TICKET"
+                                  : "VOUCHER"}
+                              </span>
+
+                              {/* Top notch */}
+                              <div
+                                className={`absolute ${locale == "en" ? "-left-3" : "-right-3"} top-4 w-5 h-5 rounded-full bg-stone-50 z-5`}
+                              />
+                              <div
+                                className={`absolute ${locale == "en" ? "-left-3" : "-right-3"} top-12 w-5 h-5 rounded-full bg-stone-50 z-5`}
+                              />
+                              {/* middle notch */}
+                              <div
+                                className={`absolute ${locale == "en" ? "-left-3" : "-right-3"}  w-5 h-5 rounded-full bg-stone-50 z-5`}
+                              />
+                              {/* Bottom notch */}
+                              <div
+                                className={`absolute ${locale == "en" ? "-left-3" : "-right-3"} bottom-12 w-5 h-5 rounded-full bg-stone-50 z-5`}
+                              />
+                              <div
+                                className={`absolute ${locale == "en" ? "-left-3" : "-right-3"} bottom-4 w-5 h-5 rounded-full bg-stone-50 z-5`}
+                              />
+                            </div>
+
+                            {/* Dashed tear line */}
+                            <div
+                              className={`absolute ${locale == "en" ? "left-14 " : "right-14"} top-0 bottom-0 border-l-2 border-dashed border-stone-50 z-5 pointer-events-none`}
+                            />
+
+                            {/* ── Main body ─────────────────────────────── */}
+                            <div
+                              className={`flex-1 ${accentColor.light} m-2 p-4 flex flex-col gap-1 rounded-md`}
+                            >
+                              {/* Top row: label + status */}
+                              <div className="flex items-center justify-between ">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-stone-500">
+                                  {tCoupon("voucher")}
+                                </p>
+                                <span
+                                  className={`text-xs font-medium px-3 py-1 rounded-full uppercase tracking-wide ${
+                                    isActive
+                                      ? "bg-green-100 text-green-700"
+                                      : status === "Expired"
+                                        ? "bg-red-100 text-red-700"
+                                        : status === "Fully Redeemed"
+                                          ? "bg-stone-200 text-stone-600"
+                                          : "bg-blue-100 text-blue-700"
+                                  }`}
+                                >
+                                  {status}
+                                </span>
+                              </div>
+
+                              {/* Big value */}
+                              <div
+                                className={`text-3xl font-black leading-none ${accentColor.text}`}
+                              >
+                                {valueLabel}
+                                {coupon.allowPartialConsumption &&
+                                  remainingBalance !== undefined &&
+                                  coupon.voucherKind !== "freeTicket" && (
+                                    <span className="text-xs font-medium text-stone-400 ms-1.5 normal-case">
+                                      / {price(coupon.discountValue, locale)}
+                                    </span>
+                                  )}
+                              </div>
+
+                              {/* Code row */}
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="border border-dashed border-stone-300 rounded px-6 py-1 bg-white">
+                                  <span className="font-mono text-lg font-semibold tracking-widest text-stone-700">
+                                    {coupon.code}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(coupon.code);
+                                    setCopiedVoucherCode(coupon.code);
+                                    setTimeout(
+                                      () => setCopiedVoucherCode(""),
+                                      2000,
+                                    );
+                                  }}
+                                  className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded transition-colors ${
+                                    isCopied
+                                      ? "text-green-600 bg-green-50"
+                                      : "text-orangeColor hover:bg-orange-100 "
+                                  }`}
+                                >
+                                  {isCopied ? (
+                                    <>
+                                      <Check className="h-3 w-3" /> Copied
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="h-3 w-3 text-orangeColor" />{" "}
+                                      Copy
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+
+                              {/* Footer: validity + event scope */}
+                              <div className="flex items-center justify-between mt-1 pt-2 border-t border-stone-200">
+                                <p className="text-xs text-stone-400 flex items-center gap-1">
+                                  <CalendarIcon className="h-3 w-3" />
+                                  {formatDateShort(
+                                    new Date(coupon.startDate),
+                                  )}{" "}
+                                  – {formatDateShort(new Date(coupon.endDate))}
+                                </p>
+                                {applicableEventNames.length === 0 ? (
+                                  <span className="text-xs text-stone-400 flex items-end gap-1">
+                                    <TicketIcon className="h-3 w-3" /> All
+                                    events
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-stone-400 flex items-end gap-1">
+                                    <TicketIcon className="h-3 w-3" />{" "}
+                                    {applicableEventNames.map(
+                                      (e) => `${e.en}- `,
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      },
+                    )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </article>

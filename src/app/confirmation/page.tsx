@@ -3,12 +3,13 @@
 import { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CalendarDays, CheckCircle, Download, MapPin } from "lucide-react";
+import { CalendarDays, CheckCircle, Download, MapPin, Tag } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
 import { generateQRCode } from "@/src/lib/utils/utils";
 import { formatDate } from "@/src/lib/utils/formatDate";
+import { Coupon } from "@/src/models/coupon";
 import { Event } from "@/src/models/event";
 import useSWR from "swr";
 import { Order } from "@/src/models/order";
@@ -29,7 +30,7 @@ function Confirmation() {
   const router = useRouter();
   const t = useTranslations("Confirm");
   const tEvent = useTranslations("Event");
-  const tCheckout = useTranslations("Checkout");
+  const tCoupon = useTranslations("Coupon");
   const locale = useLocale();
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("orderNumber");
@@ -45,6 +46,7 @@ function Confirmation() {
     order: Order;
     event: Event;
     tickets: Ticket[];
+    coupon: Coupon | null;
   }
 
   const { data, error, isLoading } = useSWR<Response>(
@@ -119,10 +121,10 @@ function Confirmation() {
     );
   }
 
-  // Calculate totals
-  const total = event?.price! * quantity;
-  const subtotal = total - total * 0.15;
-  const fees = (total - subtotal).toFixed(2);
+  const rawSubtotal = (event?.price ?? 0) * quantity;
+  const discountAmount = order?.discountAmount ?? 0;
+  const hasDiscount = discountAmount > 0;
+  const coupon = data?.coupon ?? null;
 
   return (
     <div className="container py-10">
@@ -141,11 +143,11 @@ function Confirmation() {
               <div>
                 <div className="text-xl font-semibold">{event.title}</div>
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
-                  <CalendarDays className="me-1 h-4 w-4" />
+                  <CalendarDays className="me-1 h-4 w-4 text-orangeColor" />
                   {formatDate(date, locale)}
                 </div>
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
-                  <MapPin className="me-1 h-4 w-4" />
+                  <MapPin className="me-1 h-4 w-4 text-orangeColor" />
                   {event.city.en}
                 </div>
               </div>
@@ -188,7 +190,7 @@ function Confirmation() {
             <Separator className="my-4" />
 
             <div className="space-y-2">
-              <div className="flex justify-between">
+              <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">
                   {tEvent("tickets").charAt(0).toUpperCase() +
                     tEvent("tickets").slice(1)}
@@ -197,34 +199,34 @@ function Confirmation() {
                   {quantity} × {price(event.price, locale)}
                 </span>
               </div>
-              {/* TODO: VAT*/}
-              {/* <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {tCheckout("subtotal")}
-                </span>
-                <span>
-                  <span className="icon-saudi_riyal" />
-                  {subtotal}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {tCheckout("tax")}
-                </span>
-                <span>
-                  <span className="icon-saudi_riyal" />
-                  {fees}
-                </span>
-              </div>
-              <Separator className="my-2" /> */}
+
+              {hasDiscount && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {t("subtotal")}
+                    </span>
+                    <span>{price(rawSubtotal, locale)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3.5 w-3.5" />
+                      {tCoupon("couponDiscount")}
+                      {coupon?.code && (
+                        <span className="font-mono text-xs bg-green-100 px-1.5 py-0.5 rounded">
+                          {coupon.code}
+                        </span>
+                      )}
+                    </span>
+                    <span>-{price(discountAmount, locale)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                </>
+              )}
+
               <div className="flex justify-between font-bold">
-                <span>
-                  {tEvent("total")}{" "}
-                  {/* <span className="text-xs font-light text-muted-foreground">
-                    *{tCheckout("VAT")}
-                  </span> */}
-                </span>
-                <span>{price(total, locale)}</span>
+                <span>{tEvent("total")}</span>
+                <span>{price(order?.totalAmount ?? rawSubtotal, locale)}</span>
               </div>
             </div>
           </CardContent>

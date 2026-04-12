@@ -97,7 +97,8 @@
     "phoneInvalid": "Enter 9–10 digits only",
     "continueToPay": "Continue to payment",
     "phoneSaveFailed": "Could not save your phone number. Please try again.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "voucherCoversFullAmount": "Your voucher covers the full amount. No payment required."
   },
   "Coupon": {
     "couponCode": "Coupon Code",
@@ -117,7 +118,27 @@
     "offerDiscount": "Offer Discount",
     "buyXGetYFree": "Buy {x} Get {y} Free",
     "percentageOff": "{value}% Off",
-    "fixedOff": "{value} Off"
+    "fixedOff": "{value} Off",
+    "voucher": "Voucher",
+    "voucherKindFixed": "Fixed Amount",
+    "voucherKindFree": "Free Ticket(s)",
+    "remainingBalance": "Remaining Balance",
+    "voucherAssignedTo": "Assigned to",
+    "freeOrder": "Free Order",
+    "confirmFreeOrder": "Confirm Free Order",
+    "voucherNotAssignedToYou": "This voucher is not assigned to your account",
+    "myVouchers": "My Vouchers",
+    "noVouchers": "No vouchers assigned to your account yet.",
+    "redeemHint": "Have a voucher code? Enter it below to add it to your account.",
+    "enterVoucherCode": "ENTER CODE…",
+    "voucherApplyAtCheckout": "Enter this code at checkout to apply it.",
+    "save": "Save",
+    "saving": "Saving…",
+    "voucherNotFound": "No active voucher found with this code.",
+    "voucherAlreadyYours": "This voucher is already in your account.",
+    "voucherInactiveOrExpired": "This voucher is expired or no longer active.",
+    "voucherSaveError": "Something went wrong. Please try again.",
+    "voucherAdded": "Voucher added to your account."
   },
   "Confirm": {
     "confirm": "Order Confirmed!",
@@ -129,7 +150,8 @@
     "ticket": "Ticket",
     "tickets": "Tickets",
     "myTickets": "View My Tickets",
-    "accessPurchases": "You can access your purchases anytime in your profile page"
+    "accessPurchases": "You can access your purchases anytime in your profile page",
+    "subtotal": "Subtotal"
   },
   "Page": {
     "cancel": "Cancel",

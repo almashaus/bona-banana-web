@@ -3,10 +3,11 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle, Download, Package } from "lucide-react";
+import { CheckCircle, Download, Package, Tag } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
+import { Coupon } from "@/src/models/coupon";
 import { DigitalProduct } from "@/src/models/digitalProduct";
 import useSWR from "swr";
 import { ProductOrder } from "@/src/models/productOrder";
@@ -21,6 +22,7 @@ import { useToast } from "@/src/components/ui/use-toast";
 interface ProductOrderResponse {
   order: ProductOrder;
   product: DigitalProduct;
+  coupon: Coupon | null;
 }
 
 function ProductConfirmation() {
@@ -33,6 +35,7 @@ function ProductConfirmation() {
   const t = useTranslations("Confirm");
   const tProduct = useTranslations("Product");
   const tHome = useTranslations("Home");
+  const tCoupon = useTranslations("Coupon");
   const locale = useLocale();
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("orderNumber");
@@ -55,6 +58,10 @@ function ProductConfirmation() {
       setProduct(data.product);
     }
   }, [data]);
+
+  const discountAmount = order?.discountAmount ?? 0;
+  const hasDiscount = discountAmount > 0;
+  const coupon = data?.coupon ?? null;
 
   if (error) {
     return (
@@ -203,6 +210,29 @@ function ProductConfirmation() {
             <Separator className="my-4" />
 
             <div className="space-y-2">
+              {hasDiscount && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {t("subtotal")}
+                    </span>
+                    <span>{price((order.price ?? 0) + discountAmount, locale)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3.5 w-3.5" />
+                      {tCoupon("couponDiscount")}
+                      {coupon?.code && (
+                        <span className="font-mono text-xs bg-green-100 px-1.5 py-0.5 rounded">
+                          {coupon.code}
+                        </span>
+                      )}
+                    </span>
+                    <span>-{price(discountAmount, locale)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                </>
+              )}
               <div className="flex justify-between font-bold">
                 <span>{tProduct("totalPrice")}</span>
                 <span>{price(order.price, locale)}</span>

@@ -1,5 +1,6 @@
 import { db } from "@/src/lib/firebase/firebaseConfig";
 import { getDocumentById, getEventById } from "@/src/lib/firebase/firestore";
+import { Coupon } from "@/src/models/coupon";
 import { Event } from "@/src/models/event";
 import { Order } from "@/src/models/order";
 import { Ticket } from "@/src/models/ticket";
@@ -25,9 +26,18 @@ export async function GET(request: NextRequest) {
     const ticketsSnapshot = await getDocs(ticketsQuery);
     const tickets = ticketsSnapshot.docs.map((doc) => doc.data() as Ticket);
 
+    let coupon: Coupon | null = null;
+    if (order.couponId) {
+      try {
+        coupon = (await getDocumentById("coupons", order.couponId)) as Coupon;
+      } catch {
+        coupon = null;
+      }
+    }
+
     if (order && event && tickets) {
       return new Response(
-        JSON.stringify({ order: order, event: event, tickets: tickets }),
+        JSON.stringify({ order, event, tickets, coupon }),
         {
           status: 200,
           headers: { "Content-Type": "application/json" },

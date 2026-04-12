@@ -83,7 +83,7 @@ function validateDiscountCoupon(
 }
 
 /**
- * Validates a Voucher (monetary credit, fixed amount).
+ * Validates a Voucher (monetary credit, fixed amount or free ticket).
  * Supports partial consumption when allowPartialConsumption is true.
  */
 function validateVoucher(
@@ -94,6 +94,15 @@ function validateVoucher(
 ): CouponValidationResult {
   const status = computeStatus(coupon);
   if (status !== "Active") {
+    return { valid: false, error: "couponInvalidOrExpired" };
+  }
+
+  // User assignment check
+  if (
+    coupon.assignedUserId &&
+    ctx.userId &&
+    coupon.assignedUserId !== ctx.userId
+  ) {
     return { valid: false, error: "couponInvalidOrExpired" };
   }
 
@@ -110,6 +119,11 @@ function validateVoucher(
     ctx.eventIds.some((eid) => coupon.applicableEvents.includes(eid));
   if (!applicable) {
     return { valid: false, error: "couponInvalidOrExpired" };
+  }
+
+  // Free ticket voucher: cover full cart total
+  if (coupon.voucherKind === "freeTicket") {
+    return { valid: true, discountAmount: roundMoney(ctx.cartTotal) };
   }
 
   const effectiveValue =

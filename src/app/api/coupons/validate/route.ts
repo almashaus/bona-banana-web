@@ -36,6 +36,14 @@ export async function POST(req: NextRequest) {
 
     const coupon = snapshot.docs[0].data() as Coupon;
 
+    // Early assignedUserId check
+    if (coupon.assignedUserId && coupon.assignedUserId !== userId) {
+      return NextResponse.json({
+        valid: false,
+        errorMessage: "couponInvalidOrExpired",
+      });
+    }
+
     let userUsageCount = 0;
     if (userId && coupon.perUserLimit != null) {
       const usageSnap = await db
@@ -47,6 +55,18 @@ export async function POST(req: NextRequest) {
       userUsageCount = usageSnap.size;
     }
 
+    // Fetch remaining balance for partial consumption vouchers
+    let remainingBalance: number | undefined;
+    if (coupon.type === "Voucher" && coupon.allowPartialConsumption && userId) {
+      const balDoc = await db
+        .collection("voucherBalances")
+        .doc(`${coupon.id}_${userId}`)
+        .get();
+      remainingBalance = balDoc.exists
+        ? (balDoc.data()?.remainingBalance ?? coupon.discountValue)
+        : coupon.discountValue;
+    }
+
     const ctx: CouponValidationContext = {
       cartTotal: cartSubtotal,
       ticketQuantity,
@@ -55,7 +75,9 @@ export async function POST(req: NextRequest) {
       userUsageCount,
     };
 
-    const result = validateCoupon(coupon, ctx);
+    const result = validateCoupon(coupon, ctx, {
+      voucherRemainingBalance: remainingBalance,
+    });
 
     if (!result.valid) {
       return NextResponse.json({
@@ -75,6 +97,7 @@ export async function POST(req: NextRequest) {
       discountAmount,
       discountType: isBuyXGetY ? "buyXgetY" : coupon.discountKind,
       updatedCartTotal: roundMoney(cartSubtotal - discountAmount),
+      ...(remainingBalance !== undefined && { remainingBalance }),
       couponDetails: {
         type: coupon.type,
         discountKind: coupon.discountKind,
@@ -84,6 +107,8 @@ export async function POST(req: NextRequest) {
         offerSubtype: coupon.offerSubtype ?? null,
         buyQuantity: coupon.buyQuantity ?? null,
         getQuantity: coupon.getQuantity ?? null,
+        voucherKind: coupon.voucherKind ?? null,
+        allowPartialConsumption: coupon.allowPartialConsumption ?? false,
       },
     });
   } catch (error) {

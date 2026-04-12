@@ -79,6 +79,10 @@ export async function POST(req: NextRequest) {
       ...(coupon.allowPartialConsumption !== undefined && {
         allowPartialConsumption: coupon.allowPartialConsumption,
       }),
+      ...(coupon.voucherKind && { voucherKind: coupon.voucherKind }),
+      ...(coupon.assignedUserId !== undefined && {
+        assignedUserId: coupon.assignedUserId ?? null,
+      }),
       ...(coupon.autoApply !== undefined && { autoApply: coupon.autoApply }),
       ...(coupon.offerSubtype && { offerSubtype: coupon.offerSubtype }),
       ...(coupon.buyQuantity != null && { buyQuantity: coupon.buyQuantity }),
@@ -147,6 +151,10 @@ export async function PUT(req: NextRequest) {
       updatedAt: now,
       ...(coupon.allowPartialConsumption !== undefined && {
         allowPartialConsumption: coupon.allowPartialConsumption,
+      }),
+      ...(coupon.voucherKind && { voucherKind: coupon.voucherKind }),
+      ...(coupon.assignedUserId !== undefined && {
+        assignedUserId: coupon.assignedUserId ?? null,
       }),
       ...(coupon.autoApply !== undefined && { autoApply: coupon.autoApply }),
       ...(coupon.offerSubtype && { offerSubtype: coupon.offerSubtype }),

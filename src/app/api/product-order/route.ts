@@ -1,5 +1,6 @@
 import { storage } from "@/src/lib/firebase/firebaseAdminConfig";
 import { getDocumentById } from "@/src/lib/firebase/firestore";
+import { Coupon } from "@/src/models/coupon";
 import { DigitalProduct } from "@/src/models/digitalProduct";
 import { ProductOrder } from "@/src/models/productOrder";
 import { NextRequest } from "next/server";
@@ -40,7 +41,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return new Response(JSON.stringify({ order, product }), {
+    let coupon: Coupon | null = null;
+    if (order.couponId) {
+      try {
+        coupon = (await getDocumentById("coupons", order.couponId)) as Coupon;
+      } catch {
+        coupon = null;
+      }
+    }
+
+    return new Response(JSON.stringify({ order, product, coupon }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

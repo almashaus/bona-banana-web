@@ -7,8 +7,10 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
+  CheckCircle,
   ClockIcon,
   CreditCard,
+  Gift,
   LockIcon,
   MapPin,
   FileText,
@@ -105,6 +107,7 @@ export default function CheckoutPage() {
   const totalDiscount = roundMoney(offerDiscountAmount + couponDiscountAmount);
 
   const total = roundMoney(rawSubtotal - totalDiscount);
+  const isFreeOrder = total === 0;
 
   useEffect(() => {
     if (total && total > 0) {
@@ -235,6 +238,90 @@ export default function CheckoutPage() {
     }
   };
 
+  const processZeroTotalCheckout = async () => {
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      router.replace("/login");
+      return;
+    }
+
+    const orderId = generateIDNumber("ORDER");
+    const ticketsIds: string[] = [];
+    const tickets: Ticket[] = [];
+
+    for (let i = 0; i < quantity; i++) {
+      const ticketId = generateIDNumber("TICKET");
+      const ticket: Ticket = {
+        id: ticketId,
+        orderId,
+        userId: currentUser.id,
+        eventId: event?.id!,
+        eventDateId: event?.dates.find((item) => item.id === dateId)?.id!,
+        qrCode: "",
+        status: TicketStatus.PENDING,
+        purchasePrice: event?.price || 0,
+      };
+      ticketsIds.push(ticketId);
+      tickets.push(ticket);
+    }
+
+    const order: Order = {
+      id: orderId,
+      userId: currentUser.id,
+      eventId: event?.id!,
+      invoiceId: null,
+      orderDate: new Date(),
+      status: OrderStatus.PENDING,
+      totalAmount: 0,
+      couponId: couponId ?? offerId ?? null,
+      discountAmount: totalDiscount,
+      discountType: discountType ?? (hasOffer ? "offer" : null),
+      paymentMethod: "Free",
+      tickets: ticketsIds,
+    };
+
+    const postRes = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order, tickets }),
+    });
+
+    if (!postRes.ok) {
+      toast({
+        title: t("orderFailed") || "Order Failed",
+        description:
+          t("orderFailedDescription") ||
+          "Failed to create order. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const putRes = await fetch("/api/checkout", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId, email: currentUser.email }),
+    });
+
+    if (!putRes.ok) {
+      toast({
+        title: t("orderFailed") || "Order Failed",
+        description:
+          t("orderFailedDescription") ||
+          "Failed to confirm order. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await mutate("/api/admin/events");
+    await mutate("/api/admin/orders");
+    await mutate("/api/admin/customers", undefined, { revalidate: true });
+    await mutate("/api/published-events");
+
+    router.push(`/confirmation?orderNumber=${orderId}`);
+  };
+
   const handleSavePhoneAndContinue = async () => {
     if (!user) return;
     if (!validatePhone(phoneInput)) {
@@ -270,7 +357,11 @@ export default function CheckoutPage() {
       setPhoneInput("");
       setIsProcessing(true);
       try {
-        await processCheckout();
+        if (isFreeOrder) {
+          await processZeroTotalCheckout();
+        } else {
+          await processCheckout();
+        }
       } finally {
         setIsProcessing(false);
       }
@@ -301,7 +392,11 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      await processCheckout();
+      if (isFreeOrder) {
+        await processZeroTotalCheckout();
+      } else {
+        await processCheckout();
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -442,91 +537,125 @@ export default function CheckoutPage() {
             onSubmit={handlePaymentSubmit}
             className="bg-white rounded-lg border p-6 shadow-sm"
           >
-            <div className="flex items-end gap-1 text-xl font-semibold mb-4">
-              <CreditCard />
-              {t("paymentMethods")}
-            </div>
-
-            {isLoading && (
-              <div className="flex justify-center items-center py-12">
-                <Loading />
-              </div>
-            )}
-
-            {paymentMethods && !isLoading && (
+            {isFreeOrder ? (
               <>
-                <div className="grid gap-2">
-                  {paymentMethods.length === 0 && (
-                    <div>{t("noPaymentMethods")}</div>
+                <div className="flex items-end gap-1 text-xl font-semibold mb-4">
+                  <Gift />
+                  {tCoupon("freeOrder") || "Free Order"}
+                </div>
+                <div className="rounded-md border border-green-200 bg-green-50 p-4 mb-6 text-sm text-green-800 flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 mt-0.5 shrink-0 text-green-600" />
+                  <span>{t("voucherCoversFullAmount")}</span>
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <span className="flex items-center gap-3">
+                      <CheckCircle className="h-4 w-4 animate-pulse" />
+                      {t("processing") || "Processing..."}
+                    </span>
+                  ) : (
+                    <span>
+                      {tCoupon("confirmFreeOrder") || "Confirm Free Order"}
+                    </span>
                   )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-end gap-1 text-xl font-semibold mb-4">
+                  <CreditCard />
+                  {t("paymentMethods")}
+                </div>
 
-                  {paymentMethods
-                    .filter((m) =>
-                      paymentMethodsIds.includes(m.PaymentMethodId),
-                    )
-                    .map((method: PaymentMethod) => (
-                      <div
-                        key={method.PaymentMethodId}
-                        onClick={() =>
-                          setSelectedMethod(method.PaymentMethodId)
-                        }
-                        className={`${selectedMethod === method.PaymentMethodId ? "border-2 border-orangeColor" : " border-muted-foreground/20"} border rounded-lg flex justify-between items-center p-2 cursor-pointer`}
-                      >
-                        <div className="flex items-center">
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            className="accent-greenColor cursor-pointer"
-                            value={String(method.PaymentMethodId)}
-                            checked={selectedMethod === method.PaymentMethodId}
-                            onChange={() =>
+                {isLoading && (
+                  <div className="flex justify-center items-center py-12">
+                    <Loading />
+                  </div>
+                )}
+
+                {paymentMethods && !isLoading && (
+                  <>
+                    <div className="grid gap-2">
+                      {paymentMethods.length === 0 && (
+                        <div>{t("noPaymentMethods")}</div>
+                      )}
+
+                      {paymentMethods
+                        .filter((m) =>
+                          paymentMethodsIds.includes(m.PaymentMethodId),
+                        )
+                        .map((method: PaymentMethod) => (
+                          <div
+                            key={method.PaymentMethodId}
+                            onClick={() =>
                               setSelectedMethod(method.PaymentMethodId)
                             }
-                          />
-                          <img
-                            src={method.ImageUrl}
-                            alt={method.PaymentMethodEn}
-                            className="ms-3 me-2"
-                            width={50}
-                            height={10}
-                          />
-                          <Label
-                            htmlFor={String(method.PaymentMethodId)}
-                            className="cursor-pointer"
+                            className={`${selectedMethod === method.PaymentMethodId ? "border-2 border-orangeColor" : " border-muted-foreground/20"} border rounded-lg flex justify-between items-center p-2 cursor-pointer`}
                           >
-                            {method.PaymentMethodEn}
-                          </Label>
-                        </div>
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                className="accent-greenColor cursor-pointer"
+                                value={String(method.PaymentMethodId)}
+                                checked={
+                                  selectedMethod === method.PaymentMethodId
+                                }
+                                onChange={() =>
+                                  setSelectedMethod(method.PaymentMethodId)
+                                }
+                              />
+                              <img
+                                src={method.ImageUrl}
+                                alt={method.PaymentMethodEn}
+                                className="ms-3 me-2"
+                                width={50}
+                                height={10}
+                              />
+                              <Label
+                                htmlFor={String(method.PaymentMethodId)}
+                                className="cursor-pointer"
+                              >
+                                {method.PaymentMethodEn}
+                              </Label>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="mt-6 w-full space-y-2">
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        size="lg"
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? (
+                          <span className="flex items-center gap-3">
+                            <CreditCard className="h-4 w-4 animate-pulse" />
+                            {t("processing") || "Processing..."}
+                          </span>
+                        ) : (
+                          <span>
+                            {t("pay")} {price(total, locale)}
+                          </span>
+                        )}
+                      </Button>
+                      <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                        <LockIcon className="w-3 h-3" /> {t("securePay")}{" "}
+                        <img
+                          src="/images/MF-logo.svg"
+                          alt="My Fatoorah Logo"
+                          className="h-3"
+                        />
                       </div>
-                    ))}
-                </div>
-                <div className="mt-6 w-full space-y-2">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    size="lg"
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <span className="flex items-center gap-3">
-                        <CreditCard className="h-4 w-4 animate-pulse" />
-                        {t("processing") || "Processing..."}
-                      </span>
-                    ) : (
-                      <span>
-                        {t("pay")} {price(total, locale)}
-                      </span>
-                    )}
-                  </Button>
-                  <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
-                    <LockIcon className="w-3 h-3" /> {t("securePay")}{" "}
-                    <img
-                      src="/images/MF-logo.svg"
-                      alt="My Fatoorah Logo"
-                      className="h-3"
-                    />
-                  </div>
-                </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </form>

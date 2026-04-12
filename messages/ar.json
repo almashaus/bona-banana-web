@@ -97,7 +97,8 @@
     "phoneInvalid": "أدخل من 9 إلى 10 أرقام فقط",
     "continueToPay": "متابعة للدفع",
     "phoneSaveFailed": "تعذّر حفظ رقم الجوال. يرجى المحاولة مرة أخرى.",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "voucherCoversFullAmount": "قسيمتك تغطي المبلغ بالكامل. لا يلزم الدفع."
   },
   "Coupon": {
     "couponCode": "كود الخصم",
@@ -117,7 +118,27 @@
     "offerDiscount": "خصم العرض",
     "buyXGetYFree": "اشتري {x} واحصل على {y} مجاناً",
     "percentageOff": "خصم {value}%",
-    "fixedOff": "خصم {value}"
+    "fixedOff": "خصم {value}",
+    "voucher": "قسيمة",
+    "voucherKindFixed": "مبلغ ثابت",
+    "voucherKindFree": "تذكرة مجانية",
+    "remainingBalance": "الرصيد المتبقي",
+    "voucherAssignedTo": "مخصص لـ",
+    "freeOrder": "طلب مجاني",
+    "confirmFreeOrder": "تأكيد الطلب المجاني",
+    "voucherNotAssignedToYou": "هذه القسيمة غير مخصصة لحسابك",
+    "myVouchers": "قسائمي",
+    "noVouchers": "لا توجد قسائم مخصصة لحسابك بعد.",
+    "redeemHint": "هل لديك كود قسيمة؟ أدخله أدناه لإضافته إلى حسابك.",
+    "enterVoucherCode": "أدخل الكود…",
+    "voucherApplyAtCheckout": "أدخل هذا الكود عند إتمام الشراء لتطبيقه.",
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ…",
+    "voucherNotFound": "لم يتم العثور على قسيمة نشطة بهذا الكود.",
+    "voucherAlreadyYours": "هذه القسيمة موجودة بالفعل في حسابك.",
+    "voucherInactiveOrExpired": "هذه القسيمة منتهية الصلاحية أو غير نشطة.",
+    "voucherSaveError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "voucherAdded": "تمت إضافة القسيمة إلى حسابك."
   },
   "Confirm": {
     "confirm": "تم تأكيد الطلب!",
@@ -129,7 +150,8 @@
     "ticket": "التذكرة",
     "tickets": "التذاكر",
     "myTickets": "عرض تذاكري",
-    "accessPurchases": "يمكنك الوصول إلى مشترياتك في أي وقت من صفحة الملف الشخصي"
+    "accessPurchases": "يمكنك الوصول إلى مشترياتك في أي وقت من صفحة الملف الشخصي",
+    "subtotal": "المجموع الفرعي"
   },
   "Page": {
     "cancel": "إلغاء",

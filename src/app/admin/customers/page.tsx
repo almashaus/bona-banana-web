@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, CircleAlertIcon } from "lucide-react";
+import { Search, CircleAlertIcon, Copy, Check } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
@@ -42,6 +42,7 @@ export default function customersPage() {
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [copiedUserId, setCopiedUserId] = useState("");
 
   interface Response {
     customers: CustomerResponse[];
@@ -75,6 +76,12 @@ export default function customersPage() {
   const handleViewDetails = async (customer: CustomerResponse) => {
     setSelectedCustomer(customer);
     setIsDialogOpen(true);
+  };
+
+  const copyUserId = (userId: string) => {
+    navigator.clipboard.writeText(userId);
+    setCopiedUserId(userId);
+    setTimeout(() => setCopiedUserId(""), 2000);
   };
 
   const { hasPermission } = usePermissions(user);
@@ -113,6 +120,7 @@ export default function customersPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[5px]"></TableHead>
               <TableHead className="w-[10px]"></TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
@@ -126,6 +134,21 @@ export default function customersPage() {
           <TableBody>
             {customers?.map((customer) => (
               <TableRow key={customer.user.id} role="row">
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyUserId(customer.user.id)}
+                  >
+                    <div className="">
+                      {copiedUserId && copiedUserId == customer.user.id ? (
+                        <Check className="h-4 w-4 text-green-400" />
+                      ) : (
+                        <Copy className="h-3 w-3 text-orangeColor" />
+                      )}
+                    </div>
+                  </Button>
+                </TableCell>
                 {/* avatar */}
                 <TableCell>
                   <div className="flex justify-center">

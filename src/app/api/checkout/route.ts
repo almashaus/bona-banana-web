@@ -115,6 +115,24 @@ export async function PUT(req: NextRequest) {
         const newRevenueImpact =
           coupon.revenueImpact + (orderData.totalAmount ?? 0);
 
+        // Pre-compute voucher balance so we can include status in the single coupon write
+        let balRef: FirebaseFirestore.DocumentReference | null = null;
+        let newBalance: number | null = null;
+        if (
+          coupon.type === "Voucher" &&
+          coupon.allowPartialConsumption &&
+          orderData.userId
+        ) {
+          balRef = db
+            .collection("voucherBalances")
+            .doc(`${coupon.id}_${orderData.userId}`);
+          const balDoc = await balRef.get();
+          const current = balDoc.exists
+            ? (balDoc.data()?.remainingBalance ?? coupon.discountValue)
+            : coupon.discountValue;
+          newBalance = Math.max(0, current - (orderData.discountAmount ?? 0));
+        }
+
         const couponUpdate: Record<string, unknown> = {
           usageCount: newUsageCount,
           discountImpact: newDiscountImpact,
@@ -122,10 +140,12 @@ export async function PUT(req: NextRequest) {
           updatedAt: new Date().toISOString(),
         };
 
-        if (
-          coupon.usageLimit !== null &&
-          newUsageCount >= coupon.usageLimit
-        ) {
+        if (coupon.usageLimit !== null && newUsageCount >= coupon.usageLimit) {
+          couponUpdate.status = "Fully Redeemed";
+        }
+
+        // Mark voucher fully redeemed when remaining balance is exhausted
+        if (newBalance === 0) {
           couponUpdate.status = "Fully Redeemed";
         }
 
@@ -138,6 +158,16 @@ export async function PUT(req: NextRequest) {
           discountAmount: orderData.discountAmount ?? 0,
           timestamp: new Date().toISOString(),
         });
+
+        // Persist the pre-computed voucher balance
+        if (balRef !== null && newBalance !== null) {
+          await balRef.set({
+            couponId: coupon.id,
+            userId: orderData.userId,
+            remainingBalance: newBalance,
+            updatedAt: new Date().toISOString(),
+          });
+        }
       }
     }
 
