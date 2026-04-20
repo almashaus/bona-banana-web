@@ -33,3 +33,4 @@ CLAUDE.md
 .claudeignore
 .claude/
 docs/claude/
+.agent/

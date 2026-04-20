@@ -329,7 +329,7 @@ function PlayerView({
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const store = useCampaignCheckoutStore();
 
-  const activePlayers = campaign.players.filter((p) => p.isActive);
+  const enabledPlayers = campaign.players.filter((p) => p.isActive);
 
   const isPlayerBookedInSession = (sessionId: string, playerId: string) =>
     campaign.bookings.some(
@@ -338,6 +338,10 @@ function PlayerView({
         b.playerId === playerId &&
         b.status === BookingStatus.PAID,
     );
+
+  // A player is "fully booked" only when every session has a PAID booking for them.
+  const isPlayerFullyBooked = (playerId: string) =>
+    campaign.sessions.every((s) => isPlayerBookedInSession(s.id, playerId));
 
   const toggleSession = (sessionId: string) => {
     setSelectedSessions((prev) =>
@@ -400,6 +404,27 @@ function PlayerView({
 
   const isPending = campaign.status === CampaignStatus.PENDING;
 
+  // All PAID bookings that belong to the current user
+  const myPaidBookings = campaign.bookings.filter(
+    (b) => b.userId === user?.id && b.status === BookingStatus.PAID,
+  );
+
+  // Group by player — only include players that have at least one paid booking
+  const myBookingsByPlayer = enabledPlayers
+    .map((player) => {
+      const sessions = campaign.sessions
+        .filter((s) =>
+          myPaidBookings.some(
+            (b) => b.playerId === player.id && b.sessionId === s.id,
+          ),
+        )
+        .sort((a, b) => a.sessionNumber - b.sessionNumber);
+      return sessions.length > 0 ? { player, sessions } : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  const hasConfirmedBookings = myBookingsByPlayer.length > 0;
+
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
@@ -450,7 +475,58 @@ function PlayerView({
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
+        {/* ── Confirmed Bookings ─────────────────────────────── */}
+        {hasConfirmedBookings && (
+          <div className="rounded-xl bg-green-50 border border-green-200 p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+              <h2 className="font-semibold text-green-800 text-base">
+                {t("confirmedBookings")}
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {myBookingsByPlayer.map(({ player, sessions }) => (
+                <div key={player.id} className="space-y-2">
+                  {/* Player name */}
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-green-700 shrink-0" />
+                    <span className="font-medium text-green-900 text-sm">
+                      {player.name}
+                    </span>
+                    <Badge className="bg-green-600/15 text-green-700 border-green-300 text-xs font-normal">
+                      {sessions.length} {t("sessions")}
+                    </Badge>
+                  </div>
+
+                  {/* Session rows */}
+                  <div className="ms-6 space-y-1.5">
+                    {sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className="flex items-center gap-2 text-sm text-green-800"
+                      >
+                        <CalendarDays className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                        <span className="font-medium">
+                          {t("sessionNo", { number: session.sessionNumber })}
+                        </span>
+                        <span className="text-green-700/70">—</span>
+                        <span>
+                          {session.dateTime
+                            ? formatDateTime(new Date(session.dateTime))
+                            : "TBD"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Booking Grid ───────────────────────────────────── */}
         <div className="grid lg:grid-cols-5 gap-6">
           {/* Sessions Tabs + Player Selection */}
           <div className="lg:col-span-3 space-y-6">
@@ -469,8 +545,8 @@ function PlayerView({
                   onValueChange={setSelectedPlayer}
                   className="space-y-2"
                 >
-                  {activePlayers.map((player) => {
-                    const isAssigned = !!player.assignedUserId;
+                  {enabledPlayers.map((player) => {
+                    const fullyBooked = isPlayerFullyBooked(player.id);
                     return (
                       <div key={player.id}>
                         <Label
@@ -480,19 +556,19 @@ function PlayerView({
                             selectedPlayer === player.id
                               ? "border-orangeColor bg-orangeColor/5 ring-1 ring-orangeColor/20"
                               : "border-border hover:border-orangeColor/30",
-                            isAssigned && "opacity-50 cursor-not-allowed",
+                            fullyBooked && "opacity-50 cursor-not-allowed",
                           )}
                         >
                           <RadioGroupItem
                             value={player.id}
                             id={player.id}
-                            disabled={isAssigned}
+                            disabled={fullyBooked}
                           />
 
                           <span className="font-medium text-sm flex-1">
                             {player.name}
                           </span>
-                          {isAssigned && (
+                          {fullyBooked && (
                             <Badge
                               variant="outline"
                               className="text-xs text-muted-foreground"
@@ -555,7 +631,7 @@ function PlayerView({
 
                         {/* Player slots in this session */}
                         <div className="space-y-2">
-                          {activePlayers.map((player) => {
+                          {enabledPlayers.map((player) => {
                             const booked = isPlayerBookedInSession(
                               session.id,
                               player.id,

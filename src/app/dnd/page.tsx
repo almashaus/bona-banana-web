@@ -23,6 +23,7 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { Campaign, CampaignStatus } from "@/src/models/campaign/campaign";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 interface CampaignWithSubs extends Campaign {
   players: {
@@ -167,14 +168,9 @@ function CampaignCard({
 }
 
 export default function DnDPage() {
-  const { user } = useAuth();
+  const { user, initialLoading } = useAuth();
   const t = useTranslations("DnD");
   const locale = useLocale();
-
-  // Fetch all published campaigns
-  const { data: publishedData, isLoading: loadingPublished } = useSWR<{
-    campaigns: CampaignWithSubs[];
-  }>("/api/campaigns?status=Published");
 
   // Fetch master's campaigns (if logged in)
   const { data: masterData, isLoading: loadingMaster } = useSWR<{
@@ -186,16 +182,11 @@ export default function DnDPage() {
     campaigns: CampaignWithSubs[];
   }>(user ? `/api/campaigns?userId=${user.id}&status=Published` : null);
 
-  const isLoading = loadingPublished || loadingMaster || loadingJoined;
+  // Single loading gate: wait for auth + any in-flight fetches
+  const isLoading = initialLoading || loadingMaster || loadingJoined;
 
-  const publishedCampaigns = publishedData?.campaigns || [];
   const masterCampaigns = masterData?.campaigns || [];
   const joinedCampaigns = joinedData?.campaigns || [];
-
-  // Filter out master's own campaigns from published list
-  const otherPublished = publishedCampaigns.filter(
-    (c) => !masterCampaigns.some((m) => m.id === c.id),
-  );
 
   const isMaster = masterCampaigns.length > 0;
   const isPlayer = joinedCampaigns.length > 0;
@@ -206,13 +197,13 @@ export default function DnDPage() {
       <div className="bg-greenColor text-primary-foreground">
         <section className="relative pt-12 pb-8 px-6 text-center overflow-hidden">
           <Image
-            src="/images/dnd.svg"
-            alt=""
+            src="/assets/dnd/banner.svg"
+            alt="dnd"
             fill
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/40" />
           <div className="relative z-10">
             <div className="container mx-auto px-4 py-10 md:py-16">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -248,10 +239,14 @@ export default function DnDPage() {
       <div className="container mx-auto px-4 py-8 space-y-10">
         {/* Loading Skeletons */}
         {isLoading && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <CampaignCardSkeleton key={i} />
-            ))}
+          <div>
+            <Skeleton className="w-32 h-6 bg-white mb-3" />
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <CampaignCardSkeleton key={i} />
+              ))}
+            </div>
           </div>
         )}
 
@@ -301,44 +296,23 @@ export default function DnDPage() {
           </section>
         )}
 
-        {/* Published Campaigns */}
-        {!isLoading && (
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Swords className="h-5 w-5 text-orangeColor" />
-              <h2 className="text-xl font-bold">{t("publishedCampaigns")}</h2>
-            </div>
-            {otherPublished.length === 0 ? (
-              <Card className="border-dashed border-2 border-muted-foreground/15 bg-transparent shadow-none">
-                <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <div className="p-4 rounded-full bg-muted mb-4">
-                    <Swords className="h-8 w-8 opacity-40" />
-                  </div>
-                  <p className="text-lg font-medium">{t("noCampaigns")}</p>
-                  <p className="text-sm mt-1 mb-4">
-                    {t("noCampaignsDescription")}
-                  </p>
-                  <Link href="/dnd/create-campaign">
-                    <Button variant="outline" size="sm">
-                      <Plus className="h-4 w-4 me-1" />
-                      {t("createCampaign")}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {otherPublished.map((campaign) => (
-                  <CampaignCard
-                    key={campaign.id}
-                    campaign={campaign}
-                    t={t}
-                    locale={locale}
-                  />
-                ))}
+        {/* Empty state when logged in but no campaigns */}
+        {!isLoading && user && !isMaster && !isPlayer && (
+          <Card className="border-dashed border-2 border-muted-foreground/15 bg-transparent shadow-none">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <div className="p-4 rounded-full bg-muted mb-4">
+                <Swords className="h-8 w-8 opacity-40" />
               </div>
-            )}
-          </section>
+              <p className="text-lg font-medium">{t("noCampaigns")}</p>
+              <p className="text-sm mt-1 mb-4">{t("noCampaignsDescription")}</p>
+              <Link href="/dnd/create-campaign">
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 me-1" />
+                  {t("createCampaign")}
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

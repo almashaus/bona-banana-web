@@ -5,13 +5,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { mutate } from "swr";
 import Loading from "@/src/components/ui/loading";
-import { TriangleAlert, CheckCircle, Swords } from "lucide-react";
+import {
+  TriangleAlert,
+  CheckCircle,
+  Swords,
+  CalendarDays,
+  Coins,
+  MapPin,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCampaignCheckoutStore } from "@/src/lib/stores/useCampaignCheckoutStore";
 import { Campaign } from "@/src/models/campaign/campaign";
 import { formatDateTime } from "@/src/lib/utils/formatDate";
+import { price } from "@/src/lib/utils/locales";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -22,10 +30,17 @@ function CampaignCheckoutResult() {
   const router = useRouter();
   const { user } = useAuth();
   const t = useTranslations("Checkout");
+  const locale = useLocale();
   const tDnD = useTranslations("DnD");
   const resetStore = useCampaignCheckoutStore((s) => s.reset);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [orderDetails, setOrderDetails] = useState<{
+    sessionIds: string[];
+    totalAmount: number;
+    discountAmount: number;
+    sessions: { id: string; sessionNumber: number; dateTime: string }[];
+  } | null>(null);
   const [polling, setPolling] = useState(true);
   const [attempts, setAttempts] = useState(0);
   const hasUpdatedRef = useRef(false);
@@ -105,6 +120,7 @@ function CampaignCheckoutResult() {
             await mutate(`/api/campaigns`);
             resetStore();
             setCampaign(responseData.campaign);
+            setOrderDetails(responseData.order ?? null);
             setLoading(false);
             setSuccess(true);
           } catch {
@@ -165,10 +181,64 @@ function CampaignCheckoutResult() {
             <p className="text-sm text-muted-foreground">
               {tDnD("orderNo")} : {orderId}
             </p>
-            <p className="">
-              <span className="text-orangeColor"> {tDnD("title")} </span>{" "}
-              {campaign?.title}
-            </p>
+
+            {/* Campaign details */}
+            <div className="w-full rounded-lg bg-muted/50 border p-4 space-y-3 text-start">
+              <div className="flex items-center gap-2">
+                <Swords className="h-4 w-4 text-orangeColor shrink-0" />
+                <span className="font-medium">{campaign?.title}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-orangeColor shrink-0" />
+                <span className="text-muted-foreground">
+                  {locale == "en" ? campaign?.city.en : campaign?.city.ar}
+                </span>
+              </div>
+              {orderDetails && (
+                <>
+                  {/* Session dates */}
+                  <div className="space-y-3">
+                    {orderDetails.sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className="flex items-start gap-2 text-muted-foreground"
+                      >
+                        <CalendarDays className="h-4 w-4 text-orangeColor shrink-0 mt-0.5" />
+                        <span>
+                          {tDnD("sessionNo", {
+                            number: session.sessionNumber,
+                          })}
+                          {" : "}
+                          {session.dateTime
+                            ? formatDateTime(new Date(session.dateTime))
+                            : "TBD"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Discount */}
+                  {orderDetails.discountAmount > 0 && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Coins className="h-4 w-4 text-orangeColor shrink-0" />
+                      <span>
+                        {tDnD("discount")}: -
+                        {price(orderDetails.discountAmount, locale)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Total */}
+                  <div className="flex items-center gap-2 font-semibold text-greenColor border-t pt-3">
+                    <Coins className="h-4 w-4 text-orangeColor shrink-0" />
+                    <span>
+                      {tDnD("totalPrice")}:{" "}
+                      {price(orderDetails.totalAmount, locale)}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
 
             <Button onClick={() => router.push("/dnd")}>
               {tDnD("backToCampaigns")}

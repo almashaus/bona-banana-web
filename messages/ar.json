@@ -356,6 +356,7 @@
     "selectedSessions": "الجلسات المحددة",
     "allSessions": "جميع الجلسات",
     "selected": "محدد",
-    "orderNo": "رقم الحجز"
+    "orderNo": "رقم الحجز",
+    "confirmedBookings": "حجوزاتك المؤكدة"
   }
 }

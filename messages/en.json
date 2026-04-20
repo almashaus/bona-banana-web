@@ -356,6 +356,7 @@
     "selectedSessions": "Selected Sessions",
     "allSessions": "All Sessions",
     "selected": "Selected",
-    "orderNo": "Booking Number"
+    "orderNo": "Booking Number",
+    "confirmedBookings": "Your Confirmed Bookings"
   }
 }

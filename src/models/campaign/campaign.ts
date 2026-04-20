@@ -35,8 +35,17 @@ export interface CampaignPlayer {
   campaignId: string;
 
   name: string;
+
+  /**
+   * Whether this player slot is enabled/visible in the campaign.
+   * Set to `true` when the slot is created; the DM can disable it to hide the slot.
+   * This does NOT reflect booking or payment status — use the bookings collection for that.
+   * A slot that is fully booked (all sessions paid) will still have `isActive: true`;
+   * use `isPlayerFullyBooked()` in the UI to determine booking state.
+   */
   isActive: boolean;
 
+  /** Populated once the user pays for ALL sessions in the campaign. */
   assignedUserId?: string;
 
   createdAt: Date;

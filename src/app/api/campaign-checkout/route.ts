@@ -246,8 +246,36 @@ export async function PUT(req: NextRequest) {
 
     await batch.commit();
 
+    // Fetch the booked sessions to include their dates in the response
+    const sessionsSnap = await db
+      .collection("campaigns")
+      .doc(campaignId)
+      .collection("sessions")
+      .get();
+
+    const bookedSessions = sessionsSnap.docs
+      .filter((doc) => orderData.sessionIds.includes(doc.id))
+      .map((doc) => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          sessionNumber: d.sessionNumber as number,
+          dateTime: d.dateTime as string,
+        };
+      })
+      .sort((a, b) => a.sessionNumber - b.sessionNumber);
+
     return NextResponse.json(
-      { success: true, campaign: campaignData },
+      {
+        success: true,
+        campaign: campaignData,
+        order: {
+          sessionIds: orderData.sessionIds,
+          totalAmount: orderData.totalAmount,
+          discountAmount: orderData.discountAmount,
+          sessions: bookedSessions,
+        },
+      },
       { status: 200 },
     );
   } catch (error) {
