@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 
-const protectedRoutes = ["/profile", "/confirmation"];
+const protectedRoutes = ["/profile", "/confirmation", "/dnd/create-campaign"];
 
 export function middleware(request: NextRequest) {
   const memberCookie = request.cookies.get("member")?.value;
@@ -45,5 +45,7 @@ export const config = {
     "/ticket/:path*",
     "/profile/:path*",
     "/confirmation/:path*",
+    "/dnd/create-campaign/:path*",
+    "/dnd/checkout/:path*",
   ],
 };

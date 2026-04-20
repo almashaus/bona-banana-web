@@ -12,6 +12,9 @@ export function canAccessFromPermissions(
 ): boolean {
   if (!rolePermissions || !role) return false;
 
+  // Admin has full access to all features
+  if (role === MemberRole.ADMIN) return true;
+
   const permissions = rolePermissions[role];
   if (!permissions) return false;
 

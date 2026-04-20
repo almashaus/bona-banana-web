@@ -222,7 +222,7 @@ const PermissionsPage = () => {
               Create New Permission
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent dir="ltr">
             <DialogHeader>
               <DialogTitle>Create New Permission</DialogTitle>
               <DialogDescription>
