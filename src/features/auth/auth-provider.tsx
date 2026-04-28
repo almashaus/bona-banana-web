@@ -66,32 +66,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    if (!user) {
-      // Listen for Firebase Auth state changes
-      const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-        try {
-          if (fbUser) {
-            const result = await getDocumentById("users", fbUser.uid);
-            const appUser: AppUser = result as AppUser;
-            if (appUser) {
-              setUser(appUser as AppUser);
-              setInitialLoading(false);
-            }
-          } else {
-            setUser(null);
-          }
-        } catch {
-          setUser(null);
-        } finally {
-          setInitialLoading(false);
-          setLoading(false);
-        }
-      });
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      try {
+        if (fbUser) {
+          // Re-mint the server session cookie on every auth state change.
+          // Firebase's refresh token outlives the 14-day `session`/`member`
+          // cookies, so this is what keeps client and server auth in sync
+          // after the cookies expire.
+          const idToken = await fbUser.getIdToken();
+          const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken }),
+          });
 
-      return () => unsubscribe();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }
-  }, [loading, initialLoading, setUser, user]);
+          if (!res.ok) {
+            await signOut(auth);
+            setUser(null);
+            return;
+          }
+
+          const result = await getDocumentById("users", fbUser.uid);
+          const appUser = result as AppUser | undefined;
+          if (appUser) {
+            setUser(appUser);
+          }
+        } else {
+          setUser(null);
+        }
+      } catch {
+        setUser(null);
+      } finally {
+        setInitialLoading(false);
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [setUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
@@ -116,12 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (
-      name: string,
-      email: string,
-      password: string,
-      phone: string,
-    ) => {
+    async (name: string, email: string, password: string, phone: string) => {
       setLoading(true);
       try {
         const result = await createUserWithEmailAndPassword(

@@ -252,7 +252,7 @@ export default function EventPageClient() {
           setActiveOffer(data.offer);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [event?.id]);
 
   // Recalculate coupon discount when quantity changes (coupon applies on offered price)
@@ -279,7 +279,7 @@ export default function EventPageClient() {
       setAppliedCoupon(null);
       setCouponError(
         tCoupon("couponMinNotMet") ||
-          `Minimum order value of ${details.minTicketValue} required`,
+        `Minimum order value of ${details.minTicketValue} required`,
       );
       return;
     }
@@ -504,9 +504,9 @@ export default function EventPageClient() {
                       : event.dates && event.dates.length > 0
                         ? event.dates.length > 1
                           ? `${formatDate(event.dates[0].date, locale)} - ${formatDate(
-                              event.dates[event.dates.length - 1].date,
-                              locale,
-                            )}`
+                            event.dates[event.dates.length - 1].date,
+                            locale,
+                          )}`
                           : `${formatDate(event.dates[0].date, locale)}`
                         : tEvent("noDatesAvailable") || "No dates available"}
                   </p>
@@ -521,9 +521,9 @@ export default function EventPageClient() {
                       ? `${formatTime(selectedDate.startTime, locale)} - ${formatTime(selectedDate.endTime, locale)}`
                       : event.dates && event.dates.length > 0
                         ? `${formatTime(event.dates[0].startTime, locale)} - ${formatTime(
-                            event.dates[0].endTime,
-                            locale,
-                          )}`
+                          event.dates[0].endTime,
+                          locale,
+                        )}`
                         : tEvent("noTimesAvailable") || "No times available"}
                   </p>
                 </div>
@@ -668,7 +668,7 @@ export default function EventPageClient() {
                 </Select>
               </div>
               {selectedDate?.availableTickets! === 0 ||
-              isBeforeToday(selectedDate?.date!) ? (
+                isBeforeToday(selectedDate?.date!) ? (
                 <div className="flex justify-center items-center py-3 rounded-md bg-neutral-300 text-neutral-600">
                   <InfoIcon className="w-5 h-5 me-2" />
                   {tEvent("noTicketsAvailable")}
@@ -707,9 +707,9 @@ export default function EventPageClient() {
                             activeOffer.buyQuantity != null &&
                             activeOffer.getQuantity != null &&
                             num %
-                              (activeOffer.buyQuantity +
-                                activeOffer.getQuantity) ===
-                              0;
+                            (activeOffer.buyQuantity +
+                              activeOffer.getQuantity) ===
+                            0;
 
                           return (
                             <SelectItem key={num} value={num.toString()}>
@@ -738,19 +738,19 @@ export default function EventPageClient() {
                         <Megaphone className="h-4 w-4 text-green-600 shrink-0" />
                         <span className="text-sm font-medium text-green-700">
                           {activeOffer.offerSubtype === "buyXgetY" &&
-                          activeOffer.buyQuantity != null &&
-                          activeOffer.getQuantity != null
+                            activeOffer.buyQuantity != null &&
+                            activeOffer.getQuantity != null
                             ? tCoupon("buyXGetYFree", {
-                                x: activeOffer.buyQuantity,
-                                y: activeOffer.getQuantity,
-                              })
+                              x: activeOffer.buyQuantity,
+                              y: activeOffer.getQuantity,
+                            })
                             : activeOffer.discountKind === "percentage"
                               ? tCoupon("percentageOff", {
-                                  value: activeOffer.discountValue,
-                                })
+                                value: activeOffer.discountValue,
+                              })
                               : tCoupon("fixedOff", {
-                                  value: activeOffer.discountValue,
-                                })}
+                                value: activeOffer.discountValue,
+                              })}
                         </span>
                       </div>
                     )}
@@ -965,8 +965,8 @@ export default function EventPageClient() {
                           userUsageCount >= coupon.perUserLimit;
                         const status =
                           isPerUserLimitReached ||
-                          (coupon.allowPartialConsumption &&
-                            remainingBalance === 0)
+                            (coupon.allowPartialConsumption &&
+                              remainingBalance === 0)
                             ? "Fully Redeemed"
                             : baseStatus;
                         const isCopied = copiedVoucherCode === coupon.code;
@@ -978,21 +978,21 @@ export default function EventPageClient() {
                           coupon.voucherKind === "freeTicket"
                             ? tCoupon("voucherKindFree")
                             : coupon.allowPartialConsumption &&
-                                remainingBalance !== undefined
+                              remainingBalance !== undefined
                               ? price(remainingBalance, locale)
                               : price(coupon.discountValue, locale);
 
                         const accentColor = isExpired
                           ? {
-                              bg: "bg-stone-400",
-                              text: "text-stone-400",
-                              light: "bg-stone-50",
-                            }
+                            bg: "bg-stone-400",
+                            text: "text-stone-400",
+                            light: "bg-stone-50",
+                          }
                           : {
-                              bg: "bg-orangeColor",
-                              text: "text-amber-500",
-                              light: "bg-amber-50",
-                            };
+                            bg: "bg-orangeColor",
+                            text: "text-amber-500",
+                            light: "bg-amber-50",
+                          };
 
                         return (
                           <div
@@ -1045,15 +1045,14 @@ export default function EventPageClient() {
                                   {tCoupon("voucher")}
                                 </p>
                                 <span
-                                  className={`text-xs font-medium px-3 py-1 rounded-full uppercase tracking-wide ${
-                                    isActive
-                                      ? "bg-green-100 text-green-700"
-                                      : status === "Expired"
-                                        ? "bg-red-100 text-red-700"
-                                        : status === "Fully Redeemed"
-                                          ? "bg-stone-200 text-stone-600"
-                                          : "bg-blue-100 text-blue-700"
-                                  }`}
+                                  className={`text-xs font-medium px-3 py-1 rounded-full uppercase tracking-wide ${isActive
+                                    ? "bg-green-100 text-green-700"
+                                    : status === "Expired"
+                                      ? "bg-red-100 text-red-700"
+                                      : status === "Fully Redeemed"
+                                        ? "bg-stone-200 text-stone-600"
+                                        : "bg-blue-100 text-blue-700"
+                                    }`}
                                 >
                                   {status}
                                 </span>
@@ -1090,11 +1089,10 @@ export default function EventPageClient() {
                                       2000,
                                     );
                                   }}
-                                  className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded transition-colors ${
-                                    isCopied
-                                      ? "text-green-600 bg-green-50"
-                                      : "text-orangeColor hover:bg-orange-100 "
-                                  }`}
+                                  className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded transition-colors ${isCopied
+                                    ? "text-green-600 bg-green-50"
+                                    : "text-orangeColor hover:bg-orange-100 "
+                                    }`}
                                 >
                                   {isCopied ? (
                                     <>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CalendarDays, ClockIcon } from "lucide-react";
-import { Event } from "@/src/models/event";
+import { Event, EventStatus } from "@/src/models/event";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
 import {
   findFirstTodayOrAfter,
@@ -23,6 +23,7 @@ export function EventCard({
 }) {
   const soldOut = isSoldOut(event);
   const isFree = event.price === 0;
+  const isDisabled = event.status !== EventStatus.PUBLISHED;
 
   const nearestDate =
     findFirstTodayOrAfter(event.dates.map((d) => d.date)) ??
@@ -39,6 +40,7 @@ export function EventCard({
         className={cn(
           "overflow-hidden shadow-none bg-darkColor border-0 transform-gpu will-change-transform transition-transform duration-300 hover:scale-105 hover:rotate-3",
           soldOut && "opacity-70",
+          isDisabled ? "grayscale opacity-80" : ""
         )}
       >
         <div className="flex justify-center items-center m-3">
@@ -70,7 +72,9 @@ export function EventCard({
           </div>
         </div>
 
-        <CardContent className="p-4 mx-3 rounded-md bg-beigeColor">
+        <CardContent className={`p-4 mx-3 rounded-md ${isDisabled
+          ? "bg-gray-300 text-muted-foreground"
+          : "bg-beigeColor"}`}>
           <h3 className="line-clamp-1 text-lg font-bold">
             {locale === "en" ? event.title : event.titleAr}
           </h3>

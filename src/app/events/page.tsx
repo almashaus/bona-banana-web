@@ -30,7 +30,7 @@ export default async function EventsPage() {
   let events: Event[] = [];
 
   try {
-    const res = await fetch(`${baseURL}/api/published-events`, {
+    const res = await fetch(`${baseURL}/api/events`, {
       cache: "no-store",
     });
     if (res.ok) {

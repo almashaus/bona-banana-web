@@ -57,7 +57,7 @@ export default function EventsPageClient({ events }: { events: Event[] }) {
 
   const [search, setSearch] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortKey>("soonest");
+  const [sortBy, setSortBy] = useState<SortKey>("latest");
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [freeOnly, setFreeOnly] = useState(false);
 
@@ -132,14 +132,14 @@ export default function EventsPageClient({ events }: { events: Event[] }) {
     !!selectedCity ||
     freeOnly ||
     dateRange !== "all" ||
-    sortBy !== "soonest";
+    sortBy !== "latest";
 
   const clearFilters = () => {
     setSearch("");
     setSelectedCity(null);
     setFreeOnly(false);
     setDateRange("all");
-    setSortBy("soonest");
+    setSortBy("latest");
   };
 
   return (

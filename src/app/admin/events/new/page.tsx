@@ -79,6 +79,7 @@ export default function CreateEventPage() {
   const [adImage, setAdImage] = useState("");
   const [price, setPrice] = useState("");
   const [status, setStatus] = useState<EventStatus>(EventStatus.DRAFT);
+  const [isSlugEditing, setIsSlugEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventDates, setEventDates] = useState<EventDate[]>([
     {
@@ -93,8 +94,8 @@ export default function CreateEventPage() {
   ]);
 
   // Generate slug from title
-  const generateSlug = (title: string) => {
-    return title
+  const generateSlug = (text: string) => {
+    return text
       .toLowerCase()
       .replace(/[^\w\s-]+/g, "")
       .replace(/ +/g, "-");
@@ -104,7 +105,9 @@ export default function CreateEventPage() {
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
     setTitle(newTitle);
-    setSlug(generateSlug(newTitle));
+    if (!isSlugEditing) {
+      setSlug(generateSlug(newTitle));
+    }
   };
 
   // Add new event date
@@ -344,7 +347,13 @@ export default function CreateEventPage() {
                     id="slug"
                     value={slug}
                     onChange={(e) => {
-                      setSlug(generateSlug(e.target.value));
+                      const value = e.target.value;
+                      if (value === "") {
+                        setIsSlugEditing(false);
+                      } else {
+                        setIsSlugEditing(true);
+                      }
+                      setSlug(generateSlug(value));
                     }}
                     placeholder="Enter slug"
                     required

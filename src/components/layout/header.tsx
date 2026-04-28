@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AlertCircle, Menu, MonitorCog, User } from "lucide-react";
+import { Menu, MonitorCog, User } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { LanguageToggle } from "@/src/components/i18n/language-toggle";
 import { UserNav } from "@/src/components/auth/user-nav";

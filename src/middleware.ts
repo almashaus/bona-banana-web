@@ -30,6 +30,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin")) {
+    if (!sessionCookie) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
     const isAdmin = memberCookie === "true";
     if (isAdmin) {
       return NextResponse.next();

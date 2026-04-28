@@ -98,8 +98,8 @@ export default async function RootLayout({
       <head>
         <link rel="stylesheet" href="/css/riyal.css" />
       </head>
-      <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
       <body className={DINNextLT.className}>
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
         {/* <ThemeProvider attribute="class" defaultTheme="light"> */}
         <AuthProvider>
           <MySWRProvider>

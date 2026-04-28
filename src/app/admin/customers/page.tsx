@@ -29,6 +29,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/src/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { formatDate } from "@/src/lib/utils/formatDate";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
 import AccessDenied from "@/src/components/ui/access-denied";
@@ -135,19 +140,27 @@ export default function customersPage() {
             {customers?.map((customer) => (
               <TableRow key={customer.user.id} role="row">
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyUserId(customer.user.id)}
-                  >
-                    <div className="">
-                      {copiedUserId && copiedUserId == customer.user.id ? (
-                        <Check className="h-4 w-4 text-green-400" />
-                      ) : (
-                        <Copy className="h-3 w-3 text-orangeColor" />
-                      )}
-                    </div>
-                  </Button>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => copyUserId(customer.user.id)}
+                      >
+                        <div className="">
+                          {copiedUserId && copiedUserId == customer.user.id ? (
+                            <Check className="h-4 w-4 text-green-400" />
+                          ) : (
+                            <Copy className="h-3 w-3 text-orangeColor" />
+                          )}
+                        </div>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copy User ID</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </TableCell>
                 {/* avatar */}
                 <TableCell>

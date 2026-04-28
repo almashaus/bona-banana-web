@@ -9,7 +9,6 @@ export async function getServerSession(): Promise<{
 }> {
   try {
     const sessionCookie = cookies().get("session")?.value;
-
     if (!sessionCookie) {
       return { user: null, authenticated: false };
     }

@@ -10,6 +10,7 @@ import {
   CalendarClock,
   Check,
   CheckCircle,
+  CheckIcon,
   ChevronDown,
   ChevronFirst,
   ChevronLast,
@@ -17,12 +18,16 @@ import {
   ChevronRight,
   ChevronUp,
   CircleAlertIcon,
+  Clock,
+  Clock4Icon,
   Copy,
   Edit2,
+  EyeIcon,
   MapPin,
   Plus,
   TicketIcon,
   Trash,
+  XIcon,
 } from "lucide-react";
 import {
   Select,
@@ -45,6 +50,13 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/src/components/ui/dropdown-menu";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -63,7 +75,7 @@ import {
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
-import { Event, EventDate } from "@/src/models/event";
+import { Event, EventDate, EventStatus } from "@/src/models/event";
 import { formatDate, formatTime } from "@/src/lib/utils/formatDate";
 import LoadingDots from "@/src/components/ui/loading-dots";
 import Loading from "@/src/components/ui/loading";
@@ -132,6 +144,41 @@ export default function EventsPage() {
       setEventPaginationState(paginationState);
     }
   }, [data]);
+
+  const handleEventStatus = async (id: string, status: EventStatus) => {
+    const update = { status: status };
+    const idToken = await authUser.getIdToken();
+    try {
+      const response = await fetch(`/api/admin/events/edit/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ id, update }),
+      });
+
+      if (response.ok) {
+        await mutate("/api/admin/events");
+        await mutate("/api/published-events");
+        await mutate("/api/admin/orders");
+
+        toast({
+          title: "Event updated",
+          description: "Your event has been updated successfully",
+          variant: "success",
+        });
+      } else {
+        throw new Error("Failed to update event");
+      }
+    } catch (error) {
+      toast({
+        title: "Error updating event",
+        description: "Failed to update event. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  }
 
   const handlePageChange = (eventId: string, newPage: number) => {
     setEventPaginationState((prev) => ({
@@ -205,23 +252,6 @@ export default function EventsPage() {
   const handleViewDetails = (eventDate: EventDate) => {
     setSelectedEventDate(eventDate);
     setIsDialogOpen(true);
-  };
-
-  const handleCopy = async (text: string) => {
-    const success = await copyToClipboard(text);
-    if (success) {
-      toast({
-        title: "Copied",
-        description: "Event ID copied to clipboard",
-        variant: "default",
-      });
-    } else {
-      toast({
-        title: "Copy failed",
-        description: "Unable to copy ID",
-        variant: "destructive",
-      });
-    }
   };
 
   const { hasPermission } = usePermissions(user);
@@ -345,13 +375,38 @@ export default function EventsPage() {
 
                         <div className="flex flex-col gap-2">
                           {canEditEvent && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopy(response.event.id)}
-                            >
-                              <Copy className="h-3 w-3" /> Copy ID
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <Clock className="h-3 w-3" /> Edit Status
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem className={`flex items-center ${response.event.status === EventStatus.DRAFT && "bg-green-500/20"}`}
+                                  onClick={() => handleEventStatus(response.event.id, EventStatus.DRAFT)}>
+                                  Draft
+                                  <Clock4Icon className=" w-4 h-4 text-gray-400 mx-1 " />
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className={`flex items-center ${response.event.status === EventStatus.PUBLISHED && "bg-green-500/20"}`}
+                                  onClick={() => handleEventStatus(response.event.id, EventStatus.PUBLISHED)}>
+                                  Published
+                                  <EyeIcon className=" w-4 h-4 text-blue-400 mx-1 " />
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className={`flex items-center ${response.event.status === EventStatus.CANCELED && "bg-green-500/20"}`}
+                                  onClick={() => handleEventStatus(response.event.id, EventStatus.CANCELED)}>
+                                  Canceled
+                                  <XIcon className=" w-4 h-4 text-red-400 mx-1 " />
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className={`flex items-center ${response.event.status === EventStatus.COMPLETED && "bg-green-500/20"}`}
+                                  onClick={() => handleEventStatus(response.event.id, EventStatus.COMPLETED)}>
+                                  Completed
+                                  <CheckIcon className=" w-4 h-4 text-green-400 mx-1 " />
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
 
                           {canEditEvent && (
@@ -359,7 +414,7 @@ export default function EventsPage() {
                               <Link
                                 href={`/admin/events/edit/${response.event.id}`}
                               >
-                                <Edit2 className="h-3 w-3" /> Edit
+                                <Edit2 className="h-3 w-3" /> Edit Event
                               </Link>
                             </Button>
                           )}
@@ -472,11 +527,10 @@ export default function EventsPage() {
 
                                   <TableCell>
                                     <Badge
-                                      className={`${
-                                        date.availableTickets < 5
-                                          ? "bg-orange-100 text-orange-600"
-                                          : "bg-green-100 text-green-700"
-                                      } pb-1`}
+                                      className={`${date.availableTickets < 5
+                                        ? "bg-orange-100 text-orange-600"
+                                        : "bg-green-100 text-green-700"
+                                        } pb-1`}
                                     >
                                       {date.availableTickets}
                                     </Badge>
@@ -512,7 +566,7 @@ export default function EventsPage() {
                             );
                             const startItem =
                               (pagination.currentPage - 1) *
-                                pagination.pageSize +
+                              pagination.pageSize +
                               1;
                             const endItem = Math.min(
                               pagination.currentPage * pagination.pageSize,
@@ -598,12 +652,11 @@ export default function EventsPage() {
                                                 pageNumber,
                                               )
                                             }
-                                            className={`px-3 py-1 bg-white border rounded-md text-sm ${
-                                              pagination.currentPage ===
+                                            className={`px-3 py-1 bg-white border rounded-md text-sm ${pagination.currentPage ===
                                               pageNumber
-                                                ? "bg-orangeColor text-orangeColor border-orangeColor"
-                                                : "border-gray-300 hover:bg-gray-100"
-                                            }`}
+                                              ? "bg-orangeColor text-orangeColor border-orangeColor"
+                                              : "border-gray-300 hover:bg-gray-100"
+                                              }`}
                                           >
                                             {pageNumber}
                                           </button>
@@ -652,7 +705,8 @@ export default function EventsPage() {
                 );
             })}
           </div>
-        )}
+        )
+        }
       </div>
 
       {/* ----------- Tickets Dialog ----------- */}
