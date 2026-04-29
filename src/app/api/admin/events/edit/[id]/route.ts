@@ -1,6 +1,7 @@
 import { getEventById } from "@/src/lib/firebase/firestore";
 import { Event } from "@/src/models/event";
 import { db } from "@/src/lib/firebase/firebaseAdminConfig";
+import { FieldValue } from "firebase-admin/firestore";
 import { verifyIdToken } from "@/src/lib/firebase/verifyIdToken";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -61,7 +62,6 @@ export async function PUT(req: NextRequest, res: NextResponse) {
   }
 }
 
-
 export async function POST(req: NextRequest, res: NextResponse) {
   try {
     const authHeader = req.headers.get("Authorization") || "";
@@ -76,22 +76,33 @@ export async function POST(req: NextRequest, res: NextResponse) {
     }
 
     const body = await req.json();
-    const { id, update } = body;
-    console.log("id", id);
-    console.log("update", update);
-    const docRef = await db.collection("events").doc(id).update(update);
+    const { id, update, newDate } = body;
 
-    if (docRef) {
-      return new Response(JSON.stringify({ data: "Success" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (newDate) {
+      const eventSnap = await db.collection("events").doc(id).get();
+      const currentStatus = eventSnap.data()?.status;
+
+      const dateUpdate: Record<string, unknown> = {
+        dates: FieldValue.arrayUnion(newDate),
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (currentStatus === "completed") {
+        dateUpdate.status = "published";
+      }
+
+      await db.collection("events").doc(id).update(dateUpdate);
     } else {
-      return new Response(JSON.stringify({ data: "Error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
+      await db.collection("events").doc(id).update({
+        ...update,
+        updatedAt: new Date().toISOString(),
       });
     }
+
+    return new Response(JSON.stringify({ data: "Success" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     return new Response(JSON.stringify({ data: "Error" }), {
       status: 500,

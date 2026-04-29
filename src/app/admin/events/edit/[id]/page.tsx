@@ -4,10 +4,7 @@ import type React from "react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
-  CalendarIcon,
   ImageIcon,
-  Plus,
-  Trash2,
   XIcon,
   CheckIcon,
   UploadIcon,
@@ -146,9 +143,11 @@ export default function EditEventPage() {
       id: `date${Date.now()}`,
       date: new Date(),
       startTime:
-        eventDates[0].startTime ?? new Date(new Date().setHours(18, 0, 0, 0)),
+        eventDates[eventDates.length - 1].startTime ??
+        new Date(new Date().setHours(18, 0, 0, 0)),
       endTime:
-        eventDates[0].endTime ?? new Date(new Date().setHours(23, 0, 0, 0)),
+        eventDates[eventDates.length - 1].endTime ??
+        new Date(new Date().setHours(23, 0, 0, 0)),
       capacity: 20,
       availableTickets: 20,
       eventId: event?.id || "",

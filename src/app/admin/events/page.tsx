@@ -8,8 +8,8 @@ import {
   CalendarCheck,
   CalendarCheck2,
   CalendarClock,
-  Check,
-  CheckCircle,
+  CalendarIcon,
+  CalendarPlus,
   CheckIcon,
   ChevronDown,
   ChevronFirst,
@@ -20,7 +20,6 @@ import {
   CircleAlertIcon,
   Clock,
   Clock4Icon,
-  Copy,
   Edit2,
   EyeIcon,
   MapPin,
@@ -54,8 +53,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -91,12 +95,9 @@ import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { usePermissions } from "@/src/hooks/useMemberPermissions";
 import { isBefore, isToday } from "date-fns";
-import {
-  copyToClipboard,
-  isBeforeDate,
-  isBeforeToday,
-} from "@/src/lib/utils/utils";
+import { isBeforeToday } from "@/src/lib/utils/utils";
 import AccessDenied from "@/src/components/ui/access-denied";
+import { Calendar } from "@/src/components/ui/calendar";
 
 export default function EventsPage() {
   const { toast } = useToast();
@@ -105,9 +106,9 @@ export default function EventsPage() {
   const authUser = auth.currentUser!;
   const pathname = usePathname();
   const eventUrl = pathname?.includes("/events");
-  const isMobile = useIsMobile();
   const [responseData, setResponseData] = useState<Response[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [openCollapsibleIds, setOpenCollapsibleIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -115,6 +116,7 @@ export default function EventsPage() {
     null,
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
   const [eventPaginationState, setEventPaginationState] = useState<
     Record<string, { currentPage: number; pageSize: number }>
   >({});
@@ -178,7 +180,57 @@ export default function EventsPage() {
         variant: "destructive",
       });
     }
-  }
+  };
+
+  const handleAddEventDate = async (id: string, event: Event) => {
+    const newDate: EventDate = {
+      id: `date${Date.now()}`,
+      date: selectedDate,
+      startTime:
+        event.dates[event.dates.length - 1].startTime ??
+        new Date(new Date().setHours(18, 0, 0, 0)),
+      endTime:
+        event.dates[event.dates.length - 1].endTime ??
+        new Date(new Date().setHours(23, 0, 0, 0)),
+      capacity: 20,
+      availableTickets: 20,
+      eventId: event?.id || "",
+    };
+
+    const idToken = await authUser.getIdToken();
+
+    try {
+      const response = await fetch(`/api/admin/events/edit/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ id, newDate }),
+      });
+
+      if (response.ok) {
+        await mutate("/api/admin/events");
+        await mutate("/api/published-events");
+        await mutate("/api/admin/orders");
+        setOpenPopoverId(null);
+
+        toast({
+          title: "Event updated",
+          description: "Your event has been updated successfully",
+          variant: "success",
+        });
+      } else {
+        throw new Error("Failed to update event");
+      }
+    } catch (error) {
+      toast({
+        title: "Error updating event",
+        description: "Failed to update event. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handlePageChange = (eventId: string, newPage: number) => {
     setEventPaginationState((prev) => ({
@@ -377,31 +429,57 @@ export default function EventsPage() {
                           {canEditEvent && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  <Clock className="h-3 w-3" /> Edit Status
+                                <Button variant="outline" size="sm">
+                                  <Clock className="h-3 w-3 text-orangeColor" />{" "}
+                                  Edit Status
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
-                                <DropdownMenuItem className={`flex items-center ${response.event.status === EventStatus.DRAFT && "bg-green-500/20"}`}
-                                  onClick={() => handleEventStatus(response.event.id, EventStatus.DRAFT)}>
+                                <DropdownMenuItem
+                                  className={`flex items-center ${response.event.status === EventStatus.DRAFT && "bg-green-500/20"}`}
+                                  onClick={() =>
+                                    handleEventStatus(
+                                      response.event.id,
+                                      EventStatus.DRAFT,
+                                    )
+                                  }
+                                >
                                   Draft
                                   <Clock4Icon className=" w-4 h-4 text-gray-400 mx-1 " />
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className={`flex items-center ${response.event.status === EventStatus.PUBLISHED && "bg-green-500/20"}`}
-                                  onClick={() => handleEventStatus(response.event.id, EventStatus.PUBLISHED)}>
+                                <DropdownMenuItem
+                                  className={`flex items-center ${response.event.status === EventStatus.PUBLISHED && "bg-green-500/20"}`}
+                                  onClick={() =>
+                                    handleEventStatus(
+                                      response.event.id,
+                                      EventStatus.PUBLISHED,
+                                    )
+                                  }
+                                >
                                   Published
                                   <EyeIcon className=" w-4 h-4 text-blue-400 mx-1 " />
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className={`flex items-center ${response.event.status === EventStatus.CANCELED && "bg-green-500/20"}`}
-                                  onClick={() => handleEventStatus(response.event.id, EventStatus.CANCELED)}>
+                                <DropdownMenuItem
+                                  className={`flex items-center ${response.event.status === EventStatus.CANCELED && "bg-green-500/20"}`}
+                                  onClick={() =>
+                                    handleEventStatus(
+                                      response.event.id,
+                                      EventStatus.CANCELED,
+                                    )
+                                  }
+                                >
                                   Canceled
                                   <XIcon className=" w-4 h-4 text-red-400 mx-1 " />
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className={`flex items-center ${response.event.status === EventStatus.COMPLETED && "bg-green-500/20"}`}
-                                  onClick={() => handleEventStatus(response.event.id, EventStatus.COMPLETED)}>
+                                <DropdownMenuItem
+                                  className={`flex items-center ${response.event.status === EventStatus.COMPLETED && "bg-green-500/20"}`}
+                                  onClick={() =>
+                                    handleEventStatus(
+                                      response.event.id,
+                                      EventStatus.COMPLETED,
+                                    )
+                                  }
+                                >
                                   Completed
                                   <CheckIcon className=" w-4 h-4 text-green-400 mx-1 " />
                                 </DropdownMenuItem>
@@ -414,9 +492,87 @@ export default function EventsPage() {
                               <Link
                                 href={`/admin/events/edit/${response.event.id}`}
                               >
-                                <Edit2 className="h-3 w-3" /> Edit Event
+                                <Edit2 className="h-3 w-3 text-orangeColor" />{" "}
+                                Edit Event
                               </Link>
                             </Button>
+                          )}
+
+                          {canEditEvent && (
+                            <Popover
+                              open={openPopoverId === response.event.id}
+                              onOpenChange={(open) =>
+                                setOpenPopoverId(
+                                  open ? response.event.id : null,
+                                )
+                              }
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  className="cursor-pointer"
+                                >
+                                  <div>
+                                    <CalendarPlus className="h-3 w-3 text-orangeColor" />{" "}
+                                    Add New Date
+                                  </div>
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                dir="ltr"
+                                align="end"
+                                className="flex-col justify-center items-center align-middle w-[calc(100vw-58px)] sm:w-full p-0 rounded-md bg-muted border border-muted-foreground/20"
+                              >
+                                <div className="flex justify-center items-center m-2 p-2 bg-yellowColor/20 rounded-md">
+                                  <CalendarIcon className="mr-2 h-4 w-4 text-yellowColor" />
+                                  {selectedDate ? (
+                                    <span>{formatDate(selectedDate)}</span>
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                </div>
+                                <div className="flex justify-center">
+                                  <Calendar
+                                    dir="ltr"
+                                    mode="single"
+                                    className="bg-muted"
+                                    selected={selectedDate}
+                                    onSelect={(day) => {
+                                      if (day) {
+                                        setSelectedDate(day);
+                                      }
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex justify-center gap-2 pb-3">
+                                  <PopoverClose asChild>
+                                    <Button
+                                      variant="outline"
+                                      className="cursor-pointer bg-muted-foreground/20"
+                                    >
+                                      Close
+                                    </Button>
+                                  </PopoverClose>
+                                  <Button
+                                    asChild
+                                    className="cursor-pointer"
+                                    onClick={() =>
+                                      handleAddEventDate(
+                                        response.event.id,
+                                        response.event,
+                                      )
+                                    }
+                                  >
+                                    <div className="gap-2">
+                                      <CalendarCheck className="h-4 w-4 text-white" />
+                                      Save New Date
+                                    </div>
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           )}
 
                           <AlertDialog>
@@ -527,10 +683,11 @@ export default function EventsPage() {
 
                                   <TableCell>
                                     <Badge
-                                      className={`${date.availableTickets < 5
-                                        ? "bg-orange-100 text-orange-600"
-                                        : "bg-green-100 text-green-700"
-                                        } pb-1`}
+                                      className={`${
+                                        date.availableTickets < 5
+                                          ? "bg-orange-100 text-orange-600"
+                                          : "bg-green-100 text-green-700"
+                                      } pb-1`}
                                     >
                                       {date.availableTickets}
                                     </Badge>
@@ -566,7 +723,7 @@ export default function EventsPage() {
                             );
                             const startItem =
                               (pagination.currentPage - 1) *
-                              pagination.pageSize +
+                                pagination.pageSize +
                               1;
                             const endItem = Math.min(
                               pagination.currentPage * pagination.pageSize,
@@ -652,11 +809,12 @@ export default function EventsPage() {
                                                 pageNumber,
                                               )
                                             }
-                                            className={`px-3 py-1 bg-white border rounded-md text-sm ${pagination.currentPage ===
+                                            className={`px-3 py-1 bg-white border rounded-md text-sm ${
+                                              pagination.currentPage ===
                                               pageNumber
-                                              ? "bg-orangeColor text-orangeColor border-orangeColor"
-                                              : "border-gray-300 hover:bg-gray-100"
-                                              }`}
+                                                ? "bg-orangeColor text-orangeColor border-orangeColor"
+                                                : "border-gray-300 hover:bg-gray-100"
+                                            }`}
                                           >
                                             {pageNumber}
                                           </button>
@@ -705,8 +863,7 @@ export default function EventsPage() {
                 );
             })}
           </div>
-        )
-        }
+        )}
       </div>
 
       {/* ----------- Tickets Dialog ----------- */}

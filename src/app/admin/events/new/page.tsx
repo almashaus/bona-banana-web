@@ -116,9 +116,11 @@ export default function CreateEventPage() {
       id: `date${Date.now()}`,
       date: new Date(),
       startTime:
-        eventDates[0].startTime ?? new Date(new Date().setHours(18, 0, 0, 0)),
+        eventDates[eventDates.length - 1].startTime ??
+        new Date(new Date().setHours(18, 0, 0, 0)),
       endTime:
-        eventDates[0].endTime ?? new Date(new Date().setHours(23, 0, 0, 0)),
+        eventDates[eventDates.length - 1].endTime ??
+        new Date(new Date().setHours(23, 0, 0, 0)),
       capacity: 20,
       availableTickets: 20,
       eventId: "",
