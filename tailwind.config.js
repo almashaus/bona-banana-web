@@ -27,6 +27,7 @@ module.exports = {
         orangeColor: "#f49b32",
         yellowColor: "#f0bf3f",
         greenColor: "#213421",
+        lightGreenColor: "#bdda5e",
         beigeColor: "#f3e8cc",
         lightBeigeColor: "#f3f0e5",
         darkColor: "#191919",
@@ -95,5 +96,16 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    function ({ addUtilities }) {
+      addUtilities({
+        ".scrollbar-hide": {
+          "-ms-overflow-style": "none",
+          "scrollbar-width": "none",
+          "&::-webkit-scrollbar": { display: "none" },
+        },
+      });
+    },
+  ],
 };

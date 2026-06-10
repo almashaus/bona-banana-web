@@ -16,7 +16,12 @@
     "noEvents": "There is no event currently, Come back later!",
     "error": "Something went wrong. Please try again later.",
     "gallery": "Gallery",
-    "gallerySubtitle": "Here are moments from our events at Bona Banana. dozens of board games, lively matches, and unforgettable game nights. Join us for endless fun and memories you’ll always remember."
+    "gallerySubtitle": "Here are moments from our events at Bona Banana. dozens of board games, lively matches, and unforgettable game nights. Join us for endless fun and memories you’ll always remember.",
+    "soldOut": "Sold Out",
+    "completed": "Completed",
+    "free": "Free",
+    "useMyTickets": "Use My Tickets",
+    "pay": "Pay"
   },
   "Nav": {
     "profile": "Profile",
@@ -303,8 +308,7 @@
     "showing": "Showing {count} of {total} events",
     "noResults": "No events match your filters",
     "noResultsSubtitle": "Try adjusting your search or clearing the filters",
-    "soldOut": "Sold Out",
-    "free": "Free"
+    "soldOut": "Sold Out"
   },
   "NotFound": {
     "title": "Page Not Found",

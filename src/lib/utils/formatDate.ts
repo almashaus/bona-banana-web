@@ -11,7 +11,10 @@ export function formatDate(date: Date, language: string = "en"): string {
   });
 }
 
-export const formatDateShort = (date: Date, language: string = "en"): string => {
+export const formatDateShort = (
+  date: Date,
+  language: string = "en",
+): string => {
   const locale = language === "en" ? "en-UK" : "ar-UK";
   return new Date(date).toLocaleString(locale, {
     month: "numeric",
@@ -19,6 +22,19 @@ export const formatDateShort = (date: Date, language: string = "en"): string => 
     year: "numeric",
     timeZone: "Asia/Riyadh",
   });
+};
+
+export const formatDateShort2 = (
+  date: Date,
+  language: string = "en",
+): string => {
+  const locale = language === "en" ? "en-UK" : "ar-UK";
+  const d = new Date(date);
+  const weekday = d.toLocaleString(locale, { weekday: "long", timeZone: "Asia/Riyadh" });
+  const day = d.toLocaleString(locale, { day: "2-digit", timeZone: "Asia/Riyadh" });
+  const month = d.toLocaleString(locale, { month: "2-digit", timeZone: "Asia/Riyadh" });
+
+  return `${weekday} ${day}.${month}`;
 };
 
 export function formatTime(date: Date, language: string = "en"): string {

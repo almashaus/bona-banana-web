@@ -88,9 +88,9 @@ async function EventsList({ locale, t }: { locale: string; t: any }) {
   const allEvents = (await res.json()) as Event[];
 
   return (
-    <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 md:grid-cols-2 lg:grid-cols-3">
       {allEvents.map((event) => {
-        return <EventCard key={event.id} event={event} locale={locale} t={t} />;
+        return <EventCard key={event.id} event={event} locale={locale} />;
       })}
     </div>
   );
@@ -138,7 +138,7 @@ function ProductsList({
   locale: string;
 }) {
   return (
-    <div className="grid max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 max-w-5xl justify-center items-center gap-6 mx-6 lg:mx-auto py-12 md:grid-cols-2 lg:grid-cols-3">
       {products.map((product) => {
         return (
           <Link href={`/products/${product.slug}`} key={product.id}>

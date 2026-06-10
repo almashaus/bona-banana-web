@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { Search, TriangleAlert, X } from "lucide-react";
+import { Search, TriangleAlert, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Event } from "@/src/models/event";
 import { Input } from "@/src/components/ui/input";
@@ -60,6 +60,7 @@ export default function EventsPageClient({ events }: { events: Event[] }) {
   const [sortBy, setSortBy] = useState<SortKey>("latest");
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [freeOnly, setFreeOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
 
   // Extract unique cities from the event list
   const cities = useMemo(() => {
@@ -178,7 +179,7 @@ export default function EventsPageClient({ events }: { events: Event[] }) {
               />
               <Input
                 className={cn(
-                  "bg-white border-neutral-200 focus-visible:ring-orangeColor",
+                  "bg-white border-neutral-200 focus-visible:ring-orangeColor rounded-2xl",
                   locale === "en" ? "pl-9" : "pr-9",
                 )}
                 placeholder={t("searchPlaceholder")}
@@ -216,72 +217,88 @@ export default function EventsPageClient({ events }: { events: Event[] }) {
                 {t("clearFilters")}
               </Button>
             )}
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowFilters((prev) => !prev)}
+              className="shrink-0 text-muted-foreground hover:text-foreground rounded-xl"
+              aria-label={showFilters ? "Hide filters" : "Show filters"}
+            >
+              {showFilters ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
           </div>
 
           {/* Row 2: city pills + date range pills + free toggle */}
-          <div className="flex flex-col md:flex-row items-center justify-center gap-2 ">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-xl">📍</span>
-              {/* City pills */}
-              <FilterPill
-                active={selectedCity === null}
-                onClick={() => setSelectedCity(null)}
-                variant="red"
-              >
-                {t("allCities")}
-              </FilterPill>
-              {cities.map((city) => (
+          {showFilters && (
+            <div className="flex flex-col md:flex-row items-center justify-center gap-2 ">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">📍</span>
+                {/* City pills */}
                 <FilterPill
-                  key={city.en}
-                  active={selectedCity === city.en}
-                  onClick={() =>
-                    setSelectedCity(selectedCity === city.en ? null : city.en)
-                  }
+                  active={selectedCity === null}
+                  onClick={() => setSelectedCity(null)}
                   variant="red"
                 >
-                  {locale === "en" ? city.en : city.ar}
+                  {t("allCities")}
                 </FilterPill>
-              ))}
-              <span className="w-px h-5 bg-stone-400 mx-0.5 shrink-0 hidden md:inline" />
+                {cities.map((city) => (
+                  <FilterPill
+                    key={city.en}
+                    active={selectedCity === city.en}
+                    onClick={() =>
+                      setSelectedCity(selectedCity === city.en ? null : city.en)
+                    }
+                    variant="red"
+                  >
+                    {locale === "en" ? city.en : city.ar}
+                  </FilterPill>
+                ))}
+                <span className="w-px h-5 bg-stone-400 mx-0.5 shrink-0 hidden md:inline" />
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">🗓️</span>
+                {/* Date range pills */}
+                <FilterPill
+                  active={dateRange === "all"}
+                  onClick={() => setDateRange("all")}
+                  variant="green"
+                >
+                  {t("dateAll")}
+                </FilterPill>
+                <FilterPill
+                  active={dateRange === "this-week"}
+                  onClick={() => setDateRange("this-week")}
+                  variant="green"
+                >
+                  {t("dateThisWeek")}
+                </FilterPill>
+                <FilterPill
+                  active={dateRange === "this-month"}
+                  onClick={() => setDateRange("this-month")}
+                  variant="green"
+                >
+                  {t("dateThisMonth")}
+                </FilterPill>
+                <span className="w-px h-5 bg-stone-400 mx-0.5 shrink-0 hidden md:inline" />
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                {/* Free-only toggle */}
+                <span className="text-xl">💰</span>
+                <FilterPill
+                  active={freeOnly}
+                  onClick={() => setFreeOnly(!freeOnly)}
+                  variant="yellow"
+                >
+                  {t("freeOnly")}
+                </FilterPill>
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-xl">🗓️</span>
-              {/* Date range pills */}
-              <FilterPill
-                active={dateRange === "all"}
-                onClick={() => setDateRange("all")}
-                variant="green"
-              >
-                {t("dateAll")}
-              </FilterPill>
-              <FilterPill
-                active={dateRange === "this-week"}
-                onClick={() => setDateRange("this-week")}
-                variant="green"
-              >
-                {t("dateThisWeek")}
-              </FilterPill>
-              <FilterPill
-                active={dateRange === "this-month"}
-                onClick={() => setDateRange("this-month")}
-                variant="green"
-              >
-                {t("dateThisMonth")}
-              </FilterPill>
-              <span className="w-px h-5 bg-stone-400 mx-0.5 shrink-0 hidden md:inline" />
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              {/* Free-only toggle */}
-              <span className="text-xl">💰</span>
-              <FilterPill
-                active={freeOnly}
-                onClick={() => setFreeOnly(!freeOnly)}
-                variant="yellow"
-              >
-                {t("freeOnly")}
-              </FilterPill>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -306,9 +323,9 @@ export default function EventsPageClient({ events }: { events: Event[] }) {
             )}
           </div>
         ) : (
-          <div className="grid max-w-5xl justify-center items-center gap-6 m-6 lg:mx-auto md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 max-w-5xl justify-center items-center gap-6 m-6 lg:mx-auto md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((event) => (
-              <EventCard key={event.id} event={event} locale={locale} t={t} />
+              <EventCard key={event.id} event={event} locale={locale} />
             ))}
           </div>
         )}
