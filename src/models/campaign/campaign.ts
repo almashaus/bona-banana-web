@@ -28,6 +28,28 @@ export interface Campaign {
 
   approvedBy?: string;
   approvedAt?: Date;
+
+  /** Set each time the D-Master edits the campaign after creation. Absent on brand-new campaigns. */
+  lastEditedAt?: Date;
+  /** True once the campaign has ever been published. Sticky — lets admins know an edit is of a previously-live campaign. */
+  previouslyPublished?: boolean;
+
+  /**
+   * Snapshot of the editable values as they were BEFORE the most recent master edit.
+   * Used by the admin review page to highlight what changed. Cleared when the admin
+   * approves/rejects. Absent on brand-new campaigns and pre-feature edits.
+   */
+  editSnapshot?: CampaignEditSnapshot | null;
+}
+
+export interface CampaignEditSnapshot {
+  title: string;
+  price: number;
+  city: City;
+  startDate: Date;
+  sessions: { id: string; dateTime: Date }[];
+  players: { id: string; name: string }[];
+  capturedAt: Date;
 }
 
 export interface CampaignPlayer {
@@ -47,6 +69,16 @@ export interface CampaignPlayer {
 
   /** Populated once the user pays for ALL sessions in the campaign. */
   assignedUserId?: string;
+
+  /**
+   * Set `true` when the master withdraws (removes) this player mid-campaign.
+   * Withdrawn slots stay visible to the master — labeled "withdrawn" — but are
+   * hidden from the player/visitor view. Withdrawing does NOT require admin
+   * re-approval and sends no email (unlike a full campaign edit).
+   */
+  withdrawn?: boolean;
+  /** When the slot was withdrawn. Cleared (null) if the master restores it. */
+  withdrawnAt?: Date | null;
 
   createdAt: Date;
 }

@@ -19,8 +19,25 @@ import {
   Shield,
   Sparkles,
   ArrowRight,
+  Pencil,
+  Mail,
+  UserMinus,
+  RotateCcw,
+  Loader2,
 } from "lucide-react";
+import { getAuth } from "firebase/auth";
 import { Button } from "@/src/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/src/components/ui/alert-dialog";
 import {
   Card,
   CardContent,
@@ -51,10 +68,18 @@ import {
 import { Separator } from "@/src/components/ui/separator";
 import { price } from "@/src/lib/utils/locales";
 
+interface CampaignBooker {
+  id: string;
+  name: string | null;
+  email: string | null;
+}
+
 interface CampaignDetail extends Campaign {
   players: CampaignPlayer[];
   sessions: CampaignSession[];
   bookings: CampaignBooking[];
+  /** Real users behind the bookings, keyed by userId. */
+  bookers?: Record<string, CampaignBooker>;
 }
 
 export default function CampaignPageClient({
@@ -68,7 +93,7 @@ export default function CampaignPageClient({
   const locale = useLocale();
   const { toast } = useToast();
 
-  const { data, isLoading } = useSWR<CampaignDetail>(
+  const { data, isLoading, mutate } = useSWR<CampaignDetail>(
     `/api/campaigns/${campaignId}`,
   );
 
@@ -132,7 +157,14 @@ export default function CampaignPageClient({
 
   if (isMaster) {
     return (
-      <MasterView campaign={campaign} t={t} locale={locale} router={router} />
+      <MasterView
+        campaign={campaign}
+        t={t}
+        locale={locale}
+        router={router}
+        toast={toast}
+        mutate={mutate}
+      />
     );
   }
 
@@ -155,16 +187,88 @@ function MasterView({
   t,
   locale,
   router,
+  toast,
+  mutate,
 }: {
   campaign: CampaignDetail;
   t: (key: string, values?: Record<string, string | number>) => string;
   locale: string;
   router: ReturnType<typeof useRouter>;
+  toast: ReturnType<
+    typeof import("@/src/components/ui/use-toast").useToast
+  >["toast"];
+  mutate: () => void;
 }) {
+  const sessionsCount = campaign.sessions.length;
+
+  // Player slot being withdrawn/restored right now (its id), for spinner state.
+  const [pendingPlayerId, setPendingPlayerId] = useState<string | null>(null);
+
+  // Withdraw or restore a player slot. This intentionally does NOT re-submit the
+  // campaign for approval and sends no email — see the PATCH handler.
+  const handleWithdrawToggle = async (playerId: string, restore: boolean) => {
+    const authUser = getAuth().currentUser;
+    if (!authUser) {
+      toast({ title: t("withdrawFailed"), variant: "destructive" });
+      return;
+    }
+    setPendingPlayerId(playerId);
+    try {
+      const idToken = await authUser.getIdToken();
+      const res = await fetch(`/api/campaigns/${campaign.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          action: restore ? "restorePlayer" : "withdrawPlayer",
+          playerId,
+        }),
+      });
+      if (res.ok) {
+        toast({
+          title: t(restore ? "playerRestored" : "playerWithdrawn"),
+          variant: "success",
+        });
+        mutate();
+      } else {
+        const err = await res.json().catch(() => null);
+        toast({
+          title: t("withdrawFailed"),
+          description: err?.error,
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({ title: t("withdrawFailed"), variant: "destructive" });
+    } finally {
+      setPendingPlayerId(null);
+    }
+  };
+
   const paidBookingsForSession = (sessionId: string) =>
     campaign.bookings.filter(
       (b) => b.sessionId === sessionId && b.status === BookingStatus.PAID,
     );
+
+  // All PAID bookings for a given player slot, across every session.
+  const playerPaidBookings = (playerId: string) =>
+    campaign.bookings.filter(
+      (b) => b.playerId === playerId && b.status === BookingStatus.PAID,
+    );
+
+  // The PAID booking (if any) for a specific player slot in a specific session.
+  const bookingFor = (sessionId: string, playerId: string) =>
+    campaign.bookings.find(
+      (b) =>
+        b.sessionId === sessionId &&
+        b.playerId === playerId &&
+        b.status === BookingStatus.PAID,
+    );
+
+  const bookerFor = (userId?: string | null) =>
+    userId ? (campaign.bookers?.[userId] ?? null) : null;
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -183,16 +287,25 @@ function MasterView({
             )}
             {t("backToCampaigns")}
           </Button>
-          <div className="flex items-center gap-3">
-            <User className="h-6 w-6 text-orangeColor" />
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">
-                {campaign.title}
-              </h1>
-              <p className="text-primary-foreground/60 text-sm">
-                Master &mdash; <StatusText status={campaign.status} t={t} />
-              </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <User className="h-6 w-6 text-orangeColor" />
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold">
+                  {campaign.title}
+                </h1>
+                <p className="text-primary-foreground/60 text-sm">
+                  Master &mdash; <StatusText status={campaign.status} t={t} />
+                </p>
+              </div>
             </div>
+            <Button
+              onClick={() => router.push(`/dnd/${campaign.id}/edit`)}
+              className="bg-orangeColor hover:bg-orangeColor/90 text-white shrink-0"
+            >
+              <Pencil className="h-4 w-4 me-2" />
+              {t("editCampaign")}
+            </Button>
           </div>
         </div>
       </div>
@@ -222,7 +335,7 @@ function MasterView({
           />
         </div>
 
-        {/* Sessions Overview */}
+        {/* Sessions Overview — detailed per-player status */}
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
@@ -230,75 +343,301 @@ function MasterView({
               {t("sessions")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {campaign.sessions.map((session) => {
               const booked = paidBookingsForSession(session.id);
               return (
                 <div
                   key={session.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-beigeColor/30 border border-beigeColor/60"
+                  className="rounded-lg border border-beigeColor/60 overflow-hidden"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-orangeColor/15 text-orangeColor text-xs font-bold">
-                      {session.sessionNumber}
+                  {/* Session header */}
+                  <div className="flex items-center justify-between p-3 bg-beigeColor/30">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-orangeColor/15 text-orangeColor text-xs font-bold">
+                        {session.sessionNumber}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {t("sessionNo", { number: session.sessionNumber })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {session.dateTime
+                            ? formatDateTime(new Date(session.dateTime))
+                            : "-"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {t("sessionNo", { number: session.sessionNumber })}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {session.dateTime
-                          ? formatDateTime(new Date(session.dateTime))
-                          : "-"}
-                      </p>
-                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {booked.length}/{campaign.playersCount}
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    {booked.length}/{campaign.playersCount}
-                  </Badge>
+
+                  {/* Per-player status for this session */}
+                  <div className="divide-y divide-border/50 bg-card">
+                    {campaign.players.map((player) => {
+                      const booking = bookingFor(session.id, player.id);
+                      const booker = bookerFor(booking?.userId);
+                      return (
+                        <div
+                          key={player.id}
+                          className="flex items-center justify-between gap-2 px-3 py-2"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <User
+                              className={cn(
+                                "h-3.5 w-3.5 shrink-0",
+                                player.withdrawn
+                                  ? "text-muted-foreground/40"
+                                  : booking
+                                    ? "text-green-600"
+                                    : "text-muted-foreground/40",
+                              )}
+                            />
+                            <span
+                              className={cn(
+                                "text-sm font-medium truncate",
+                                player.withdrawn &&
+                                  "text-muted-foreground line-through",
+                              )}
+                            >
+                              {player.name}
+                            </span>
+                            {player.withdrawn && (
+                              <span className="text-xs text-redColor font-medium shrink-0">
+                                ({t("withdrawn")})
+                              </span>
+                            )}
+                          </div>
+                          {booking ? (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs text-muted-foreground truncate max-w-[140px]">
+                                {booker?.name ||
+                                  booker?.email ||
+                                  t("unknownPlayer")}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="text-green-600 border-green-600 text-xs shrink-0"
+                              >
+                                <CheckCircle className="h-3 w-3 me-1" />
+                                {t("booked")}
+                              </Badge>
+                            </div>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="text-xs text-muted-foreground shrink-0"
+                            >
+                              {t("available")}
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
           </CardContent>
         </Card>
 
-        {/* Players */}
+        {/* Player Assignments — who is assigned to each player slot */}
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="h-4 w-4 text-orangeColor" />
-              {t("players")}
+              {t("playerAssignments")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {campaign.players.map((player) => (
-              <div
-                key={player.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-beigeColor/30 border border-beigeColor/60"
-              >
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-greenColor" />
-                  <span className="text-sm font-medium">{player.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {player.assignedUserId ? (
-                    <Badge
-                      variant="outline"
-                      className="text-green-600 border-green-600 text-xs"
-                    >
-                      <CheckCircle className="h-3 w-3 me-1" /> Assigned
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="text-xs bg-yellowColor/20 text-yellowColor border border-yellowColor"
-                    >
-                      {t("available")}
-                    </Badge>
+            {campaign.players.map((player) => {
+              const paid = playerPaidBookings(player.id);
+              const bookedCount = new Set(paid.map((b) => b.sessionId)).size;
+              const fully = sessionsCount > 0 && bookedCount === sessionsCount;
+              const partial = bookedCount > 0 && !fully;
+              const withdrawn = !!player.withdrawn;
+              const primaryUserId =
+                player.assignedUserId ?? paid[0]?.userId ?? null;
+              const booker = bookerFor(primaryUserId);
+              const pending = pendingPlayerId === player.id;
+
+              return (
+                <div
+                  key={player.id}
+                  className={cn(
+                    "p-3 rounded-lg border",
+                    withdrawn
+                      ? "bg-muted/40 border-border"
+                      : fully
+                        ? "bg-green-50 border-green-200"
+                        : partial
+                          ? "bg-orangeColor/5 border-orangeColor/30"
+                          : "bg-beigeColor/30 border-beigeColor/60",
                   )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={cn(
+                          "flex items-center justify-center w-8 h-8 rounded-full shrink-0",
+                          withdrawn
+                            ? "bg-muted"
+                            : fully
+                              ? "bg-green-600/15"
+                              : partial
+                                ? "bg-orangeColor/15"
+                                : "bg-greenColor/10",
+                        )}
+                      >
+                        <User
+                          className={cn(
+                            "h-4 w-4",
+                            withdrawn
+                              ? "text-muted-foreground/50"
+                              : fully
+                                ? "text-green-700"
+                                : partial
+                                  ? "text-orangeColor"
+                                  : "text-greenColor",
+                          )}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <span
+                          className={cn(
+                            "text-sm font-medium block truncate",
+                            withdrawn && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {player.name}
+                        </span>
+                        {withdrawn ? (
+                          <span className="text-xs text-muted-foreground block">
+                            {t("withdrawnNote")}
+                          </span>
+                        ) : booker ? (
+                          <span className="text-xs text-muted-foreground block truncate">
+                            {t("bookedBy")}:{" "}
+                            {booker.name || booker.email || t("unknownPlayer")}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground block">
+                            {t("noBookingsYet")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {withdrawn ? (
+                      <Badge
+                        variant="outline"
+                        className="text-redColor border-redColor text-xs shrink-0"
+                      >
+                        {t("withdrawn")}
+                      </Badge>
+                    ) : fully ? (
+                      <Badge
+                        variant="outline"
+                        className="text-green-600 border-green-600 text-xs shrink-0"
+                      >
+                        <CheckCircle className="h-3 w-3 me-1" /> {t("assigned")}
+                      </Badge>
+                    ) : partial ? (
+                      <Badge
+                        variant="outline"
+                        className="text-orangeColor border-orangeColor text-xs shrink-0"
+                      >
+                        {t("partiallyBooked")}
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-yellowColor/20 text-yellowColor border border-yellowColor shrink-0"
+                      >
+                        {t("available")}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {bookedCount > 0 && (
+                    <div className="mt-2 ms-11 space-y-1">
+                      {booker?.name && booker?.email && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                          <Mail className="h-3 w-3 shrink-0" /> {booker.email}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {t("sessionsBookedOf", {
+                          booked: bookedCount,
+                          total: sessionsCount,
+                        })}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Withdraw / restore action — no approval, no email */}
+                  <div className="mt-3 ms-11">
+                    {withdrawn ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => handleWithdrawToggle(player.id, true)}
+                        className="h-7 text-xs border-greenColor/40 text-greenColor hover:bg-greenColor/10"
+                      >
+                        {pending ? (
+                          <Loader2 className="h-3 w-3 me-1 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-3 w-3 me-1" />
+                        )}
+                        {t("restorePlayer")}
+                      </Button>
+                    ) : (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={pending}
+                            className="h-7 text-xs border-redColor/40 text-redColor hover:bg-redColor/10"
+                          >
+                            {pending ? (
+                              <Loader2 className="h-3 w-3 me-1 animate-spin" />
+                            ) : (
+                              <UserMinus className="h-3 w-3 me-1" />
+                            )}
+                            {t("withdrawPlayer")}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {t("withdrawPlayerTitle")}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("withdrawPlayerDescription", {
+                                name: player.name,
+                              })}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() =>
+                                handleWithdrawToggle(player.id, false)
+                              }
+                              className="bg-redColor hover:bg-redColor/90 text-white"
+                            >
+                              {t("withdrawPlayer")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       </div>
@@ -329,7 +668,10 @@ function PlayerView({
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const store = useCampaignCheckoutStore();
 
-  const enabledPlayers = campaign.players.filter((p) => p.isActive);
+  // Withdrawn slots are hidden from players/visitors (still visible to the master).
+  const enabledPlayers = campaign.players.filter(
+    (p) => p.isActive && !p.withdrawn,
+  );
 
   const isPlayerBookedInSession = (sessionId: string, playerId: string) =>
     campaign.bookings.some(
@@ -589,7 +931,7 @@ function PlayerView({
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-orangeColor" />
-                  {t("sessions")}
+                  {t("selectSessions")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -603,7 +945,11 @@ function PlayerView({
                       <TabsTrigger
                         key={session.id}
                         value={session.id}
-                        className="flex-1 min-w-0 text-xs sm:text-sm"
+                        className={cn(
+                          "flex-1 min-w-0 text-xs sm:text-sm transition-colors",
+                          selectedSessions.includes(session.id) &&
+                            "text-green-600 font-semibold data-[state=active]:text-green-600",
+                        )}
                       >
                         {t("sessionNo", { number: session.sessionNumber })}
                       </TabsTrigger>

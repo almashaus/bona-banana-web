@@ -68,3 +68,41 @@ export const campaignBookingSchema = z.object({
 });
 
 export type CampaignBookingData = z.infer<typeof campaignBookingSchema>;
+
+// Master edit: counts are fixed (sessions/players are tied to bookings),
+// so only the values of existing sessions/players can be changed.
+export const campaignEditSchema = z.object({
+  title: z
+    .string()
+    .min(3, { message: "Title must be at least 3 characters long" })
+    .trim(),
+
+  price: z.number().positive({ message: "Price must be greater than 0" }),
+
+  startDate: z.string().min(1, { message: "Start date is required" }),
+
+  city: z.object({
+    ar: z.string().min(1, { message: "City (Arabic) is required" }),
+    en: z.string().min(1, { message: "City (English) is required" }),
+  }),
+
+  players: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z
+        .string()
+        .min(2, { message: "Player name must be at least 2 characters" })
+        .trim(),
+    }),
+  ),
+
+  sessions: z.array(
+    z.object({
+      id: z.string().min(1),
+      sessionNumber: z.number(),
+      dateTime: z.string().min(1, { message: "Session date is required" }),
+    }),
+  ),
+});
+
+export type CampaignEditData = z.infer<typeof campaignEditSchema>;

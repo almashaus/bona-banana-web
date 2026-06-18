@@ -11,7 +11,10 @@ export function middleware(request: NextRequest) {
     pathname.startsWith(route),
   );
 
-  if (isProtectedRoute && !sessionCookie) {
+  // Campaign edit page (/dnd/[campaignId]/edit) is master-only; require a session.
+  const isCampaignEdit = /^\/dnd\/[^/]+\/edit/.test(pathname);
+
+  if ((isProtectedRoute || isCampaignEdit) && !sessionCookie) {
     const url = new URL("/login", request.url);
     return NextResponse.redirect(url);
   }
@@ -50,5 +53,6 @@ export const config = {
     "/confirmation/:path*",
     "/dnd/create-campaign/:path*",
     "/dnd/checkout/:path*",
+    "/dnd/:campaignId/edit/:path*",
   ],
 };

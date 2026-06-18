@@ -11,12 +11,14 @@ import {
   CalendarDays,
   Users,
   MapPin,
-  User,
+  Crown,
+  Shield,
   Clock,
   CheckCircle,
   XCircle,
   ArrowRight,
   ArrowLeft,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -100,70 +102,196 @@ function CampaignCardSkeleton() {
   );
 }
 
+type CardVariant = "owned" | "joined";
+
+/**
+ * Role-based theming so the two relationships never look interchangeable:
+ * - "owned"  → you are the Dungeon Master (green brand accent, status matters)
+ * - "joined" → you are a Player (orange accent, always published)
+ */
+const variantTheme: Record<
+  CardVariant,
+  {
+    Icon: LucideIcon;
+    roleKey: string;
+    accentBar: string;
+    iconWrap: string;
+    iconColor: string;
+    metaIcon: string;
+    hoverTitle: string;
+    price: string;
+    arrow: string;
+  }
+> = {
+  owned: {
+    Icon: Crown,
+    roleKey: "master",
+    accentBar: "before:bg-green-900",
+    iconWrap: "bg-green-900/10 group-hover:bg-green-900/20",
+    iconColor: "text-green-900",
+    metaIcon: "text-green-900/70",
+    hoverTitle: "group-hover:text-green-900",
+    price: "text-green-900",
+    arrow: "group-hover:text-green-900",
+  },
+  joined: {
+    Icon: Shield,
+    roleKey: "player",
+    accentBar: "before:bg-orangeColor",
+    iconWrap: "bg-orangeColor/10 group-hover:bg-orangeColor/20",
+    iconColor: "text-orangeColor",
+    metaIcon: "text-orangeColor/70",
+    hoverTitle: "group-hover:text-orangeColor",
+    price: "text-orangeColor",
+    arrow: "group-hover:text-orangeColor",
+  },
+};
+
 function CampaignCard({
   campaign,
   t,
   locale,
+  variant,
 }: {
   campaign: CampaignWithSubs;
   t: (key: string) => string;
   locale: string;
+  variant: CardVariant;
 }) {
+  const theme = variantTheme[variant];
+  const RoleIcon = theme.Icon;
+
   return (
     <Link href={`/dnd/${campaign.id}`}>
-      <Card className="group hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-none shadow-sm h-full">
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-md bg-greenColor/10 group-hover:bg-greenColor/20 transition-colors">
-                <Swords className="h-4 w-4 text-greenColor" />
+      <Card
+        className={`group relative overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-none shadow-sm h-full before:absolute before:inset-y-0 before:start-0 before:w-1 ${theme.accentBar}`}
+      >
+        <CardContent className="p-5 ps-6">
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`p-1.5 rounded-md transition-colors shrink-0 ${theme.iconWrap}`}
+              >
+                <RoleIcon className={`h-4 w-4 ${theme.iconColor}`} />
               </div>
-              <h3 className="font-semibold text-base group-hover:text-greenColor transition-colors line-clamp-1">
-                {campaign.title}
-              </h3>
+              <div className="min-w-0">
+                <h3
+                  className={`font-semibold text-base transition-colors line-clamp-1 ${theme.hoverTitle}`}
+                >
+                  {campaign.title}
+                </h3>
+                <span
+                  className={`flex items-center gap-1 text-xs font-medium ${theme.iconColor}`}
+                >
+                  <RoleIcon className="h-3 w-3" />
+                  {t(theme.roleKey)}
+                </span>
+              </div>
             </div>
-            <StatusBadge status={campaign.status} t={t} />
+            {variant === "owned" ? (
+              <StatusBadge status={campaign.status} t={t} />
+            ) : (
+              <Badge
+                variant="outline"
+                className="text-orangeColor border-orangeColor/40 bg-orangeColor/5 text-xs shrink-0"
+              >
+                <CheckCircle className="h-3 w-3 me-1" /> {t("joined")}
+              </Badge>
+            )}
           </div>
 
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5 text-orangeColor" />
+              <CalendarDays className={`h-3.5 w-3.5 ${theme.metaIcon}`} />
               <span>
                 {campaign.sessionsCount} {t("sessions")}
               </span>
               <span className="mx-1">·</span>
-              <Users className="h-3.5 w-3.5 text-orangeColor" />
+              <Users className={`h-3.5 w-3.5 ${theme.metaIcon}`} />
               <span>
                 {campaign.playersCount} {t("players")}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 text-orangeColor" />
+              <MapPin className={`h-3.5 w-3.5 ${theme.metaIcon}`} />
               <span>
                 {locale === "ar" ? campaign.city?.ar : campaign.city?.en}
               </span>
             </div>
             {campaign.startDate && (
               <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-orangeColor" />
+                <Clock className={`h-3.5 w-3.5 ${theme.metaIcon}`} />
                 <span>{formatDate(new Date(campaign.startDate))}</span>
               </div>
             )}
           </div>
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between">
-            <span className="font-bold text-greenColor">
+            <span className={`font-bold ${theme.price}`}>
               {campaign.price} SAR
             </span>
             {locale == "en" ? (
-              <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-greenColor group-hover:translate-x-0.5 transition-all" />
+              <ArrowRight
+                className={`h-4 w-4 text-muted-foreground/40 group-hover:translate-x-0.5 transition-all ${theme.arrow}`}
+              />
             ) : (
-              <ArrowLeft className="h-4 w-4 text-muted-foreground/40 group-hover:text-greenColor group-hover:translate-x-0.5 transition-all" />
+              <ArrowLeft
+                className={`h-4 w-4 text-muted-foreground/40 group-hover:-translate-x-0.5 transition-all ${theme.arrow}`}
+              />
             )}
           </div>
         </CardContent>
       </Card>
     </Link>
+  );
+}
+
+function SectionHeader({
+  variant,
+  title,
+  description,
+  count,
+}: {
+  variant: CardVariant;
+  title: string;
+  description: string;
+  count: number;
+}) {
+  const owned = variant === "owned";
+  const SectionIcon = owned ? Crown : Shield;
+  return (
+    <div className="flex items-center gap-3 mb-5">
+      <span
+        className={`w-1.5 self-stretch rounded-full ${
+          owned ? "bg-green-900" : "bg-orangeColor"
+        }`}
+      />
+      <div
+        className={`p-2 rounded-lg ${
+          owned ? "bg-green-900/10" : "bg-orangeColor/10"
+        }`}
+      >
+        <SectionIcon
+          className={`h-5 w-5 ${owned ? "text-green-900" : "text-orangeColor"}`}
+        />
+      </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold">{title}</h2>
+          <Badge
+            variant="outline"
+            className={`${
+              owned
+                ? "border-green-900/30 text-green-900 bg-green-900/5"
+                : "border-orangeColor/30 text-orangeColor bg-orangeColor/5"
+            }`}
+          >
+            {count}
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+    </div>
   );
 }
 
@@ -194,7 +322,7 @@ export default function DnDPage() {
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Hero */}
-      <div className="bg-greenColor text-primary-foreground">
+      <div className="bg-green-900 text-primary-foreground">
         <section className="relative pt-12 pb-8 px-6 text-center overflow-hidden">
           <Image
             src="/assets/dnd/banner.svg"
@@ -250,16 +378,15 @@ export default function DnDPage() {
           </div>
         )}
 
-        {/* Master's Campaigns */}
+        {/* My Campaigns — you are the Dungeon Master */}
         {!isLoading && isMaster && (
           <section>
-            <div className="flex items-center gap-2 mb-4">
-              <User className="h-5 w-5 text-orangeColor" />
-              <h2 className="text-xl font-bold">{t("myCampaigns")}</h2>
-              <Badge variant="outline" className="ms-1 mt-1">
-                {masterCampaigns.length}
-              </Badge>
-            </div>
+            <SectionHeader
+              variant="owned"
+              title={t("myCampaigns")}
+              description={t("myCampaignsDesc")}
+              count={masterCampaigns.length}
+            />
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {masterCampaigns.map((campaign) => (
                 <CampaignCard
@@ -267,22 +394,22 @@ export default function DnDPage() {
                   campaign={campaign}
                   t={t}
                   locale={locale}
+                  variant="owned"
                 />
               ))}
             </div>
           </section>
         )}
 
-        {/* Joined Campaigns */}
+        {/* Joined Campaigns — you are a Player */}
         {!isLoading && isPlayer && (
           <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="h-5 w-5 text-orangeColor" />
-              <h2 className="text-xl font-bold">{t("joinedCampaigns")}</h2>
-              <Badge variant="outline" className="ms-1">
-                {joinedCampaigns.length}
-              </Badge>
-            </div>
+            <SectionHeader
+              variant="joined"
+              title={t("joinedCampaigns")}
+              description={t("joinedCampaignsDesc")}
+              count={joinedCampaigns.length}
+            />
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {joinedCampaigns.map((campaign) => (
                 <CampaignCard
@@ -290,6 +417,7 @@ export default function DnDPage() {
                   campaign={campaign}
                   t={t}
                   locale={locale}
+                  variant="joined"
                 />
               ))}
             </div>

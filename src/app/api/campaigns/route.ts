@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { campaignFormSchema } from "@/src/models/campaign/campaignSchemas";
 import { CampaignStatus } from "@/src/models/campaign/campaign";
 import { generateIDNumber } from "@/src/lib/utils/utils";
+import { sendCampaignApprovalRequestEmail } from "@/src/lib/firebase/sendCampaignEmail";
 
 export async function POST(req: NextRequest) {
   try {
@@ -81,6 +82,19 @@ export async function POST(req: NextRequest) {
     });
 
     await Promise.all([...playerPromises, ...sessionPromises]);
+
+    // Notify the Bona Banana team that a new campaign awaits approval.
+    // Email failures must not block campaign creation.
+    await sendCampaignApprovalRequestEmail({
+      id: campaignId,
+      title: data.title,
+      masterId: decoded.uid,
+      sessionsCount: data.sessionsCount,
+      playersCount: data.playersCount,
+      price: data.price,
+      city: data.city,
+      startDate: data.startDate,
+    });
 
     return NextResponse.json(
       { success: true, campaignId },

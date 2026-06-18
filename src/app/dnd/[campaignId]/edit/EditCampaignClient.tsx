@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  campaignFormSchema,
-  type CampaignFormData,
+  campaignEditSchema,
+  type CampaignEditData,
 } from "@/src/models/campaign/campaignSchemas";
 import { useAuth } from "@/src/features/auth/auth-provider";
 import { useLocale, useTranslations } from "next-intl";
 import { getAuth } from "firebase/auth";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { format } from "date-fns";
 import {
   Swords,
@@ -25,6 +25,7 @@ import {
   ArrowRight,
   CalendarIcon,
   BookOpen,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -44,10 +45,22 @@ import {
 } from "@/src/components/ui/popover";
 import { useToast } from "@/src/components/ui/use-toast";
 import { cn } from "@/src/lib/utils/utils";
-import { formatDate, formatDateTime } from "@/src/lib/utils/formatDate";
+import { formatDate } from "@/src/lib/utils/formatDate";
+import {
+  Campaign,
+  CampaignPlayer,
+  CampaignSession,
+  CampaignBooking,
+} from "@/src/models/campaign/campaign";
 
 interface CityResponse {
   city: { ar: string; en: string }[];
+}
+
+interface CampaignDetail extends Campaign {
+  players: CampaignPlayer[];
+  sessions: CampaignSession[];
+  bookings: CampaignBooking[];
 }
 
 function DateTimePicker({
@@ -123,7 +136,11 @@ function DateTimePicker({
   );
 }
 
-export default function CreateCampaignPage() {
+export default function EditCampaignClient({
+  campaignId,
+}: {
+  campaignId: string;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -131,69 +148,63 @@ export default function CreateCampaignPage() {
   const t = useTranslations("DnD");
   const auth = getAuth();
   const authUser = auth.currentUser;
+  const { mutate } = useSWRConfig();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: cityData } = useSWR<CityResponse>("/api/admin/settings/city");
+  const { data: campaign, isLoading } = useSWR<CampaignDetail>(
+    `/api/campaigns/${campaignId}`,
+  );
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
-  } = useForm<CampaignFormData>({
-    resolver: zodResolver(campaignFormSchema),
+  } = useForm<CampaignEditData>({
+    resolver: zodResolver(campaignEditSchema),
     defaultValues: {
       title: "",
-      sessionsCount: 3,
-      playersCount: 3,
-      playerNames: ["", "", ""],
       price: 0,
       startDate: "",
-      sessionDates: ["", "", ""],
       city: { ar: "", en: "" },
+      players: [],
+      sessions: [],
     },
   });
 
-  const sessionsCount = watch("sessionsCount");
-  const playersCount = watch("playersCount");
-  const playerNames = watch("playerNames");
-  const sessionDates = watch("sessionDates");
-
-  // Sync playerNames array with playersCount
+  // Populate the form once the campaign data has loaded.
   useEffect(() => {
-    const current = playerNames || [];
-    if (current.length < playersCount) {
-      const extended = [
-        ...current,
-        ...Array(playersCount - current.length).fill(""),
-      ];
-      setValue("playerNames", extended);
-    } else if (current.length > playersCount) {
-      setValue("playerNames", current.slice(0, playersCount));
-    }
-  }, [playersCount]);
+    if (!campaign) return;
+    reset({
+      title: campaign.title,
+      price: campaign.price,
+      startDate: campaign.startDate
+        ? new Date(campaign.startDate).toISOString()
+        : "",
+      city: { ar: campaign.city?.ar ?? "", en: campaign.city?.en ?? "" },
+      players: campaign.players.map((p) => ({ id: p.id, name: p.name })),
+      sessions: [...campaign.sessions]
+        .sort((a, b) => a.sessionNumber - b.sessionNumber)
+        .map((s) => ({
+          id: s.id,
+          sessionNumber: s.sessionNumber,
+          dateTime: s.dateTime ? new Date(s.dateTime).toISOString() : "",
+        })),
+    });
+  }, [campaign, reset]);
 
-  // Sync sessionDates array with sessionsCount
-  useEffect(() => {
-    const current = sessionDates || [];
-    if (current.length < sessionsCount) {
-      const extended = [
-        ...current,
-        ...Array(sessionsCount - current.length).fill(""),
-      ];
-      setValue("sessionDates", extended);
-    } else if (current.length > sessionsCount) {
-      setValue("sessionDates", current.slice(0, sessionsCount));
-    }
-  }, [sessionsCount]);
+  const players = watch("players");
+  const sessions = watch("sessions");
 
-  const onSubmit = async (data: CampaignFormData) => {
+  const onSubmit = async (data: CampaignEditData) => {
     if (!authUser) {
       toast({
-        title: "Error",
-        description: "You must be logged in to create a campaign.",
+        title: t("updateFailed"),
+        description: "You must be logged in.",
         variant: "destructive",
       });
       return;
@@ -204,33 +215,47 @@ export default function CreateCampaignPage() {
     try {
       const idToken = await authUser.getIdToken();
 
-      const response = await fetch("/api/campaigns", {
-        method: "POST",
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          title: data.title,
+          price: data.price,
+          city: data.city,
+          startDate: data.startDate,
+          updatePlayers: data.players.map((p) => ({
+            id: p.id,
+            name: p.name,
+          })),
+          updateSessions: data.sessions.map((s) => ({
+            id: s.id,
+            dateTime: s.dateTime,
+          })),
+        }),
       });
 
       if (response.ok) {
         toast({
-          title: t("createSuccess"),
-          description: t("createSuccessDescription"),
+          title: t("updateSuccess"),
+          description: t("updateSuccessDescription"),
           variant: "success",
         });
-        router.push("/dnd");
+        mutate(`/api/campaigns/${campaignId}`);
+        router.push(`/dnd/${campaignId}`);
       } else {
         const errorData = await response.json();
         toast({
-          title: t("createFailed"),
+          title: t("updateFailed"),
           description: errorData?.error || "Something went wrong",
           variant: "destructive",
         });
       }
     } catch {
       toast({
-        title: t("createFailed"),
+        title: t("updateFailed"),
         description: "Something went wrong",
         variant: "destructive",
       });
@@ -238,6 +263,50 @@ export default function CreateCampaignPage() {
       setIsSubmitting(false);
     }
   };
+
+  // ── Loading / guards ──────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-orangeColor/30 border-t-orangeColor rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center text-center px-4">
+        <div className="p-4 rounded-full bg-muted mb-4">
+          <Swords className="h-10 w-10 text-muted-foreground/40" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">{t("campaignNotFound")}</h2>
+        <p className="text-muted-foreground mb-4">
+          {t("campaignNotFoundDescription")}
+        </p>
+        <Button onClick={() => router.push("/dnd")}>
+          {t("backToCampaigns")}
+        </Button>
+      </div>
+    );
+  }
+
+  // Only the campaign master may edit.
+  if (user?.id !== campaign.masterId) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center text-center px-4">
+        <div className="p-4 rounded-full bg-muted mb-4">
+          <AlertTriangle className="h-10 w-10 text-muted-foreground/40" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">{t("accessDenied")}</h2>
+        <p className="text-muted-foreground mb-4">
+          {t("accessDeniedDescription")}
+        </p>
+        <Button onClick={() => router.push(`/dnd/${campaignId}`)}>
+          {t("backToCampaigns")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -286,7 +355,7 @@ export default function CreateCampaignPage() {
             <div className="flex flex-col items-center text-center">
               <Button
                 variant="ghost"
-                onClick={() => router.back()}
+                onClick={() => router.push(`/dnd/${campaignId}`)}
                 className="text-darkColor/60 hover:text-darkColor hover:bg-orangeColor/10 mb-8 font-medium transition-all group"
               >
                 {locale == "en" ? (
@@ -305,7 +374,7 @@ export default function CreateCampaignPage() {
               </div>
 
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-whimsical text-darkColor mb-2">
-                {t("createCampaign")}
+                {t("editCampaign")}
               </h1>
               <div className="flex items-center gap-2 text-darkColor/60 font-medium">
                 <span>
@@ -317,6 +386,14 @@ export default function CreateCampaignPage() {
 
           {/* Form */}
           <div className="container mx-auto px-4 py-8 max-w-3xl">
+            {/* Re-approval warning */}
+            <div className="flex items-start gap-3 mb-6 p-4 rounded-2xl bg-orangeColor/20 border border-orangeColor/30">
+              <AlertTriangle className="h-5 w-5 text-orangeColor shrink-0 mt-0.5" />
+              <p className="text-sm text-darkColor/80 font-medium">
+                {t("editWarning")}
+              </p>
+            </div>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Section 1: Basic Info */}
               <div className="enchanted-panel rounded-[2rem] p-6 md:p-8 space-y-6 relative overflow-hidden group">
@@ -403,6 +480,7 @@ export default function CreateCampaignPage() {
                       </Label>
                       <Select
                         dir={locale == "en" ? "ltr" : "rtl"}
+                        value={watch("city")?.en || ""}
                         onValueChange={(value) => {
                           const selected = cityData?.city?.find(
                             (c) => c.en === value,
@@ -426,7 +504,7 @@ export default function CreateCampaignPage() {
                         <SelectContent className="enchanted-panel rounded-xl">
                           {cityData?.city?.map((c) => (
                             <SelectItem key={c.en} value={c.en}>
-                              {c.en}
+                              {locale === "ar" ? c.ar : c.en}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -479,78 +557,43 @@ export default function CreateCampaignPage() {
                   </h2>
                 </div>
 
-                <div className="grid gap-6">
-                  {/* Sessions Count */}
-                  <div className="space-y-2 sm:w-1/2">
-                    <Label className="flex items-center gap-2 text-darkColor/80 font-bold ml-1">
-                      <CalendarIcon className="h-4 w-4 text-orangeColor" />
-                      {t("sessionsCount")}
-                    </Label>
-                    <Select
-                      dir={locale == "en" ? "ltr" : "rtl"}
-                      value={String(sessionsCount)}
-                      onValueChange={(val) =>
-                        setValue("sessionsCount", Number(val), {
-                          shouldValidate: true,
-                        })
-                      }
+                <div className="grid gap-4">
+                  {sessions.map((session, index) => (
+                    <div
+                      key={session.id}
+                      className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-2xl bg-white/30 border border-yellowColor/30 transition-all hover:bg-white/50 group/item"
                     >
-                      <SelectTrigger className="h-12 bg-white/70 border-orangeColor/20 rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="enchanted-panel rounded-xl">
-                        {[3, 4, 5, 6, 7].map((n) => (
-                          <SelectItem key={n} value={String(n)}>
-                            {n} {t("sessions")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Dynamic Session Date Fields */}
-                  <div className="grid gap-4">
-                    {Array.from({ length: sessionsCount }).map((_, index) => (
-                      <div
-                        key={index}
-                        className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-2xl bg-white/30 border border-yellowColor/30 transition-all hover:bg-white/50 group/item"
-                      >
-                        <div className="flex items-center gap-3 shrink-0">
-                          <div
-                            className={cn(
-                              "flex items-center justify-center w-8 h-8 rounded-xl text-sm font-bold transition-colors",
-                              sessionDates[index]
-                                ? "bg-orangeColor text-white"
-                                : "bg-orangeColor/10 text-orangeColor",
-                            )}
-                          >
-                            {index + 1}
-                          </div>
-                          <Label className="text-sm font-bold text-darkColor/70">
-                            {t("sessionNo", { number: index + 1 })}
-                          </Label>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div
+                          className={cn(
+                            "flex items-center justify-center w-8 h-8 rounded-xl text-sm font-bold transition-colors",
+                            session.dateTime
+                              ? "bg-orangeColor text-white"
+                              : "bg-orangeColor/10 text-orangeColor",
+                          )}
+                        >
+                          {session.sessionNumber}
                         </div>
-                        <div className="flex-1">
-                          <DateTimePicker
-                            value={watch(`sessionDates.${index}`) ?? ""}
-                            onChange={(iso) =>
-                              setValue(`sessionDates.${index}`, iso, {
-                                shouldValidate: true,
-                              })
-                            }
-                            hasError={!!errors.sessionDates?.[index]}
-                            label={t("sessionDate", { number: index + 1 })}
-                          />
-                        </div>
+                        <Label className="text-sm font-bold text-darkColor/70">
+                          {t("sessionNo", { number: session.sessionNumber })}
+                        </Label>
                       </div>
-                    ))}
-                    {errors.sessionDates &&
-                      !Array.isArray(errors.sessionDates) && (
-                        <p className="text-sm text-redColor font-medium ml-1">
-                          {errors.sessionDates.message}
-                        </p>
-                      )}
-                  </div>
+                      <div className="flex-1">
+                        <DateTimePicker
+                          value={watch(`sessions.${index}.dateTime`) ?? ""}
+                          onChange={(iso) =>
+                            setValue(`sessions.${index}.dateTime`, iso, {
+                              shouldValidate: true,
+                            })
+                          }
+                          hasError={!!errors.sessions?.[index]?.dateTime}
+                          label={t("sessionDate", {
+                            number: session.sessionNumber,
+                          })}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -571,79 +614,45 @@ export default function CreateCampaignPage() {
                   </h2>
                 </div>
 
-                <div className="grid gap-6">
-                  {/* Players Count */}
-                  <div className="space-y-2 sm:w-1/2">
-                    <Label className="flex items-center gap-2 text-darkColor/80 font-bold ml-1">
-                      <Swords className="h-4 w-4 text-orangeColor" />
-                      {t("playersCount")}
-                    </Label>
-                    <Select
-                      dir={locale == "en" ? "ltr" : "rtl"}
-                      value={String(playersCount)}
-                      onValueChange={(val) =>
-                        setValue("playersCount", Number(val), {
-                          shouldValidate: true,
-                        })
-                      }
+                <div className="grid gap-4">
+                  {players.map((player, index) => (
+                    <div
+                      key={player.id}
+                      className="flex items-center gap-4 p-4 rounded-2xl bg-white/30 border border-yellowColor/30 transition-all hover:bg-white/50 group/item"
                     >
-                      <SelectTrigger className="h-12 bg-white/70 border-orangeColor/20 rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="enchanted-panel rounded-xl">
-                        {[3, 4, 5, 6, 7].map((n) => (
-                          <SelectItem key={n} value={String(n)}>
-                            {n} {t("players")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Dynamic Player Name Fields */}
-                  <div className="grid gap-4">
-                    {Array.from({ length: playersCount }).map((_, index) => (
                       <div
-                        key={index}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-white/30 border border-yellowColor/30 transition-all hover:bg-white/50 group/item"
+                        className={cn(
+                          "flex items-center justify-center w-10 h-10 rounded-xl transition-colors shrink-0 text-greenColor",
+                          player.name ? "bg-yellowColor" : "bg-greenColor/10",
+                        )}
                       >
-                        <div
-                          className={cn(
-                            "flex items-center justify-center w-10 h-10 rounded-xl transition-colors shrink-0 text-greenColor",
-                            playerNames[index]
-                              ? "bg-yellowColor"
-                              : "bg-greenColor/10 ",
-                          )}
-                        >
-                          <User className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <Label
-                            htmlFor={`playerNames.${index}`}
-                            className="text-xs font-bold text-darkColor/70 ml-1"
-                          >
-                            {t("playerName")} {index + 1}
-                          </Label>
-                          <Input
-                            id={`playerNames.${index}`}
-                            {...register(`playerNames.${index}`)}
-                            placeholder={`Player ${index + 1}`}
-                            className={cn(
-                              "h-10 bg-white/70 rounded-xl transition-all",
-                              errors.playerNames?.[index] &&
-                                "border-redColor focus-visible:ring-redColor",
-                            )}
-                          />
-                        </div>
+                        <User className="h-5 w-5" />
                       </div>
-                    ))}
-                    {errors.playerNames &&
-                      !Array.isArray(errors.playerNames) && (
-                        <p className="text-sm text-redColor font-medium ml-1">
-                          {errors.playerNames.message}
-                        </p>
-                      )}
-                  </div>
+                      <div className="flex-1 space-y-1">
+                        <Label
+                          htmlFor={`players.${index}.name`}
+                          className="text-xs font-bold text-darkColor/70 ml-1"
+                        >
+                          {t("playerName")} {index + 1}
+                        </Label>
+                        <Input
+                          id={`players.${index}.name`}
+                          {...register(`players.${index}.name`)}
+                          placeholder={`Player ${index + 1}`}
+                          className={cn(
+                            "h-10 bg-white/70 rounded-xl transition-all",
+                            errors.players?.[index]?.name &&
+                              "border-redColor focus-visible:ring-redColor",
+                          )}
+                        />
+                        {errors.players?.[index]?.name && (
+                          <p className="text-sm text-redColor font-medium ml-1">
+                            {errors.players[index]?.name?.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -652,7 +661,7 @@ export default function CreateCampaignPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.back()}
+                  onClick={() => router.push(`/dnd/${campaignId}`)}
                   className="h-12 px-10 rounded-2xl border-orangeColor/20 hover:bg-orangeColor/10 text-darkColor/60 font-bold transition-all"
                 >
                   {locale == "en" ? (
@@ -671,12 +680,12 @@ export default function CreateCampaignPage() {
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      {t("creating")}
+                      {t("saving")}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Swords className="h-5 w-5" />
-                      {t("createCampaign")}
+                      {t("saveChanges")}
                     </div>
                   )}
                 </Button>

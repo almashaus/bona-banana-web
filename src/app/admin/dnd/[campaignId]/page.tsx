@@ -12,7 +12,16 @@ import {
   XCircle,
   Clock,
   User,
+  Crown,
+  Mail,
+  Phone,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
 import { Button } from "@/src/components/ui/button";
 import {
   Card,
@@ -39,6 +48,7 @@ import { usePermissions } from "@/src/hooks/useMemberPermissions";
 import { useAuthStore } from "@/src/lib/stores/useAuthStore";
 import AccessDenied from "@/src/components/ui/access-denied";
 import { formatDate, formatDateTime } from "@/src/lib/utils/formatDate";
+import { getCampaignChanges } from "@/src/lib/utils/campaignDiff";
 import { getAuth } from "firebase/auth";
 import {
   Campaign,
@@ -49,10 +59,19 @@ import {
   BookingStatus,
 } from "@/src/models/campaign/campaign";
 
+interface CampaignMaster {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  profileImage: string | null;
+}
+
 interface CampaignDetail extends Campaign {
   players: CampaignPlayer[];
   sessions: CampaignSession[];
   bookings: CampaignBooking[];
+  master: CampaignMaster | null;
 }
 
 export default function AdminCampaignDetailPage({
@@ -90,6 +109,12 @@ export default function AdminCampaignDetailPage({
 
   const campaign = data;
   const isPending = campaign.status === CampaignStatus.PENDING;
+  const isEdit = !!campaign.lastEditedAt;
+
+  // What the master changed in the last edit (null when no snapshot).
+  const changes = getCampaignChanges(campaign, campaign.editSnapshot);
+  const didChange = (key: string) => changes?.changed.has(key) ?? false;
+  const oldValue = (key: string) => changes?.oldValues[key];
 
   const handleAction = async (action: "approve" | "reject") => {
     if (!authUser) return;
@@ -145,9 +170,45 @@ export default function AdminCampaignDetailPage({
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <Swords className="h-5 w-5 text-orangeColor" />
-        <h1 className="text-2xl font-bold mb-1">{campaign.title}</h1>
+        <h1 className={"text-2xl font-bold mb-1"}>
+          {campaign.title}
+          <span className="text-sm text-muted-foreground line-through ms-3">
+            {didChange("title") && `${String(oldValue("title"))}`}
+          </span>
+        </h1>
         <StatusBadge status={campaign.status} />
+        {isEdit && (
+          <Badge
+            variant="outline"
+            className="text-amber-600 border-amber-400 bg-amber-50"
+          >
+            <AlertTriangle className="h-3 w-3 me-1" /> Edited
+          </Badge>
+        )}
       </div>
+
+      {/* Edit notice — distinguishes a re-submitted edit from a new campaign */}
+      {isEdit && (
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-amber-800">
+              {campaign.previouslyPublished
+                ? "Edit of a published campaign"
+                : "Edited submission"}
+            </p>
+            <p className="text-sm text-amber-700">
+              {campaign.previouslyPublished
+                ? "The D-Master edited a campaign that was already live. Approving it republishes the updated details. Existing paid bookings are preserved."
+                : "The D-Master edited this campaign after first submitting it; this is not a new campaign."}
+            </p>
+
+            <p className="text-xs text-amber-600">
+              Last edited {formatDateTime(new Date(campaign.lastEditedAt!))}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Campaign Info */}
@@ -162,11 +223,23 @@ export default function AdminCampaignDetailPage({
                   icon={<Coins className="h-4 w-4 text-orangeColor" />}
                   label="Price per Session"
                   value={`${campaign.price} SAR`}
+                  changed={didChange("price")}
+                  oldValue={
+                    didChange("price")
+                      ? `${String(oldValue("price"))} SAR`
+                      : undefined
+                  }
                 />
                 <InfoItem
                   icon={<MapPin className="h-4 w-4 text-orangeColor" />}
                   label="City"
                   value={campaign.city?.en ?? "-"}
+                  changed={didChange("city")}
+                  oldValue={
+                    didChange("city")
+                      ? ((oldValue("city") as { en?: string })?.en ?? "-")
+                      : undefined
+                  }
                 />
                 <InfoItem
                   icon={<CalendarDays className="h-4 w-4 text-orangeColor" />}
@@ -175,6 +248,12 @@ export default function AdminCampaignDetailPage({
                     campaign.startDate
                       ? formatDate(new Date(campaign.startDate))
                       : "-"
+                  }
+                  changed={didChange("startDate")}
+                  oldValue={
+                    didChange("startDate")
+                      ? formatDate(new Date(oldValue("startDate") as string))
+                      : undefined
                   }
                 />
                 <InfoItem
@@ -197,24 +276,38 @@ export default function AdminCampaignDetailPage({
             <CardContent className="space-y-3">
               {campaign.sessions.map((session) => {
                 const booked = paidBookingsForSession(session.id);
+                const sessionChanged = didChange(`session:${session.id}`);
+                const prevDate = oldValue(`session:${session.id}`);
                 return (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border"
+                    className={
+                      "flex items-center justify-between p-3 rounded-lg bg-muted/50 border"
+                    }
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-7 h-7 rounded-full bg-orangeColor/15 text-orangeColor text-xs font-bold">
                         {session.sessionNumber}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium flex items-center gap-1">
                           Session {session.sessionNumber}
+                          {sessionChanged && (
+                            <span className="text-[10px] font-semibold uppercase text-amber-600">
+                              Edited
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {session.dateTime
                             ? formatDateTime(new Date(session.dateTime))
                             : "No date set"}
                         </p>
+                        {sessionChanged && prevDate ? (
+                          <p className="text-xs text-muted-foreground line-through">
+                            {formatDateTime(new Date(prevDate as string))}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                     <Badge variant="outline" className="text-xs">
@@ -235,40 +328,124 @@ export default function AdminCampaignDetailPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {campaign.players.map((player) => (
-                <div
-                  key={player.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border"
-                >
-                  <div className="flex items-center gap-3">
-                    <User className="h-4 w-4 text-greenColor" />
-                    <div>
-                      <p className="text-sm font-medium">{player.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {player.assignedUserId
-                          ? "Assigned user"
-                          : "Not yet assigned user"}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="outline"
+              {campaign.players.map((player) => {
+                const nameChanged = didChange(`player:${player.id}`);
+                const prevName = oldValue(`player:${player.id}`);
+                return (
+                  <div
+                    key={player.id}
                     className={
-                      player.isActive
-                        ? "text-green-600 border-green-600"
-                        : "text-muted-foreground"
+                      "flex items-center justify-between p-3 rounded-lg bg-muted/50 border"
                     }
                   >
-                    {player.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-greenColor" />
+                      <div>
+                        <p className="text-sm font-medium flex items-center gap-1">
+                          {player.name}
+                          {nameChanged && (
+                            <span className="text-[10px] font-semibold uppercase text-amber-600">
+                              Edited
+                            </span>
+                          )}
+                        </p>
+                        {nameChanged && prevName ? (
+                          <p className="text-xs text-muted-foreground line-through">
+                            {String(prevName)}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            {player.assignedUserId
+                              ? "Assigned user"
+                              : "Not yet assigned user"}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        player.isActive
+                          ? "text-green-600 border-green-600"
+                          : "text-muted-foreground"
+                      }
+                    >
+                      {player.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
 
         {/* Sidebar: Actions */}
         <div className="space-y-6">
+          {/* D-Master Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Crown className="h-4 w-4 text-orangeColor" />
+                D-Master
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {campaign.master ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border bg-orangeColor/15">
+                      <AvatarImage
+                        src={campaign.master.profileImage ?? undefined}
+                        alt={campaign.master.name ?? "D-Master"}
+                      />
+                      <AvatarFallback className="bg-orangeColor/15 text-orangeColor">
+                        {campaign.master.name ? (
+                          campaign.master.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase()
+                        ) : (
+                          <User className="h-5 w-5" />
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">
+                        {campaign.master.name ?? "Unnamed"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Campaign Master
+                      </p>
+                    </div>
+                  </div>
+
+                  <dl className="space-y-3">
+                    {campaign.master.email && (
+                      <InfoItem
+                        icon={<Mail className="h-4 w-4 text-orangeColor" />}
+                        label="Email"
+                        value={campaign.master.email}
+                      />
+                    )}
+                    {campaign.master.phone && (
+                      <InfoItem
+                        icon={<Phone className="h-4 w-4 text-orangeColor" />}
+                        label="Phone"
+                        value={campaign.master.phone}
+                      />
+                    )}
+                  </dl>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  D-Master details unavailable.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {isPending && canEdit && (
             <Card className="border-orangeColor/30 bg-orangeColor/5">
               <CardHeader>
@@ -404,17 +581,33 @@ function InfoItem({
   icon,
   label,
   value,
+  changed,
+  oldValue,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  changed?: boolean;
+  oldValue?: string;
 }) {
   return (
-    <div className="flex items-start gap-2">
+    <div className={"flex items-start gap-2"}>
       <div className="mt-0.5">{icon}</div>
       <div>
-        <dt className="text-xs text-muted-foreground">{label}</dt>
+        <dt className="text-xs text-muted-foreground flex items-center gap-1">
+          {label}
+          {changed && (
+            <span className="text-[10px] font-semibold uppercase text-amber-600">
+              Edited
+            </span>
+          )}
+        </dt>
         <dd className="text-sm font-medium">{value}</dd>
+        {changed && oldValue !== undefined && (
+          <dd className="text-xs text-muted-foreground line-through">
+            {oldValue}
+          </dd>
+        )}
       </div>
     </div>
   );

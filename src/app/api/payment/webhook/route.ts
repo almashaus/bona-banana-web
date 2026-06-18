@@ -5,6 +5,7 @@ import { db } from "@/src/lib/firebase/firebaseAdminConfig";
 import { TicketStatus } from "@/src/models/ticket";
 import { OrderStatus } from "@/src/models/order";
 import { BookingStatus } from "@/src/models/campaign/campaign";
+import { sendCampaignBookingPaidEmail } from "@/src/lib/firebase/sendCampaignEmail";
 
 const MF_WEBHOOK_SECRET = process.env.MF_WEBHOOK_SECRET!;
 
@@ -132,10 +133,22 @@ async function markOrderPaid(invoiceId: string) {
     if (!campaignOrderSnap.empty) {
       const batch = db.batch();
 
+      // Collect the data needed to notify each campaign master after commit.
+      // Only orders transitioning into Paid get an email, so a webhook replay
+      // does not send duplicate notifications.
+      const notifications: {
+        campaignId: string;
+        userId: string;
+        playerIds: Set<string>;
+        sessionCount: number;
+      }[] = [];
+
       for (const orderDoc of campaignOrderSnap.docs) {
+        const orderData = orderDoc.data();
+        const alreadyPaid = orderData.status === OrderStatus.PAID;
+
         batch.update(orderDoc.ref, { status: OrderStatus.PAID });
 
-        const orderData = orderDoc.data();
         const { campaignId, sessionIds } = orderData;
 
         // Update bookings to paid
@@ -161,13 +174,79 @@ async function markOrderPaid(invoiceId: string) {
             .doc(playerId);
           batch.update(playerRef, { assignedUserId: orderData.userId });
         }
+
+        if (!alreadyPaid) {
+          notifications.push({
+            campaignId,
+            userId: orderData.userId,
+            playerIds,
+            sessionCount: sessionIds?.length ?? 0,
+          });
+        }
       }
 
       await batch.commit();
       console.log("Campaign order marked paid");
+
+      // Notify masters (best-effort — never block the webhook ack).
+      await Promise.all(
+        notifications.map((n) => notifyCampaignBookingPaid(n)),
+      );
     }
   } catch (error) {
     console.log("markOrderPaid error :>> ", error);
+  }
+}
+
+/**
+ * Best-effort email to the campaign master that a player paid for a booking.
+ * Reads the campaign + booked player slot, then delegates to the email sender.
+ * Any failure is swallowed so it can never break webhook processing.
+ */
+async function notifyCampaignBookingPaid({
+  campaignId,
+  userId,
+  playerIds,
+  sessionCount,
+}: {
+  campaignId: string;
+  userId: string;
+  playerIds: Set<string>;
+  sessionCount: number;
+}) {
+  try {
+    const campaignDoc = await db.collection("campaigns").doc(campaignId).get();
+    if (!campaignDoc.exists) return;
+    const c = campaignDoc.data() ?? {};
+
+    // A booking targets a single player slot — grab its display name.
+    let playerName: string | null = null;
+    const firstPlayerId = [...playerIds][0];
+    if (firstPlayerId) {
+      const playerDoc = await db
+        .collection("campaigns")
+        .doc(campaignId)
+        .collection("players")
+        .doc(firstPlayerId)
+        .get();
+      playerName = playerDoc.data()?.name ?? null;
+    }
+
+    await sendCampaignBookingPaidEmail({
+      campaign: {
+        id: campaignId,
+        title: c.title,
+        masterId: c.masterId,
+        city: c.city,
+        startDate: c.startDate,
+        price: c.price,
+      },
+      playerName,
+      bookerId: userId,
+      sessionCount,
+    });
+  } catch (error) {
+    console.log("notifyCampaignBookingPaid error :>> ", error);
   }
 }
 

@@ -38,7 +38,35 @@ export function EventCard({ event, locale }: { event: Event; locale: string }) {
       ? event.eventImage
       : "/no-image.svg";
 
-  return (
+  // When the event is disabled or completed (no upcoming dates) there is no
+  // interactive content inside the card, so make the whole card a single link.
+  const wholeCardClickable = isDisabled || upcomingDates.length === 0;
+
+  const imageBlock = (
+    <div className="flex justify-center items-center m-3.5">
+      <div className="relative w-[300px] h-[260px] rounded-xl overflow-hidden">
+        {/* Placeholder shimmer shown until image loads */}
+        <div className="absolute inset-0 bg-muted-foreground animate-pulse rounded-2xl" />
+        <Image
+          src={imageSrc}
+          alt={event.title}
+          fill
+          priority
+          className="object-cover rounded-2xl"
+          unoptimized={event.eventLogo?.includes("firebasestorage")}
+        />
+        {soldOut && (
+          <div className="absolute inset-0 rounded-xl bg-black/55 flex items-center justify-center">
+            <span className="bg-redColor text-white text-sm font-bold px-4 py-1.5 rounded-full uppercase tracking-wide">
+              {t("soldOut")}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const card = (
     <Card
       className={cn(
         "relative overflow-visible shadow-none bg-darkColor border-0 rounded-3xl max-w-full",
@@ -63,33 +91,17 @@ export function EventCard({ event, locale }: { event: Event; locale: string }) {
       </div>
 
       {/* Event image */}
-      <Link
-        href={`/events/${event.slug}`}
-        key={event.id}
-        className="cursor-pointer block"
-      >
-        <div className="flex justify-center items-center m-3.5">
-          <div className="relative w-[300px] h-[260px] rounded-xl overflow-hidden">
-            {/* Placeholder shimmer shown until image loads */}
-            <div className="absolute inset-0 bg-muted-foreground animate-pulse rounded-2xl" />
-            <Image
-              src={imageSrc}
-              alt={event.title}
-              fill
-              priority
-              className="object-cover rounded-2xl"
-              unoptimized={event.eventLogo?.includes("firebasestorage")}
-            />
-            {soldOut && (
-              <div className="absolute inset-0 rounded-xl bg-black/55 flex items-center justify-center">
-                <span className="bg-redColor text-white text-sm font-bold px-4 py-1.5 rounded-full uppercase tracking-wide">
-                  {t("soldOut")}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </Link>
+      {wholeCardClickable ? (
+        imageBlock
+      ) : (
+        <Link
+          href={`/events/${event.slug}`}
+          key={event.id}
+          className="cursor-pointer block"
+        >
+          {imageBlock}
+        </Link>
+      )}
 
       <div className={"mx-3.5 pt-1 pb-4"}>
         {/* Date chips */}
@@ -170,29 +182,45 @@ export function EventCard({ event, locale }: { event: Event; locale: string }) {
 
         {/* Price */}
         <div>
-          {/*  href={`/checkout`} */}
-          <a href={`/events/${event.slug}`}>
-            <button
-              className={`w-full ${
-                isFree
-                  ? "bg-greenColor text-white"
-                  : "bg-lightGreenColor text-darkColor"
-              } py-3 rounded-2xl text-sm md:text-md font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90`}
-            >
-              <div>
-                {isFree ? (
-                  t("free")
-                ) : (
-                  <span>
-                    {/* TODO: {`${t("pay")}`} */}
-                    {price(event.price, locale)}
-                  </span>
-                )}
-              </div>
-            </button>
-          </a>
+          {/* TODO: href={`/checkout`} */}
+          {(() => {
+            const priceButton = (
+              <button
+                className={`w-full ${
+                  isFree
+                    ? "bg-greenColor text-white"
+                    : "bg-lightGreenColor text-darkColor"
+                } py-3 rounded-2xl text-sm md:text-md font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90`}
+              >
+                <div>
+                  {isFree ? (
+                    t("free")
+                  ) : (
+                    <span>
+                      {/* TODO: {`${t("pay")}`} */}
+                      {price(event.price, locale)}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+
+            return wholeCardClickable ? (
+              priceButton
+            ) : (
+              <a href={`/events/${event.slug}`}>{priceButton}</a>
+            );
+          })()}
         </div>
       </div>
     </Card>
+  );
+
+  return wholeCardClickable ? (
+    <Link href={`/events/${event.slug}`} className="block cursor-pointer">
+      {card}
+    </Link>
+  ) : (
+    card
   );
 }
